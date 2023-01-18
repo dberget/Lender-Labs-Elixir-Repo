@@ -1,0 +1,27 @@
+<div>
+  <h2><%= @title %></h2>
+
+  <.form
+    let={f}
+    for={@changeset}
+    id="loan_plan-form"
+    phx-target={@myself}
+    phx-change="validate"
+    phx-submit="save">
+
+     <%= label f, :style %>
+     <%= text_input f, :style %>
+
+     <%= label f, :max_ltf %>
+     <%= number_input f, :max_ltf %>
+
+     <%= label f, :target_ltf %>
+     <%= number_input f, :target_ltf %>
+
+    <%= multiple_select f, :collections, @collections, selected: [1] %>
+
+    <div>
+      <%= submit "Save", phx_disable_with: "Saving..." %>
+    </div>
+  </.form>
+</div>
