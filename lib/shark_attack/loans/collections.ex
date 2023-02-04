@@ -2,9 +2,9 @@ defmodule SharkAttack.Loans.Collection do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:address, :string, []}
   schema "collections" do
     field(:name, :string)
-    field(:address, :string)
     field(:apy, :integer)
     field(:duration, :integer)
 

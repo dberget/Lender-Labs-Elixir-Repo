@@ -1,7 +1,6 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  # @rpc_url "https://solana--mainnet.datahub.figment.io/apikey/8921a90aba6a83716db5f1ea3d8e9e3c"
   @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
 

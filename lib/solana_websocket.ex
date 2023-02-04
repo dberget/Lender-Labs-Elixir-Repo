@@ -4,20 +4,19 @@ defmodule SharkAttack.SolanaWS do
   require Logger
 
   def start_link(opts) do
-    Logger.info("Starting SolanaWS")
+    # Logger.info("Starting SolanaWS")
 
-    # WebSockex.start_link("wss://api.mainnet-beta.solana.com/", __MODULE__, [], opts)
-    start_result =
-      WebSockex.start_link(
-        "wss://solana--mainnet.datahub.figment.io/apikey/8921a90aba6a83716db5f1ea3d8e9e3c/",
-        __MODULE__,
-        [],
-        opts
-      )
+    # start_result =
+    #   WebSockex.start_link(
+    #     "wss://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/",
+    #     __MODULE__,
+    #     [],
+    #     opts
+    #   )
 
-    subscribe_account(ExLiquidator.SolanaWS, "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD")
+    # subscribe_account(SharkAttack.SolanaWS, "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP")
 
-    start_result
+    # start_result
   end
 
   def terminate(reason, state) do
@@ -31,7 +30,7 @@ defmodule SharkAttack.SolanaWS do
     request = %{
       "jsonrpc" => "2.0",
       "id" => 1,
-      "method" => "accountSubscribe",
+      "method" => "programSubscribe",
       "params" => [
         account,
         %{
@@ -50,14 +49,14 @@ defmodule SharkAttack.SolanaWS do
     {:ok, state}
   end
 
-  # def handle_frame({type, msg}, state) do
-  # message = Jason.decode!(msg)
+  def handle_frame({type, msg}, state) do
+    message = Jason.decode!(msg)
 
-  # IO.puts("Received Message - Type: #{inspect(type)} -- Message:")
-  # IO.inspect(message)
+    IO.puts("Received Message - Type: #{inspect(type)} -- Message:")
+    IO.inspect(message)
 
-  # msg_data = get_in(message, ["params", "result", "value", "data"])
+    msg_data = get_in(message, ["params", "result", "value", "data"])
 
-  # {:ok, state}
-  # end
+    {:ok, state}
+  end
 end

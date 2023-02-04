@@ -46,6 +46,15 @@ config :shark_attack, SharkAttack.Vault,
        tag: "AES.GCM.V1", key: Base.decode64!("xdzZGSkAKVLSg8QkQx+BBxWourhdtRCKBuTE13uPxjA=")}
   ]
 
+config :nostrum,
+  token: "MTA2NTcyMTE2MDM2NjU3NTY3Ng.G7N0K0._LBgqzGDHp59DdR84IkxcfBwFZQVbAWSNdSMQs",
+  gateway_intents: [
+    :guilds,
+    :guild_messages,
+    :direct_messages
+    # other gateway intents
+  ]
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

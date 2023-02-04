@@ -7,7 +7,9 @@ defmodule SharkAttack.Loans do
   alias SharkAttack.Loans.PlanSettings
   alias SharkAttack.Repo
 
-  alias SharkAttack.Loans.LoanPlan
+  alias SharkAttack.Loans.{LoanPlan, Loan}
+
+  alias SharkAttack.Accounts.User
 
   @doc """
   Returns the list of loan_plans.
@@ -20,6 +22,10 @@ defmodule SharkAttack.Loans do
   """
   def list_loan_plans do
     Repo.all(LoanPlan)
+  end
+
+  def list_loans do
+    Repo.all(Loan)
   end
 
   @doc """
@@ -38,6 +44,16 @@ defmodule SharkAttack.Loans do
   """
   def get_loan_plan!(id), do: Repo.get!(LoanPlan, id)
 
+  def get_user_loan_plans(user_address) do
+    Repo.all(LoanPlan, user_address: user_address) |> Repo.preload(:plan_settings)
+  end
+
+  def get_user!(address), do: Repo.get!(User, address)
+
+  @spec create_loan_plan(
+          :invalid
+          | %{optional(:__struct__) => none, optional(atom | binary) => any}
+        ) :: any
   @doc """
   Creates a loan_plan.
 
@@ -54,6 +70,12 @@ defmodule SharkAttack.Loans do
     %LoanPlan{}
     |> LoanPlan.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_loan(attrs \\ %{}) do
+    %Loan{}
+    |> Loan.changeset(attrs)
+    |> Repo.insert(on_conflict: :replace_all)
   end
 
   @doc """

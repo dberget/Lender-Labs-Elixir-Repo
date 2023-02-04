@@ -54,7 +54,12 @@ defmodule SharkAttack.MixProject do
       {:solana_spl, "~> 0.1.1", override: true},
       {:finch, "~> 0.10"},
       {:number, "~> 1.0.3"},
-      {:cloak_ecto, "~> 1.2.0"}
+      {:cloak_ecto, "~> 1.2.0"},
+      {:nostrum, "~> 0.6.1"},
+      {:gun, "== 2.0.1",
+       [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},
+      {:cowlib, "~> 2.11.1",
+       [env: :prod, hex: "remedy_cowlib", repo: "hexpm", optional: false, override: true]}
     ]
   end
 

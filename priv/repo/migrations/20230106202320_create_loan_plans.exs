@@ -4,8 +4,10 @@ defmodule SharkAttack.Repo.Migrations.CreateLoanPlans do
   def change do
     create table(:loan_plans) do
       add(:plan_settings_id, references(:plan_settings))
-      add(:keypair_id, references(:keypairs))
-      add(:user_id, references(:users))
+
+      add :user_address, references(:users, column: :address, type: :string)
+
+      add :keypair_pk, references(:keypairs, column: :public_key, type: :string)
 
       timestamps()
     end

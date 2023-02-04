@@ -11,6 +11,13 @@ defmodule SharkAttack.SharkyApi do
     Map.get(res, "orderBooks", []) |> Enum.filter(fn x -> x["name"] !== nil end)
   end
 
+  def get_all_loans() do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
+
+    Map.get(res, "loanData", [])
+  end
+
+  @spec get_floor_prices :: any
   def get_floor_prices() do
     res = SharkAttack.Helpers.do_get_request("https://sharky.fi/api/floor-prices")
 
@@ -23,6 +30,15 @@ defmodule SharkAttack.SharkyApi do
 
   def get_user_open_offers(address) do
     SharkAttack.Helpers.do_get_request("http://localhost:5000/offers/#{address}")
+  end
+
+  def get_user_open_offers_for_order_book(user_address, order_book_address) do
+    IO.inspect(order_book_address, label: "order_book_address")
+
+    user_address
+    |> get_user_open_offers()
+    |> get_in(["offerData", "activeOffers"])
+    |> Enum.filter(&(&1["orderBook"] == order_book_address))
   end
 
   def submit_offer(_address, %{
@@ -38,7 +54,7 @@ defmodule SharkAttack.SharkyApi do
         pubkey: pubkey
       }) do
     SharkAttack.Helpers.do_get_request(
-      "http://localhost:5000/offers/loan/#{address}/#{pubkey}/#{loan_amount}"
+      "http://localhost:5000/offers/ix/#{address}/#{pubkey}/#{loan_amount}"
     )
   end
 

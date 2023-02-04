@@ -1,7 +1,5 @@
 defmodule SharkAttack.Helpers do
   def do_post_request(url, params \\ %{}) do
-    IO.inspect(params)
-
     Finch.build(
       :post,
       url,
@@ -15,13 +13,12 @@ defmodule SharkAttack.Helpers do
   def do_get_request(url) do
     Finch.build(
       :get,
-      url,
-      [],
-      nil,
+      url
+    )
+    |> Finch.request(SharkAttackWeb.Finch,
       receive_timeout: 1_500_000_000,
       pool_timeout: 1_500_000_000
     )
-    |> Finch.request(SharkAttackWeb.Finch)
     |> parse_response()
   end
 

@@ -7,4 +7,11 @@ defmodule SharkAttackWeb.ApiController do
     conn
     |> json(%{message: "Hello from the API!"})
   end
+
+  def save_favorite(conn, params) do
+    IO.inspect("save_favorite")
+
+    conn
+    |> json(%{message: "Hello from the API!"})
+  end
 end

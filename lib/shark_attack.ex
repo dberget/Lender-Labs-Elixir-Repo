@@ -8,13 +8,17 @@ defmodule SharkAttack do
   # }
 
   def getWallet(),
-    do: Solana.Key.pair_from_file("/Users/davidberget/.config/solana/albatross.json")
+    do: Solana.Key.pair_from_file("/Users/davidberget/.config/solana/arbot.json")
+
+  def go do
+    SharkAttack.Monitor.monitor_offers("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
+  end
 
   def build_collection_data() do
-    orderbooks = SharkAttack.SharkyApi.get_order_books()
+    order_books = SharkAttack.SharkyApi.get_order_books() |> IO.inspect()
     floors = SharkAttack.SharkyApi.get_floor_prices()
 
-    modify_data(orderbooks, floors)
+    modify_data(order_books, floors)
   end
 
   defp modify_data(order_books, floor_prices) do
@@ -27,7 +31,7 @@ defmodule SharkAttack do
 
       best_loan_ltf = calculate_current_ltf(Map.get(order_book, "bestLoan", 0), floor_price)
 
-      target_loan_amount = calculate_loan_amount(floor_price, 0.8)
+      # target_loan_amount = calculate_loan_amount(floor_price, loan_plan.ltf_target)
 
       order_book
       |> Map.put("floor_price", floor_price)
@@ -35,7 +39,6 @@ defmodule SharkAttack do
         "current_ltf",
         best_loan_ltf
       )
-      |> Map.put("target_loan_amount", target_loan_amount)
     end)
   end
 
@@ -47,7 +50,7 @@ defmodule SharkAttack do
     price
   end
 
-  defp calculate_loan_amount(floor_price, ltf_target) do
+  def calculate_target_loan_amount(floor_price, ltf_target) do
     (floor_price * ltf_target) |> Float.round(2)
   end
 

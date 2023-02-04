@@ -3,9 +3,11 @@ defmodule SharkAttack.Repo.Migrations.CreatePlanSettings do
 
   def change do
     create table(:plan_settings) do
-      add :max_ltf, :integer
-      add :target_ltf, :integer
+      add :max_ltf, :float
+      add :target_ltf, :float
       add :style, :string
+
+      add :collection_address, references(:collections, column: :address, type: :string)
 
       timestamps()
     end

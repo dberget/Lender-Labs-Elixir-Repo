@@ -5,27 +5,30 @@ defmodule SharkAttack.Loaner do
 
   @loanPlan %{
     loan_style: "best",
-    wallet_address: "BYyyoDn3LB6dNcc7MZmiyqoPmptccVjdW6jHD5j7M91W",
-    target_collection: "AiYV1ZfNTNdcfyCsxQVGJUqdhHvfiMkkW1Dtif1RHf3o"
+    wallet_address: "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+    target_collection: "AiYV1ZfNTNdcfyCsxQVGJUqdhHvfiMkkW1Dtif1RHf3o",
+    ltf_target: 0.55
   }
 
-  def calculate_loan(loanPlan \\ @loanPlan) do
-    target_collection = loanPlan.target_collection
-    available_balance = SharkAttack.get_solana_balance()
+  # def calculate_loan(loanPlan \\ @loanPlan) do
+  #   target_collection = loanPlan.target_collection
+  #   available_balance = SharkAttack.get_solana_balance()
 
-    collection =
-      SharkAttack.build_collection_data()
-      |> Enum.filter(fn x -> x["pubkey"] === target_collection end)
-      |> hd
+  #   # collection =
+  #   #   SharkAttack.build_collection_data(loanPlan)
+  #   #   |> Enum.filter(fn x -> x["pubkey"] === target_collection end)
+  #   #   |> hd
 
-    loan = %{
-      loan_amount: get_loan_amount(loanPlan.loan_style, collection),
-      pubkey: collection["pubkey"],
-      available_balance: available_balance
-    }
+  #   loan = %{
+  #     loan_amount: get_loan_amount(loanPlan.loan_style, collection),
+  #     pubkey: collection["pubkey"],
+  #     available_balance: available_balance
+  #   }
 
-    SharkAttack.SharkyApi.submit_offer(loanPlan.wallet_address, loan)
-  end
+  #   # offerIx = SharkAttack.SharkyApi.submit_offer(loanPlan.wallet_address, loan)
+  #   # offerIx
+  #   loan
+  # end
 
   def get_loan_amount(loan_style, collection) do
     case loan_style do

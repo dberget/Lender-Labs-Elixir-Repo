@@ -4,9 +4,14 @@ defmodule SharkAttack.Loans.PlanSettings do
 
   schema "plan_settings" do
     field(:style, :string)
-    field(:max_ltf, :integer)
-    field(:target_ltf, :integer)
-    many_to_many :collections, SharkAttack.Loans.Collection, join_through: "plan_collections"
+    field(:max_ltf, :float)
+    field(:target_ltf, :float)
+
+    belongs_to(:collection, SharkAttack.Loans.Collection,
+      foreign_key: :collection_address,
+      references: :address,
+      type: :string
+    )
 
     timestamps()
   end

@@ -2,9 +2,9 @@ defmodule SharkAttack.Keypair do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:public_key, :string, []}
   schema "keypairs" do
     field :private_key, SharkAttack.Encrypted.Binary
-    field :public_key, :string
 
     timestamps()
   end
