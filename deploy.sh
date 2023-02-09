@@ -4,8 +4,9 @@ rsync -az --progress --delete --exclude=.DS_Store --exclude=_build --exclude=.el
 
 ssh snowflakes-dev -t 'bash -i -c "cd /root/lenderlabs; ./build_release.sh"'
 
-# scp lenderlabs.service lenderlabs:/home/lenderlabs/
+scp lenderlabs.service lenderlabs:/home/lenderlabs/
+scp release.sh lenderlabs:/home/lenderlabs/release.sh
 
-# ssh lenderlabs "cp /home/lenderlabs/lenderlabs.service /etc/systemd/system/lenderlabs.service && systemctl daemon-reload && systemctl enable lenderlabs.service"
+ssh lenderlabs "cp /home/lenderlabs/lenderlabs.service /etc/systemd/system/lenderlabs.service && systemctl daemon-reload && systemctl enable lenderlabs.service"
 
-# ssh lenderlabs -t 'bash -l -i -c "cd /home/lenderlabs; ./release.sh"'
+ssh lenderlabs -t 'bash -l -i -c "cd /home/lenderlabs; ./release.sh"'
