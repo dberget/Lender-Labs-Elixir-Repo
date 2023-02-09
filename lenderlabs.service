@@ -1,0 +1,16 @@
+[Unit]
+Description=lenderlabs
+After=network.target
+
+[Service]
+ExecStart=/home/lenderlabs/lenderlabs/bin/shark_attack start
+ExecStop=/home/lenderlabs/lenderlabs/bin/shark_attack stop
+ExecReload=/home/lenderlabs/lenderlabs/bin/shark_attack restart
+WorkingDirectory=/home/lenderlabs/lenderlabs
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=lenderlabs
+
+[Install]
+WantedBy=multi-user.target

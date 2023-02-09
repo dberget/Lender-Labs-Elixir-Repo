@@ -10,10 +10,29 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
 
-## Learn more
+## Deployment
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+To build and deploy a release:
+
+```
+./deploy.sh
+```
+
+### Production commands
+
+Add or edit an environment variable to be read in `runtime.exs`:
+```bash
+systemctl edit lenderlabs.service
+# edit config, then:
+systemctl restart lenderlabs.service
+```
+
+Tail the logs in production:
+```bash
+journalctl -u lenderlabs.service -b -f
+```
+
+Restart the prod server:
+```bash
+systemctl restart lenderlabs.service
+```
