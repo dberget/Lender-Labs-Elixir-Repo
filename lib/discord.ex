@@ -24,8 +24,6 @@ defmodule SharkAttack.DiscordConsumer do
   end
 
   def send_message(dm_id, event) do
-    IO.inspect(event)
-
     embed =
       %Nostrum.Struct.Embed{}
       |> put_title("Offer Warning")

@@ -17,6 +17,11 @@ config :shark_attack, SharkAttackWeb.Endpoint,
   pubsub_server: SharkAttack.PubSub,
   live_view: [signing_salt: "EYLKcoEy"]
 
+config :cors_plug,
+  origin: ["https://lenderlabs.xyz"],
+  max_age: 86400,
+  methods: ["GET", "POST"]
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

@@ -23,6 +23,7 @@ defmodule SharkAttackWeb.Router do
     pipe_through :api
 
     get "/", ApiController, :index
+    post "/save_discord", ApiController, :save_discord
   end
 
   scope "/", SharkAttackWeb do

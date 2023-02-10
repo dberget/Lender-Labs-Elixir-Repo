@@ -28,6 +28,11 @@ config :shark_attack, SharkAttackWeb.Endpoint,
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
   ]
 
+config :cors_plug,
+  origin: ["*"],
+  max_age: 86400,
+  methods: ["GET", "POST"]
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

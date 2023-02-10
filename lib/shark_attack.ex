@@ -15,7 +15,7 @@ defmodule SharkAttack do
   end
 
   def build_collection_data() do
-    order_books = SharkAttack.SharkyApi.get_order_books() |> IO.inspect()
+    order_books = SharkAttack.SharkyApi.get_order_books()
     floors = SharkAttack.SharkyApi.get_floor_prices()
 
     modify_data(order_books, floors)

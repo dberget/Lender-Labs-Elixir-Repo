@@ -56,6 +56,9 @@ defmodule SharkAttack.MixProject do
       {:number, "~> 1.0.3"},
       {:cloak_ecto, "~> 1.2.0"},
       {:nostrum, "~> 0.6.1"},
+      {:sentry, "~> 8.0"},
+      {:hackney, "~> 1.8"},
+      {:cors_plug, "~> 3.0"},
       {:gun, "== 2.0.1",
        [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},
       {:cowlib, "~> 2.11.1",
@@ -75,7 +78,8 @@ defmodule SharkAttack.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"]
+      "assets.deploy": ["esbuild default --minify", "phx.digest"],
+      sentry_recompile: ["compile", "deps.compile sentry --force"]
     ]
   end
 end

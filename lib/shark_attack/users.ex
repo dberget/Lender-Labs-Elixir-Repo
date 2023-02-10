@@ -1,0 +1,13 @@
+defmodule SharkAttack.Users do
+  import Ecto.Query, warn: false
+  alias SharkAttack.Repo
+  alias SharkAttack.Accounts.User
+
+  def get!(address), do: Repo.get!(User, address)
+
+  def create_user(attrs \\ %{}) do
+    %User{}
+    |> User.changeset(attrs)
+    |> Repo.insert()
+  end
+end

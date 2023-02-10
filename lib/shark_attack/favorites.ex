@@ -3,8 +3,12 @@ defmodule SharkAttack.Accounts.Favorites do
   import Ecto.Changeset
 
   schema "favorites" do
-    belongs_to(:user, SharkAttack.Accounts.User)
-    belongs_to(:collection, SharkAttack.Loans.Collection)
+    belongs_to(:user, SharkAttack.Accounts.User, foreign_key: :user_id, references: :address)
+
+    belongs_to(:collection, SharkAttack.Loans.Collection,
+      foreign_key: :collection_id,
+      references: :address
+    )
 
     timestamps()
   end
