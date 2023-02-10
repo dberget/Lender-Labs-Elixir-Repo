@@ -10,11 +10,11 @@ defmodule SharkAttackWeb.ApiController do
 
   def save_discord(conn, params) do
     case SharkAttack.Users.create_user(params) do
-      {:ok, user} ->
+      {:ok, _user} ->
         conn
         |> json(%{message: "Success!"})
 
-      {:error, changeset} ->
+      {:error, _changeset} ->
         conn
         |> json(%{message: "Error, please try again"})
     end
