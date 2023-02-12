@@ -55,6 +55,23 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  token =
+    System.get_env("DISCORD_TOKEN") ||
+      raise """
+      environment variable DISCORD_TOKEN is missing.
+      """
+
+  config :nostrum,
+    token: token,
+    gateway_intents: [
+      :guilds,
+      :guild_messages,
+      :direct_messages,
+      :guild_members,
+      :message_content
+      # other gateway intents
+    ]
+
   # ## Using releases
   #
   # If you are doing OTP releases, you need to instruct Phoenix
