@@ -1,6 +1,6 @@
 defmodule SharkAttack.Loaner do
   # strict: only offer loans at the target loan amount according to target LTF
-  # best: Always offer loans above best active offer but below target LTF.
+  # best: Always offer loans above best active offer but below max LTF.
   # max: Always offer loans above best active offer regardless of target LTF.
 
   @loanPlan %{

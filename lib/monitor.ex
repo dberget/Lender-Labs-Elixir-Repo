@@ -97,9 +97,9 @@ defmodule SharkAttack.Monitor do
   end
 
   def adjust_offer(
-        offer,
-        {true, true, target_ltf_amount_difference, _over_max_ltf, target_loan_amount},
-        %LoanPlan{plan_settings: plan_settings} = loanPlan
+        _offer,
+        {true, true, target_ltf_amount_difference, _over_max_ltf, _target_loan_amount},
+        %LoanPlan{plan_settings: _plan_settings} = _loanPlan
       )
       when target_ltf_amount_difference > 0.15 do
     # Loan should be updated
@@ -115,8 +115,8 @@ defmodule SharkAttack.Monitor do
   def adjust_offer(
         offer,
         {_have_best_offer, _under_target_ltf, target_ltf_amount_difference, _over_max_ltf,
-         target_loan_amount},
-        %LoanPlan{plan_settings: plan_settings} = loanPlan
+         _target_loan_amount},
+        %LoanPlan{plan_settings: plan_settings} = _loanPlan
       )
       when target_ltf_amount_difference > 0.15 do
     SharkAttack.SharkyApi.revoke_offer(plan_settings.wallet_address, offer["loan"])
@@ -131,7 +131,7 @@ defmodule SharkAttack.Monitor do
   def adjust_offer(
         _offer,
         {have_best_offer, under_target_ltf, target_ltf_amount_difference, over_max_ltf,
-         target_loan_amount},
+         _target_loan_amount},
         _loanPlan
       ) do
     # Not sure what to do.

@@ -91,15 +91,40 @@ defmodule SharkAttack.DiscordConsumer do
   # end
 
   def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
-    IO.inspect(interaction)
+    %Nostrum.Struct.Interaction{
+      data: %Nostrum.Struct.ApplicationCommandInteractionData{options: options}
+    } = interaction
+
+    [
+      %Nostrum.Struct.ApplicationCommandInteractionDataOption{
+        name: "account",
+        value: account
+      }
+    ] = options
+
+    discordId = interaction.member.user.id
+
+    IO.inspect(discordId)
+
+    case SharkAttack.Users.create_user(%{discordId: discordId, address: account}) do
+      {:ok, _user} ->
+        Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})
+
+      {:error, changeset} ->
+        IO.inspect(changeset)
+
+        Api.create_interaction_response(interaction, %{
+          type: 4,
+          data: %{content: "Error subscribing"}
+        })
+    end
+
     # Run the command, and check for a response message, or default to a checkmark emoji
     # message =
     #   case do_command(interaction) do
     #     {:msg, msg} -> msg
     #     _ -> ":white_check_mark:"
     #   end
-
-    Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})
   end
 
   # Default event handler, if you don't include this, your consumer WILL crash if

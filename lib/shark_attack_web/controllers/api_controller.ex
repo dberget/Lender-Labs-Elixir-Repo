@@ -37,6 +37,13 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{data: loans})
   end
 
+  def get_all_loans(conn, _params) do
+    loans = SharkAttack.SharkyApi.get_all_loans()
+
+    conn
+    |> json(%{data: loans})
+  end
+
   def save_favorite(conn, _params) do
     IO.inspect("save_favorite")
 

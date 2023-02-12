@@ -4,7 +4,7 @@ defmodule SharkAttack.Accounts.User do
 
   @primary_key {:address, :string, []}
   schema "users" do
-    field :discordId, :string
+    field :discordId, :integer
 
     timestamps()
   end

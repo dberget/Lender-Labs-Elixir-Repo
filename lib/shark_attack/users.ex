@@ -8,6 +8,6 @@ defmodule SharkAttack.Users do
   def create_user(attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :replace_all)
   end
 end
