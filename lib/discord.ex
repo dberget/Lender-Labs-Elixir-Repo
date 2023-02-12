@@ -7,7 +7,7 @@ defmodule SharkAttack.Discord do
 
   @impl true
   def init(_init_arg) do
-    children = [DiscordConsumer]
+    children = [SharkAttack.DiscordConsumer]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
@@ -19,8 +19,35 @@ defmodule SharkAttack.DiscordConsumer do
   import Nostrum.Struct.Embed
   alias Nostrum.Api
 
+  @commands [
+    {"subscribe", "Subscribe to notifications.",
+     [
+       %{
+         name: "account",
+         description: "account to subscribe with",
+         type: 3
+       }
+     ]}
+  ]
+
   def start_link do
     Consumer.start_link(__MODULE__)
+  end
+
+  def create_guild_commands(guild_id) do
+    Enum.each(@commands, fn {name, description, options} ->
+      Api.create_guild_application_command(1_073_807_738_007_732_245, guild_id, %{
+        name: name,
+        description: description,
+        options: options
+      })
+    end)
+  end
+
+  def create_dm_channel(discordId) do
+    {:ok, %Nostrum.Struct.Channel{id: id}} = Api.create_dm(discordId)
+
+    id
   end
 
   def send_message(dm_id, event) do
@@ -35,11 +62,16 @@ defmodule SharkAttack.DiscordConsumer do
   end
 
   def handle_info(_event) do
+    :noop
+  end
+
+  def handle_event({:READY, %{guilds: guilds} = _event, _ws_state}) do
+    guilds
+    |> Enum.map(fn guild -> guild.id end)
+    |> Enum.each(&create_guild_commands/1)
   end
 
   # def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
-  #   IO.inspect(msg)
-
   #   case msg.content do
   #     "!sleep" ->
   #       Api.create_message(msg.channel_id, "Going to sleep...")
@@ -47,7 +79,7 @@ defmodule SharkAttack.DiscordConsumer do
   #       Process.sleep(3000)
 
   #     "!ping" ->
-  #       Api.create_message(msg.channel_id, "pyongyang!")
+  #       Api.create_message(msg.channel_id, "!pong")
 
   #     "!raise" ->
   #       # This won't crash the entire Consumer.
@@ -57,6 +89,18 @@ defmodule SharkAttack.DiscordConsumer do
   #       :ignore
   #   end
   # end
+
+  def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
+    IO.inspect(interaction)
+    # Run the command, and check for a response message, or default to a checkmark emoji
+    # message =
+    #   case do_command(interaction) do
+    #     {:msg, msg} -> msg
+    #     _ -> ":white_check_mark:"
+    #   end
+
+    Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})
+  end
 
   # Default event handler, if you don't include this, your consumer WILL crash if
   # you don't have a method definition for each event type.

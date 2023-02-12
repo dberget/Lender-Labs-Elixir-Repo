@@ -24,6 +24,7 @@ defmodule SharkAttackWeb.Router do
 
     get "/", ApiController, :index
     post "/save_discord", ApiController, :save_discord
+    get "/get_history", ApiController, :get_history
   end
 
   scope "/", SharkAttackWeb do

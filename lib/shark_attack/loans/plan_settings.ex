@@ -7,11 +7,7 @@ defmodule SharkAttack.Loans.PlanSettings do
     field(:max_ltf, :float)
     field(:target_ltf, :float)
 
-    belongs_to(:collection, SharkAttack.Loans.Collection,
-      foreign_key: :collection_address,
-      references: :address,
-      type: :string
-    )
+    belongs_to(:collection, SharkAttack.Loans.Collection)
 
     timestamps()
   end

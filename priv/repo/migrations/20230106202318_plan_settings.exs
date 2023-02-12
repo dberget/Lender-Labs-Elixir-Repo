@@ -7,7 +7,7 @@ defmodule SharkAttack.Repo.Migrations.CreatePlanSettings do
       add :target_ltf, :float
       add :style, :string
 
-      add :collection_address, references(:collections, column: :address, type: :string)
+      add :collection_id, references(:collections)
 
       timestamps()
     end

@@ -20,6 +20,23 @@ defmodule SharkAttackWeb.ApiController do
     end
   end
 
+  def get_history(conn, params) do
+    loans = SharkAttack.Loans.get_loans_history!(params["pk"])
+
+    case loans do
+      nil ->
+        SharkAttack.Stats.save_lender_history(params["pk"])
+
+      _ ->
+        SharkAttack.SharkyApi.get_recent_history(params["pk"])
+    end
+
+    loans = SharkAttack.Loans.get_loans_history!(params["pk"])
+
+    conn
+    |> json(%{data: loans})
+  end
+
   def save_favorite(conn, _params) do
     IO.inspect("save_favorite")
 

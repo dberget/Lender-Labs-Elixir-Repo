@@ -4,6 +4,7 @@ defmodule SharkAttack.Loans do
   """
 
   import Ecto.Query, warn: false
+
   alias SharkAttack.Loans.PlanSettings
   alias SharkAttack.Repo
 
@@ -50,10 +51,15 @@ defmodule SharkAttack.Loans do
 
   def get_user!(address), do: Repo.get!(User, address)
 
-  @spec create_loan_plan(
-          :invalid
-          | %{optional(:__struct__) => none, optional(atom | binary) => any}
-        ) :: any
+  def get_loans_history!(address) do
+    query =
+      from l in Loan,
+        where: l.lender == ^address,
+        select: l
+
+    Repo.all(query)
+  end
+
   @doc """
   Creates a loan_plan.
 

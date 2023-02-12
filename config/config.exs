@@ -51,12 +51,16 @@ config :shark_attack, SharkAttack.Vault,
        tag: "AES.GCM.V1", key: Base.decode64!("xdzZGSkAKVLSg8QkQx+BBxWourhdtRCKBuTE13uPxjA=")}
   ]
 
+# 1065721160366575676
+# eytkEY8vJ8hyw-9v0vHRm9RACh1Qrcvm
 config :nostrum,
-  token: "MTA2NTcyMTE2MDM2NjU3NTY3Ng.G7N0K0._LBgqzGDHp59DdR84IkxcfBwFZQVbAWSNdSMQs",
+  token: "MTA3MzgwNzczODAwNzczMjI0NQ.GzSo8g.S3fCBm-UsXErrdBkzt-MrUCFVwEuppFugEMqIY",
   gateway_intents: [
     :guilds,
     :guild_messages,
-    :direct_messages
+    :direct_messages,
+    :guild_members,
+    :message_content
     # other gateway intents
   ]
 

@@ -2,6 +2,25 @@ defmodule SharkAttack.Loans.Loan do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder,
+           only: [
+             :loan,
+             :lender,
+             :amountSol,
+             :borrower,
+             :earnings,
+             :length,
+             :nftCollateralMint,
+             :orderBook,
+             :dateOffered,
+             :dateTaken,
+             :dateRepaid,
+             :dateForeclosed,
+             :offerTxId,
+             :takeTxId,
+             :repayTxId,
+             :forecloseTxId
+           ]}
   @primary_key {:loan, :string, []}
   schema "loans" do
     field(:amountSol, :float)

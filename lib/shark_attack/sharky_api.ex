@@ -33,8 +33,6 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_user_open_offers_for_order_book(user_address, order_book_address) do
-    IO.inspect(order_book_address, label: "order_book_address")
-
     user_address
     |> get_user_open_offers()
     |> get_in(["offerData", "activeOffers"])
@@ -63,5 +61,28 @@ defmodule SharkAttack.SharkyApi do
       wallet: wallet_address,
       loanPubKey: loan_pubkey
     })
+  end
+
+  def get_recent_history(lender, offset \\ 0) do
+    SharkAttack.Helpers.do_get_request(
+      "https://sharky.fi/api/loan/my-loans?lender=#{lender}&network=mainnet&deployEnvironment=production&offset=#{offset}"
+    )
+  end
+
+  def get_history(lender, offset \\ 0, all_items \\ []) do
+    limit = 50
+
+    case SharkAttack.Helpers.do_get_request(
+           "https://sharky.fi/api/loan/my-loans?lender=#{lender}&network=mainnet&deployEnvironment=production&offset=#{offset}"
+         ) do
+      data ->
+        all_items = all_items ++ data["historyLoans"]
+
+        if data["historyLoans"] |> length >= limit do
+          get_history(lender, offset + limit, all_items)
+        else
+          all_items
+        end
+    end
   end
 end

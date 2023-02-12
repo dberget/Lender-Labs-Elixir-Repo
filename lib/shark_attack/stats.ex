@@ -9,10 +9,10 @@ defmodule SharkAttack.Stats do
     SharkAttack.Loans.create_loan(loan)
   end
 
-  def get_lender_history(pk) do
-    data = SharkAttack.Helpers.do_get_request("http://localhost:3000/api/export?pk=#{pk}")
+  def save_lender_history(pk) do
+    data = SharkAttack.SharkyApi.get_history(pk)
 
-    Map.get(data, "data", [])
+    data
     |> Enum.map(&format_historical_loan/1)
     |> Enum.map(&SharkAttack.Loans.create_loan(&1))
   end
@@ -21,6 +21,7 @@ defmodule SharkAttack.Stats do
     loan
     |> Map.put("loan", loan["pubKey"])
     |> Map.put("orderBook", loan["orderBookPubKey"])
+    |> Map.put("nftCollateralMint", loan["collateralMint"])
     |> Map.put("length", loan["durationSeconds"])
     |> Map.put("amountSol", loan["principalLamports"] / 1_000_000_000)
     |> Map.put("earnings", get_earnings(loan))

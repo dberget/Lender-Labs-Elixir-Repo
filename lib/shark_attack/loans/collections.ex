@@ -2,8 +2,10 @@ defmodule SharkAttack.Loans.Collection do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:address, :string, []}
   schema "collections" do
+    field(:sharky_address, :string)
+    field(:frakt_address, :string)
+    field(:hyperspace_id, :string)
     field(:name, :string)
     field(:apy, :integer)
     field(:duration, :integer)
@@ -14,7 +16,7 @@ defmodule SharkAttack.Loans.Collection do
   @doc false
   def changeset(collection, attrs) do
     collection
-    |> cast(attrs, [:name, :address, :apy, :duration])
+    |> cast(attrs, [:name, :sharky_address, :apy, :duration, :frakt_address, :hyperspace_id])
     |> validate_required([])
   end
 end

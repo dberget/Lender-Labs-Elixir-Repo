@@ -10,8 +10,24 @@ defmodule SharkAttack.Collections do
     Repo.get_by(Collection, address: address)
   end
 
+  def get_and_update_collection(%{name: name} = attrs) do
+    collection = get_collection_by_name(name)
+
+    if is_nil(collection) do
+      create_collection(attrs)
+    else
+      update_collection(collection, attrs)
+    end
+  end
+
   def get_collection_by_name(name) do
     Repo.get_by(Collection, name: name)
+  end
+
+  def update_collection(%Collection{} = collection, attrs) do
+    collection
+    |> Collection.changeset(attrs)
+    |> Repo.update()
   end
 
   def update_collection_list() do
@@ -20,7 +36,7 @@ defmodule SharkAttack.Collections do
     Enum.map(collections, fn collection ->
       data = %{
         name: collection["name"],
-        address: collection["pubkey"],
+        sharky_address: collection["pubkey"],
         duration: collection["duration"],
         apy: collection["apy"]
       }
