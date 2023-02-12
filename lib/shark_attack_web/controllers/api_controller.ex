@@ -2,8 +2,6 @@ defmodule SharkAttackWeb.ApiController do
   use SharkAttackWeb, :controller
 
   def index(conn, _params) do
-    IO.inspect("here")
-
     conn
     |> json(%{message: "Hello from the API!"})
   end
@@ -24,11 +22,11 @@ defmodule SharkAttackWeb.ApiController do
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])
 
     case loans do
-      nil ->
+      [] ->
         SharkAttack.Stats.save_lender_history(params["pk"])
 
       _ ->
-        SharkAttack.SharkyApi.get_recent_history(params["pk"])
+        SharkAttack.Stats.save_recent_lender_history(params["pk"])
     end
 
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])

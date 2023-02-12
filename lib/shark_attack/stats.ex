@@ -17,6 +17,14 @@ defmodule SharkAttack.Stats do
     |> Enum.map(&SharkAttack.Loans.create_loan(&1))
   end
 
+  def save_recent_lender_history(pk) do
+    data = SharkAttack.SharkyApi.get_recent_history(pk)
+
+    data
+    |> Enum.map(&format_historical_loan/1)
+    |> Enum.map(&SharkAttack.Loans.create_loan(&1))
+  end
+
   def format_historical_loan(loan) do
     loan
     |> Map.put("loan", loan["pubKey"])
