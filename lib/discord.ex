@@ -104,8 +104,6 @@ defmodule SharkAttack.DiscordConsumer do
 
     discordId = interaction.member.user.id
 
-    IO.inspect(discordId)
-
     case SharkAttack.Users.create_user(%{discordId: discordId, address: account}) do
       {:ok, _user} ->
         Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})

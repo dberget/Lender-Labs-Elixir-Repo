@@ -18,7 +18,7 @@ defmodule SharkAttack.Application do
       # Start the Endpoint (http/https)
       SharkAttackWeb.Endpoint,
       SharkAttack.Vault,
-      SharkAttack.DiscordConsumer
+      SharkAttack.Discord
       # {SharkAttack.SolanaWS, name: SharkAttack.SolanaWS}
       # Start a worker by calling: SharkAttack.Worker.start_link(arg)
       # {SharkAttack.Worker, arg}

@@ -14,17 +14,13 @@ defmodule SharkAttackWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/app", SharkAttackWeb do
-    get "/", WebappController, :index
-    get "/*path", WebappController, :index
-  end
-
   scope "/api", SharkAttackWeb do
     pipe_through :api
 
     get "/", ApiController, :index
     post "/save_discord", ApiController, :save_discord
     get "/get_history", ApiController, :get_history
+    get "/get_all_loans", ApiController, :get_all_loans
   end
 
   scope "/", SharkAttackWeb do

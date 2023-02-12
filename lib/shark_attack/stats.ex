@@ -41,6 +41,6 @@ defmodule SharkAttack.Stats do
     SharkAttack.Loans.list_loans()
     |> Enum.map(& &1.lender)
     |> Enum.uniq()
-    |> Enum.map(fn x -> SharkAttack.Stats.get_lender_history(x) end)
+    |> Enum.map(fn x -> SharkAttack.Stats.save_lender_history(x) end)
   end
 end
