@@ -27,6 +27,6 @@ defmodule SharkAttack.Repo.Migrations.CreateLoan do
       timestamps()
     end
 
-    create unique_index(:loans, [:loan], name: :unique_loan)
+    # create unique_index(:loans, [:loan])
   end
 end

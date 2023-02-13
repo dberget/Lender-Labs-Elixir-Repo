@@ -14,6 +14,7 @@ defmodule SharkAttack.Stats do
 
     data
     |> Enum.map(&format_historical_loan/1)
+    |> Enum.reverse()
     |> Enum.map(&SharkAttack.Loans.create_loan(&1))
   end
 
