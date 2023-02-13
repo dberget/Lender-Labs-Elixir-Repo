@@ -57,7 +57,8 @@ defmodule SharkAttack.Loans do
     query =
       from l in Loan,
         where: l.lender == ^address,
-        select: l
+        select: l,
+        order_by: [desc: l.id]
 
     Repo.all(query)
   end
