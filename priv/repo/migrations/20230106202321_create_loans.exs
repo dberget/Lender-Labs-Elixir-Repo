@@ -2,8 +2,8 @@ defmodule SharkAttack.Repo.Migrations.CreateLoan do
   use Ecto.Migration
 
   def change do
-    create table(:loans, primary_key: false) do
-      add(:loan, :string, primary_key: true)
+    create table(:loans) do
+      add(:loan, :string)
       add(:amountSol, :float)
       add(:borrower, :string)
       add(:lender, :string)
@@ -14,10 +14,10 @@ defmodule SharkAttack.Repo.Migrations.CreateLoan do
       add(:nftCollateralMint, :string)
       add(:orderBook, :string)
       add(:start, :integer)
-      add(:dateOffered, :date)
-      add(:dateTaken, :date)
-      add(:dateRepaid, :date)
-      add(:dateForeclosed, :date)
+      add(:dateOffered, :naive_datetime)
+      add(:dateTaken, :naive_datetime)
+      add(:dateRepaid, :naive_datetime)
+      add(:dateForeclosed, :naive_datetime)
       add(:offerTxId, :string)
       add(:rescindTxId, :string)
       add(:takeTxId, :string)

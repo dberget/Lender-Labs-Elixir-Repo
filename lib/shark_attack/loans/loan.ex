@@ -21,8 +21,8 @@ defmodule SharkAttack.Loans.Loan do
              :repayTxId,
              :forecloseTxId
            ]}
-  @primary_key {:loan, :string, []}
   schema "loans" do
+    field(:loan, :string)
     field(:amountSol, :float)
     field(:borrower, :string)
     field(:lender, :string)
@@ -33,10 +33,10 @@ defmodule SharkAttack.Loans.Loan do
     field(:nftCollateralMint, :string)
     field(:orderBook, :string)
     field(:start, :integer)
-    field(:dateOffered, :date)
-    field(:dateTaken, :date)
-    field(:dateRepaid, :date)
-    field(:dateForeclosed, :date)
+    field(:dateOffered, :naive_datetime)
+    field(:dateTaken, :naive_datetime)
+    field(:dateRepaid, :naive_datetime)
+    field(:dateForeclosed, :naive_datetime)
     field(:offerTxId, :string)
     field(:rescindTxId, :string)
     field(:takeTxId, :string)

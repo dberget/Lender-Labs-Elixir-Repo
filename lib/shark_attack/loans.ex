@@ -45,6 +45,8 @@ defmodule SharkAttack.Loans do
   """
   def get_loan_plan!(id), do: Repo.get!(LoanPlan, id)
 
+  def get_loan!(id), do: Repo.get!(Loan, id)
+
   def get_user_loan_plans(user_address) do
     Repo.all(LoanPlan, user_address: user_address) |> Repo.preload(:plan_settings)
   end
@@ -81,7 +83,13 @@ defmodule SharkAttack.Loans do
   def create_loan(attrs \\ %{}) do
     %Loan{}
     |> Loan.changeset(attrs)
-    |> Repo.insert(on_conflict: :replace_all)
+    |> Repo.insert(on_conflict: :nothing)
+  end
+
+  def update_loan(%Loan{} = loan, attrs) do
+    loan
+    |> Loan.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

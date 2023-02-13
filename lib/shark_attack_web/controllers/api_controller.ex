@@ -21,6 +21,8 @@ defmodule SharkAttackWeb.ApiController do
   def get_history(conn, params) do
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])
 
+    # recent = hd(loans) |> IO.inspect()
+
     case loans do
       [] ->
         SharkAttack.Stats.save_lender_history(params["pk"])
@@ -31,8 +33,18 @@ defmodule SharkAttackWeb.ApiController do
 
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])
 
+    forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
+
+    data = %{
+      loans: loans,
+      foreclosed: forelosedLoans,
+      totalSolLoaned: Enum.map(loans, fn l -> l.amountSol end) |> Enum.sum(),
+      totalInterest: Enum.map(loans, & &1.earnings) |> Enum.sum(),
+      foreclosedCount: Enum.count(forelosedLoans)
+    }
+
     conn
-    |> json(%{data: loans})
+    |> json(data)
   end
 
   def get_all_loans(conn, _params) do
@@ -52,5 +64,21 @@ defmodule SharkAttackWeb.ApiController do
   def save_favorite(conn, _params) do
     conn
     |> json(%{message: "Hello from the API!"})
+  end
+
+  def update_loan_earnings(conn, params) do
+    loan = SharkAttack.Loans.get_loan!(params["loan"])
+
+    case SharkAttack.Loans.update_loan(loan, %{
+           earnings: params["earnings"]
+         }) do
+      {:ok, _loan} ->
+        conn
+        |> json(%{message: "Updated!"})
+
+      {:error, _changeset} ->
+        conn
+        |> json(%{message: "Error, please try again"})
+    end
   end
 end

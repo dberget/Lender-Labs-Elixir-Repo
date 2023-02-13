@@ -116,13 +116,6 @@ defmodule SharkAttack.DiscordConsumer do
           data: %{content: "Error subscribing"}
         })
     end
-
-    # Run the command, and check for a response message, or default to a checkmark emoji
-    # message =
-    #   case do_command(interaction) do
-    #     {:msg, msg} -> msg
-    #     _ -> ":white_check_mark:"
-    #   end
   end
 
   # Default event handler, if you don't include this, your consumer WILL crash if

@@ -22,6 +22,7 @@ defmodule SharkAttackWeb.Router do
     get "/get_history", ApiController, :get_history
     get "/get_all_loans", ApiController, :get_all_loans
     get "/get_orderbooks", ApiController, :get_orderbooks
+    post "/update_loan_earnings", ApiController, :update_loan_earnings
   end
 
   scope "/", SharkAttackWeb do
