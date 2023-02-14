@@ -9,6 +9,27 @@ defmodule SharkAttack.Stats do
     SharkAttack.Loans.create_loan(loan)
   end
 
+  # This makes sure you get all loans if none exist so the order is what they expect.
+  def update_history_safe(pk) do
+    loans = SharkAttack.Loans.get_loans_history!(pk, 1)
+
+    case loans do
+      [] ->
+        SharkAttack.Stats.save_lender_history(pk)
+        IO.inspect("Getting all loans")
+
+      _ ->
+        SharkAttack.Stats.save_recent_lender_history(pk)
+        IO.inspect("GETTING RECENT LOANS")
+    end
+
+    # data = SharkAttack.SharkyApi.get_recent_history(pk)
+
+    # data
+    # |> Enum.map(&format_historical_loan/1)
+    # |> Enum.map(&SharkAttack.Loans.create_loan(&1))
+  end
+
   def save_lender_history(pk) do
     data = SharkAttack.SharkyApi.get_history(pk)
 

@@ -63,10 +63,10 @@ defmodule SharkAttack.SharkyApi do
     })
   end
 
-  def get_recent_history(lender, offset \\ 0) do
+  def get_recent_history(lender) do
     res =
       SharkAttack.Helpers.do_get_request(
-        "https://sharky.fi/api/loan/my-loans?lender=#{lender}&network=mainnet&deployEnvironment=production&offset=#{offset}"
+        "https://sharky.fi/api/loan/my-loans?lender=#{lender}&network=mainnet&deployEnvironment=production"
       )
 
     Map.get(res, "historyLoans", [])

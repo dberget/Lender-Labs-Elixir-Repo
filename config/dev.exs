@@ -31,6 +31,7 @@ config :shark_attack, SharkAttackWeb.Endpoint,
 config :cors_plug,
   origin: ["*"],
   max_age: 86400,
+  headers: ["accept", "content-type", "origin", "authorization", "baggage"],
   methods: ["GET", "POST"]
 
 # ## SSL Support

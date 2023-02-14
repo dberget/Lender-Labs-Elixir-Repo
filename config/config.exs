@@ -20,6 +20,7 @@ config :shark_attack, SharkAttackWeb.Endpoint,
 config :cors_plug,
   origin: ["https://lenderlabs.xyz"],
   max_age: 86400,
+  headers: ["accept", "content-type", "origin", "authorization", "baggage"],
   methods: ["GET", "POST"]
 
 # Configures the mailer

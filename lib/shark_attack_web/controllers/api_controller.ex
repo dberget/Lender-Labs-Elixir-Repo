@@ -6,30 +6,17 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{message: "Hello from the API!"})
   end
 
-  def save_discord(conn, params) do
-    case SharkAttack.Users.create_user(params) do
-      {:ok, _user} ->
-        conn
-        |> json(%{message: "Success!"})
+  def get_recent_loans(conn, params) do
+    SharkAttack.Stats.update_history_safe(params["pk"])
 
-      {:error, _changeset} ->
-        conn
-        |> json(%{message: "Error, please try again"})
-    end
+    loans = SharkAttack.Loans.get_loans_history!(params["pk"], Map.get(params, "limit", 5))
+
+    conn
+    |> json(%{data: loans})
   end
 
   def get_history(conn, params) do
-    loans = SharkAttack.Loans.get_loans_history!(params["pk"])
-
-    # recent = hd(loans) |> IO.inspect()
-
-    case loans do
-      [] ->
-        SharkAttack.Stats.save_lender_history(params["pk"])
-
-      _ ->
-        SharkAttack.Stats.save_recent_lender_history(params["pk"])
-    end
+    SharkAttack.Stats.update_history_safe(params["pk"])
 
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])
 

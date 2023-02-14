@@ -63,6 +63,17 @@ defmodule SharkAttack.Loans do
     Repo.all(query)
   end
 
+  def get_loans_history!(address, limit) do
+    query =
+      from l in Loan,
+        where: l.lender == ^address,
+        select: l,
+        order_by: [desc: l.id],
+        limit: ^limit
+
+    Repo.all(query)
+  end
+
   @doc """
   Creates a loan_plan.
 

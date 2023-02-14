@@ -18,11 +18,11 @@ defmodule SharkAttackWeb.Router do
     pipe_through :api
 
     get "/", ApiController, :index
-    post "/save_discord", ApiController, :save_discord
     get "/get_history", ApiController, :get_history
     get "/get_all_loans", ApiController, :get_all_loans
     get "/get_orderbooks", ApiController, :get_orderbooks
     post "/update_loan_earnings", ApiController, :update_loan_earnings
+    get "/get_recent_loans", ApiController, :get_recent_loans
   end
 
   scope "/", SharkAttackWeb do
