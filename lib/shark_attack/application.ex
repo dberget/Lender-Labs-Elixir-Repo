@@ -17,8 +17,8 @@ defmodule SharkAttack.Application do
       {Phoenix.PubSub, name: SharkAttack.PubSub},
       # Start the Endpoint (http/https)
       SharkAttackWeb.Endpoint,
-      SharkAttack.Vault,
-      SharkAttack.Discord
+      SharkAttack.Vault
+      # SharkAttack.Discord
       # {SharkAttack.SolanaWS, name: SharkAttack.SolanaWS}
       # Start a worker by calling: SharkAttack.Worker.start_link(arg)
       # {SharkAttack.Worker, arg}
