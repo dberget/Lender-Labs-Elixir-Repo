@@ -25,6 +25,10 @@ defmodule SharkAttack.Helpers do
     body |> Jason.decode!()
   end
 
+  def parse_response({:ok, %{status: 500, body: body}}) do
+    {:error, body}
+  end
+
   def parse_response(res) do
     res
   end

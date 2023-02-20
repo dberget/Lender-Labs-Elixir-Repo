@@ -11,11 +11,12 @@ defmodule SharkAttack.Stats do
 
   # This makes sure you get all loans if none exist so the order is what they expect.
   def update_history_safe(pk) do
-    loans = SharkAttack.Loans.get_loans_history!(pk, 1)
-
-    case loans do
+    case SharkAttack.Loans.get_loans_history!(pk, 1) do
       [] ->
         SharkAttack.Stats.save_lender_history(pk)
+
+      {:error, _} ->
+        {:error, []}
 
       _ ->
         SharkAttack.Stats.save_recent_lender_history(pk)
@@ -32,11 +33,15 @@ defmodule SharkAttack.Stats do
   end
 
   def save_recent_lender_history(pk) do
-    data = SharkAttack.SharkyApi.get_recent_history(pk)
+    case SharkAttack.SharkyApi.get_recent_history(pk) do
+      {:error, _} ->
+        {:error, :error}
 
-    data
-    |> Enum.map(&format_historical_loan/1)
-    |> Enum.map(&SharkAttack.Loans.create_loan(&1))
+      data ->
+        data
+        |> Enum.map(&format_historical_loan/1)
+        |> Enum.map(&SharkAttack.Loans.create_loan(&1))
+    end
   end
 
   def format_historical_loan(loan) do
