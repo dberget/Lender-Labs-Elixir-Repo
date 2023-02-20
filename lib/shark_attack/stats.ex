@@ -16,18 +16,10 @@ defmodule SharkAttack.Stats do
     case loans do
       [] ->
         SharkAttack.Stats.save_lender_history(pk)
-        IO.inspect("Getting all loans")
 
       _ ->
         SharkAttack.Stats.save_recent_lender_history(pk)
-        IO.inspect("GETTING RECENT LOANS")
     end
-
-    # data = SharkAttack.SharkyApi.get_recent_history(pk)
-
-    # data
-    # |> Enum.map(&format_historical_loan/1)
-    # |> Enum.map(&SharkAttack.Loans.create_loan(&1))
   end
 
   def save_lender_history(pk) do

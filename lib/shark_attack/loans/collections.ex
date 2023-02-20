@@ -2,6 +2,7 @@ defmodule SharkAttack.Loans.Collection do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :name, :sharky_address, :frakt_address, :hyperspace_id]}
   schema "collections" do
     field(:sharky_address, :string)
     field(:frakt_address, :string)

@@ -1,5 +1,6 @@
 defmodule SharkAttack.Collections do
   alias SharkAttack.Repo
+  import Ecto.Query
   alias SharkAttack.Loans.Collection
 
   def list_collections() do
@@ -18,6 +19,12 @@ defmodule SharkAttack.Collections do
     else
       update_collection(collection, attrs)
     end
+  end
+
+  def search_collection_by_name(name) do
+    query = from c in Collection, where: like(c.name, ^"%#{name}%")
+
+    Repo.all(query)
   end
 
   def get_collection_by_name(name) do

@@ -11,6 +11,8 @@ defmodule SharkAttackWeb.ApiController do
 
     loans = SharkAttack.Loans.get_loans_history!(params["pk"], Map.get(params, "limit", 5))
 
+    # forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
+
     conn
     |> json(%{data: loans})
   end
@@ -51,6 +53,20 @@ defmodule SharkAttackWeb.ApiController do
   def save_favorite(conn, _params) do
     conn
     |> json(%{message: "Hello from the API!"})
+  end
+
+  def get_collection_list(conn, _params) do
+    collections = SharkAttack.Collections.list_collections()
+
+    conn
+    |> json(%{data: collections})
+  end
+
+  def search_collections(conn, params) do
+    collections = SharkAttack.Collections.search_collection_by_name(params["name"])
+
+    conn
+    |> json(%{data: collections})
   end
 
   def update_loan_earnings(conn, params) do

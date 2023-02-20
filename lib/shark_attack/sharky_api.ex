@@ -6,7 +6,7 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_raw_order_books() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/order_book/rawlist")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/rawlist")
 
     Map.get(res, "orderBooks", []) |> Enum.filter(fn x -> x["name"] !== nil end)
   end
