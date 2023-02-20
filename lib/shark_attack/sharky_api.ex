@@ -12,7 +12,7 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_all_loans() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
 
     Map.get(res, "loanData", [])
   end
