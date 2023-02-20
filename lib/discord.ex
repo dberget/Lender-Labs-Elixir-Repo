@@ -61,6 +61,17 @@ defmodule SharkAttack.DiscordConsumer do
     Api.create_message!(dm_id, embeds: [embed])
   end
 
+  def send_foreclosure_msg(dm_id, loan) do
+    embed =
+      %Nostrum.Struct.Embed{}
+      |> put_title("Foreclosure Alert")
+      |> put_description(
+        "Loan is #{(loan["secondsUntilForeclosable"] / 60) |> round} minutes from foreclosure, collect: https://lenderlabs.xyz/"
+      )
+
+    Api.create_message!(dm_id, embeds: [embed])
+  end
+
   def handle_info(_event) do
     :noop
   end

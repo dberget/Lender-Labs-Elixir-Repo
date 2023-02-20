@@ -5,6 +5,8 @@ defmodule SharkAttack.Users do
 
   def get!(address), do: Repo.get!(User, address)
 
+  def list!(), do: Repo.all(User)
+
   def create_user(attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)

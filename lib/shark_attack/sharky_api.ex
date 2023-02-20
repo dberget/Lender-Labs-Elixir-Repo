@@ -12,7 +12,7 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_all_loans() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all")
 
     Map.get(res, "loanData", [])
   end
@@ -30,6 +30,10 @@ defmodule SharkAttack.SharkyApi do
 
   def get_user_open_offers(address) do
     SharkAttack.Helpers.do_get_request("http://localhost:5000/offers/#{address}")
+  end
+
+  def get_lender_loans(address) do
+    SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/#{address}")
   end
 
   def get_user_open_offers_for_order_book(user_address, order_book_address) do
