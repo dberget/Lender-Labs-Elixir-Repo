@@ -27,6 +27,12 @@ defmodule SharkAttackWeb.Router do
     get "/search_collections", ApiController, :search_collections
   end
 
+  scope "/event", SharkAttackWeb do
+    pipe_through :api
+
+    post "/", EventController, :index
+  end
+
   scope "/", SharkAttackWeb do
     pipe_through :browser
 

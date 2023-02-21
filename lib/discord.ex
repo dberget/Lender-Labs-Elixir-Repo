@@ -50,6 +50,15 @@ defmodule SharkAttack.DiscordConsumer do
     id
   end
 
+  def send_raw_message(dm_id, title, message) do
+    embed =
+      %Nostrum.Struct.Embed{}
+      |> put_title(title)
+      |> put_description(message)
+
+    Api.create_message!(dm_id, embeds: [embed])
+  end
+
   def send_message(dm_id, event) do
     embed =
       %Nostrum.Struct.Embed{}

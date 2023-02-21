@@ -45,7 +45,7 @@ defmodule SharkAttack.Loans do
   """
   def get_loan_plan!(id), do: Repo.get!(LoanPlan, id)
 
-  def get_loan!(address), do: Repo.get_by!(Loan, loan: address)
+  def get_loan!(address), do: Repo.get_by(Loan, loan: address)
 
   def get_user_loan_plans(user_address) do
     Repo.all(LoanPlan, user_address: user_address) |> Repo.preload(:plan_settings)

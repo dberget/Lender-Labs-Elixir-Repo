@@ -3,7 +3,7 @@ defmodule SharkAttack.Users do
   alias SharkAttack.Repo
   alias SharkAttack.Accounts.User
 
-  def get!(address), do: Repo.get!(User, address)
+  def get!(address), do: Repo.get(User, address)
 
   def list!(), do: Repo.all(User)
 
