@@ -4,12 +4,6 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
-    # IO.inspect(event["type"], label: "type")
-    # IO.inspect(event["source"], label: "source")
-    # IO.inspect(event["signature"], label: "sig")
-
-    IO.inspect(event)
-
     send_message(event["source"], event["type"], event)
 
     conn
