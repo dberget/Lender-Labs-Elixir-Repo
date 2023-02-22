@@ -58,7 +58,7 @@ defmodule SharkAttack.Loans do
       from l in Loan,
         where: l.lender == ^address,
         select: l,
-        order_by: [desc: l.id]
+        order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
 
     Repo.all(query)
   end
@@ -68,7 +68,7 @@ defmodule SharkAttack.Loans do
       from l in Loan,
         where: l.lender == ^address,
         select: l,
-        order_by: [desc: l.id],
+        order_by: [desc: coalesce(l.dateForeclosed, l.dateRepaid)],
         limit: ^limit
 
     Repo.all(query)

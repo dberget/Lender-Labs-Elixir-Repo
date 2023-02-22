@@ -91,25 +91,6 @@ defmodule SharkAttack.DiscordConsumer do
     |> Enum.each(&create_guild_commands/1)
   end
 
-  # def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
-  #   case msg.content do
-  #     "!sleep" ->
-  #       Api.create_message(msg.channel_id, "Going to sleep...")
-  #       # This won't stop other events from being handled.
-  #       Process.sleep(3000)
-
-  #     "!ping" ->
-  #       Api.create_message(msg.channel_id, "!pong")
-
-  #     "!raise" ->
-  #       # This won't crash the entire Consumer.
-  #       raise "No problems here!"
-
-  #     _ ->
-  #       :ignore
-  #   end
-  # end
-
   def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
     %Nostrum.Struct.Interaction{
       data: %Nostrum.Struct.ApplicationCommandInteractionData{options: options}
