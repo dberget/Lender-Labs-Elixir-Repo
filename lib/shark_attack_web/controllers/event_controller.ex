@@ -16,13 +16,48 @@ defmodule SharkAttackWeb.EventController do
     user = SharkAttack.Users.get!(to)
 
     if user do
-      # loanPk = Map.get(Enum.at(event["instructions"], 1), "accounts") |> hd
-      # IO.inspect(loanPk, label: "loanpk")
+      %{"mint" => mint} = hd(event["tokenTransfers"])
+
+      res =
+        SharkAttack.Helpers.do_post_request(
+          "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
+          %{mints: [mint]}
+        )
+
+      name = res |> hd |> Map.get("name")
 
       SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
       |> SharkAttack.DiscordConsumer.send_raw_message(
-        "Loan Repaid",
-        "Your loan has been repaid! You have earned #{Float.round(amount / 1_000_000_000, 2)} SOL. https://solscan.io/tx/#{event["signature"]}"
+        "#{name} Repaid",
+        "Your loan for #{name} has been repaid! You have earned #{Float.round(amount / 1_000_000_000, 2)} SOL. https://solscan.io/tx/#{event["signature"]}"
+      )
+    end
+
+    :ok
+  end
+
+  def send_message("SHARKY_FI", "TAKE_LOAN", event) do
+    %{"fromUserAccount" => from} = hd(event["nativeTransfers"])
+
+    %{"nativeBalanceChange" => amount} = hd(event["accountData"])
+
+    user = SharkAttack.Users.get!(from)
+
+    if user do
+      %{"mint" => mint} = hd(event["tokenTransfers"])
+
+      res =
+        SharkAttack.Helpers.do_post_request(
+          "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
+          %{mints: [mint]}
+        )
+
+      name = res |> hd |> Map.get("name")
+
+      SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
+      |> SharkAttack.DiscordConsumer.send_raw_message(
+        "Offer accepted for #{name}!",
+        "#{Float.round(amount / 1_000_000_000, 2)} SOL Offer accepted for #{name}! https://solscan.io/tx/#{event["signature"]}"
       )
     end
 
