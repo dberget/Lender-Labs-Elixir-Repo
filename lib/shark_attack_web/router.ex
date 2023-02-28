@@ -25,6 +25,7 @@ defmodule SharkAttackWeb.Router do
     get "/get_recent_loans", ApiController, :get_recent_loans
     get "/get_collection_list", ApiController, :get_collection_list
     get "/search_collections", ApiController, :search_collections
+    post "/save_nft_image", APiController, :save_nft_image
   end
 
   scope "/event", SharkAttackWeb do

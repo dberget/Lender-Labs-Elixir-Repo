@@ -5,7 +5,7 @@ defmodule SharkAttack.Accounts.Favorites do
   schema "favorites" do
     belongs_to(:user, SharkAttack.Accounts.User, foreign_key: :user_id, references: :address)
 
-    belongs_to(:collection, SharkAttack.Loans.Collection)
+    belongs_to(:collection, SharkAttack.Collections.Collection)
 
     timestamps()
   end

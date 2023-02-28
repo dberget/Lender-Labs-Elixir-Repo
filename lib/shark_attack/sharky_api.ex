@@ -12,7 +12,25 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_all_loans() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/taken")
+
+    Map.get(res, "loanData", [])
+  end
+
+  def get_loan(pk) do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/#{pk}")
+
+    Map.get(res, "loanData", [])
+  end
+
+  def get_all_loan_data() do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all")
+
+    Map.get(res, "loanData", [])
+  end
+
+  def get_loans_and_offers() do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/")
 
     Map.get(res, "loanData", [])
   end
@@ -22,6 +40,10 @@ defmodule SharkAttack.SharkyApi do
     res = SharkAttack.Helpers.do_get_request("https://sharky.fi/api/floor-prices")
 
     Map.get(res, "floorPrices", %{})
+  end
+
+  def get_mint_lists() do
+    SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/mintList")
   end
 
   def get_orderbook_offers(pubKey) do

@@ -37,7 +37,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_all_loans(conn, _params) do
-    loans = SharkAttack.SharkyApi.get_all_loans()
+    loans = :ets.match(:loans, {:_, :_, :"$1"}) |> List.flatten()
 
     conn
     |> json(%{data: loans})
@@ -60,6 +60,16 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(%{data: collections})
+  end
+
+  def save_nft_image(conn, params) do
+    res =
+      SharkAttack.Nfts.update_nft(
+        %SharkAttack.Collections.Nft{mint: params["nft_mint"]},
+        %{image: params["image"]}
+      )
+
+    conn |> json(%{data: res})
   end
 
   def search_collections(conn, params) do
