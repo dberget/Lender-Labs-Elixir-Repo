@@ -50,13 +50,22 @@ defmodule SharkAttack.DiscordConsumer do
     id
   end
 
+  def send_to_webhook(params, url) do
+    Api.execute_webhook(
+      "1079515258529521725",
+      "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
+      params
+    )
+    |> IO.inspect()
+  end
+
   def send_raw_message(dm_id, title, message) do
     embed =
       %Nostrum.Struct.Embed{}
       |> put_title(title)
       |> put_description(message)
 
-    Api.create_message!(dm_id, embeds: [embed])
+    Api.create_message(dm_id, embeds: [embed])
   end
 
   def send_message(dm_id, event) do

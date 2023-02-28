@@ -1,5 +1,8 @@
 defmodule SharkAttackWeb.EventController do
   use SharkAttackWeb, :controller
+  require Logger
+
+  @debug_webhook "https://discord.com/api/webhooks/1079515258529521725/x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu"
 
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
@@ -28,7 +31,10 @@ defmodule SharkAttackWeb.EventController do
 
       name = res |> hd |> Map.get("name")
 
-      SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
+      Logger.info("Sending REPAY_LOAN message to #{user.discordId}")
+
+      user.discordId
+      |> SharkAttack.DiscordConsumer.create_dm_channel()
       |> SharkAttack.DiscordConsumer.send_raw_message(
         "#{name} Repaid",
         "Your loan for #{name} has been repaid! You have earned #{Float.round(amount / 1_000_000_000, 2)} SOL. https://solscan.io/tx/#{event["signature"]}"
@@ -56,7 +62,10 @@ defmodule SharkAttackWeb.EventController do
 
       name = res |> hd |> Map.get("name")
 
-      SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
+      Logger.info("Sending TAKE_LOAN message to #{user.discordId}")
+
+      user.discordId
+      |> SharkAttack.DiscordConsumer.create_dm_channel()
       |> SharkAttack.DiscordConsumer.send_raw_message(
         "Offer accepted for #{name}!",
         "#{Float.round(amount / 1_000_000_000, 2)} SOL Offer accepted for #{name}! https://solscan.io/tx/#{event["signature"]}"
