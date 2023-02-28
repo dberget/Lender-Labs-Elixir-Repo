@@ -4,9 +4,11 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
-    # send_message(event["source"], event["type"], event)
+    IO.inspect(event)
 
-    SharkAttack.LoansWorker.update_loan(event, event["type"])
+    send_message(event["source"], event["type"], event)
+
+    # SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn
     |> json(%{message: "ok"})
@@ -39,7 +41,7 @@ defmodule SharkAttackWeb.EventController do
   end
 
   def send_message("SHARKY_FI", "TAKE_LOAN", event) do
-    %{"fromUserAccount" => from} = hd(event["nativeTransfers"])
+    from = event["instructions"] |> List.last() |> Map.get("accounts") |> hd
 
     %{"nativeBalanceChange" => amount} = hd(event["accountData"])
 
