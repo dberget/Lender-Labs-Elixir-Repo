@@ -7,7 +7,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_recent_loans(conn, params) do
-    SharkAttack.Stats.update_history_safe(params["pk"])
+    # SharkAttack.Stats.update_history_safe(params["pk"])
 
     loans = SharkAttack.Loans.get_loans_history!(params["pk"], Map.get(params, "limit", 5))
 
@@ -37,7 +37,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_all_loans(conn, _params) do
-    loans = :ets.tab2list(:loans) |> List.flatten()
+    loans = SharkAttack.LoansWorker.get_all_loans()
 
     conn
     |> json(%{data: loans})
