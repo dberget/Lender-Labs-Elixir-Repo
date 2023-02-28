@@ -56,7 +56,6 @@ defmodule SharkAttack.DiscordConsumer do
       "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
       params
     )
-    |> IO.inspect()
   end
 
   def send_raw_message(dm_id, title, message) do

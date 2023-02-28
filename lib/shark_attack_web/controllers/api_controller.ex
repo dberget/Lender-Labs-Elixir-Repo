@@ -37,7 +37,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_all_loans(conn, _params) do
-    loans = :ets.match(:loans, {:_, :_, :"$1"}) |> List.flatten()
+    loans = :ets.tab2list(:loans) |> List.flatten()
 
     conn
     |> json(%{data: loans})

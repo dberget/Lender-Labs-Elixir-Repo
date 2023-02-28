@@ -29,6 +29,10 @@ defmodule SharkAttack.Helpers do
     {:error, body}
   end
 
+  def parse_response({:error, %Mint.TransportError{reason: :econnrefused}}) do
+    {:error, "Connection refused"}
+  end
+
   def parse_response(res) do
     res
   end

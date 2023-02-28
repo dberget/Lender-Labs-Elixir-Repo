@@ -8,8 +8,8 @@ defmodule SharkAttack.LoansWorker do
 
   require Logger
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, [], opts)
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   def update_loan(loan, "REPAY_LOAN") do
@@ -26,25 +26,54 @@ defmodule SharkAttack.LoansWorker do
 
   def update_loan(loan, "TAKE_LOAN") do
     loanAddress =
-      Map.get(loan, "instructions")
-      |> List.last()
+      loan
+      |> Map.get("instructions")
+      |> Enum.at(1)
       |> Map.get("accounts")
       |> Enum.at(5)
 
-    # loanData = SharkyApi.get_loan(loanAddress) |> IO.inspect(label: "TAKE_LOAN_RES")
+    case SharkyApi.get_loan(loanAddress) do
+      {:error, _message} ->
+        nil
 
-    # :ets.insert(:loans, {loanAddress, from, loan})
+      loanData ->
+        IO.inspect(loanData, label: "loanData")
+
+        :ets.insert(:loans, {loanAddress, loanData["lender"], loanData})
+    end
   end
 
-  def update_loan(loan, _Status) do
-    # IO.inspect(loan)
+  def update_loan(loan, "OFFER_LOAN") do
+    loanAddress =
+      loan
+      |> Map.get("instructions")
+      |> hd()
+      |> Map.get("accounts")
+      |> Enum.at(4)
+      |> IO.inspect()
+
+    case SharkyApi.get_loan(loanAddress) |> IO.inspect() do
+      {:error, _message} ->
+        IO.inspect(loan, label: "FAILED LOAN")
+
+        nil
+
+      loanData ->
+        IO.inspect(loanData, label: "loanData")
+
+        :ets.insert(:loans, {loanAddress, loanData["lender"], loanData})
+    end
+  end
+
+  def update_loan(_loan, _status) do
+    # IO.inspect(status)
 
     # :ets.delete(:loans, loan["loan"])
   end
 
   @impl true
   def init([]) do
-    :ets.new(:loans, [:set, :public, :named_table])
+    generate_table()
 
     SharkyApi.get_all_loan_data()
     |> Enum.each(fn loan ->
@@ -56,8 +85,16 @@ defmodule SharkAttack.LoansWorker do
 
   @impl true
   def handle_info(:fetch, state) do
-    IO.inspect(state)
-
     {:noreply, state}
+  end
+
+  defp generate_table() do
+    :ets.new(:loans, [
+      :set,
+      :public,
+      :named_table,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
   end
 end

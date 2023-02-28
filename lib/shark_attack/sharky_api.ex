@@ -1,4 +1,6 @@
 defmodule SharkAttack.SharkyApi do
+  require Logger
+
   def get_order_books() do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5000/order_book/list")
 
@@ -18,13 +20,19 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_loan(pk) do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/loan/#{pk}")
+    case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/#{pk}") do
+      {:error, body} ->
+        Logger.error(body)
 
-    Map.get(res, "loanData", [])
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
   end
 
   def get_all_loan_data() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all")
 
     Map.get(res, "loanData", [])
   end
