@@ -18,7 +18,11 @@ defmodule SharkAttack.Collections do
     Repo.all(Collection)
   end
 
-  def get_collection_by_address(address) do
+  def get_collection(id) when is_integer(id) do
+    Repo.get(Collection, id)
+  end
+
+  def get_collection(address) do
     query =
       from c in Collection,
         where: c.sharky_address == ^address,

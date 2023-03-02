@@ -59,15 +59,13 @@ defmodule SharkAttackWeb.ApiController do
     offers = Enum.filter(loans, fn l -> l["state"] == "offered" end)
 
     loanSummary = %{
-      totalSolLoaned:
-        Enum.map(takenLoans, fn l -> String.to_float(l["amountSol"]) end) |> Enum.sum(),
+      totalSolLoaned: Enum.map(takenLoans, fn l -> l["amountSol"] end) |> Enum.sum(),
       totalEarnings: Enum.map(takenLoans, fn l -> l["earnings"] end) |> Enum.sum(),
       activeLoans: takenLoans
     }
 
     offerSummary = %{
-      totalSolOffered:
-        Enum.map(offers, fn l -> String.to_float(l["amountSol"]) end) |> Enum.sum(),
+      totalSolOffered: Enum.map(offers, fn l -> l["amountSol"] end) |> Enum.sum(),
       activeOffers: offers
     }
 
@@ -76,7 +74,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_collection(conn, params) do
-    collection = SharkAttack.Collections.get_collection_by_address(params["collection_id"])
+    collection = SharkAttack.Collections.get_collection(params["collection_id"])
 
     loans_and_offers = SharkAttack.LoansWorker.get_collection_loans(collection.sharky_address)
 
