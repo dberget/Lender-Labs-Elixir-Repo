@@ -37,11 +37,10 @@ defmodule SharkAttack.SharkyApi do
     Map.get(res, "loanData", [])
   end
 
-  @spec get_floor_prices :: any
   def get_floor_prices() do
     res = SharkAttack.Helpers.do_get_request("https://sharky.fi/api/floor-prices")
 
-    Map.get(res, "floorPrices", %{})
+    res
   end
 
   def get_mint_lists() do

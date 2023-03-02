@@ -90,8 +90,18 @@ defmodule SharkAttackWeb.ApiController do
       |> Enum.filter(&(&1["state"] == "taken"))
       |> Enum.sort_by(& &1["start"], :desc)
 
+    floor_price =
+      :ets.lookup(:floor_prices, collection.id) |> List.first({collection.id, 0.0}) |> elem(1)
+
     conn
-    |> json(%{collection: collection, offers: offers, loans: loans})
+    |> json(%{
+      collection: %{
+        collection
+        | fp: floor_price,
+          offers: offers,
+          loans: loans
+      }
+    })
   end
 
   def get_collection_offers(conn, params) do
@@ -118,23 +128,25 @@ defmodule SharkAttackWeb.ApiController do
 
   def flush_loans(conn, _params) do
     SharkAttack.LoansWorker.flush()
+
+    conn
+    |> json(%{message: "Flushed!"})
   end
 
   def get_collection_list(conn, params) do
-    collections = SharkAttack.Collections.list_collections(%{sharky: params["sharky"]})
-
-    # [id, [loans]]
     loans = SharkAttack.LoansWorker.get_all_collection_loans()
 
     collections =
-      Enum.map(collections, fn c ->
+      SharkAttack.Collections.list_collections(%{sharky: params["sharky"]})
+      |> Enum.map(fn c ->
         {_ob, collection_loans} =
           Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.sharky_address end)
 
         %{
           c
           | offers: collection_loans |> Enum.filter(&(&1["state"] == "offered")),
-            loans: collection_loans |> Enum.filter(&(&1["state"] == "taken"))
+            loans: collection_loans |> Enum.filter(&(&1["state"] == "taken")),
+            fp: :ets.lookup(:floor_prices, c.id) |> List.first({c.id, 0.0}) |> elem(1)
         }
       end)
 

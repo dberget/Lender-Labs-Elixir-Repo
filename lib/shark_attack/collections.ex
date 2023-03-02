@@ -4,6 +4,10 @@ defmodule SharkAttack.Collections do
   alias SharkAttack.Collections.Collection
   alias SharkAttack.Collections.Nft
 
+  def list_collections() do
+    Repo.all(Collection)
+  end
+
   def list_collections(%{sharky: "1"}) do
     query = from c in Collection, where: not is_nil(c.sharky_address)
 
@@ -114,6 +118,52 @@ defmodule SharkAttack.Collections do
     %Collection{}
     |> Collection.changeset(attrs)
     |> Repo.insert(on_conflict: :nothing)
+  end
+
+  def update_logos() do
+    all_collections = list_collections(%{sharky: "1"})
+
+    all_collections
+    |> SharkAttack.Hyperspace.get_floor_prices()
+    |> Enum.each(fn {collection, %{img_url: img_url}} ->
+      all_collections
+      |> Enum.filter(&(&1.hyperspace_id == collection))
+      |> Enum.each(fn token ->
+        SharkAttack.Collections.update_collection(token, %{
+          logo: img_url
+        })
+      end)
+    end)
+  end
+
+  def update_hyperspace_ids do
+    SharkAttack.Collections.list_collections(%{sharky: "1"})
+
+    hyperspace =
+      SharkAttack.SharkyApi.get_floor_prices()
+      |> Map.get("hyperspaceData")
+
+    hyperspace
+    |> Map.keys()
+    |> Enum.each(fn name ->
+      collection = SharkAttack.Collections.search_collection_by_name(name)
+
+      update_hyperspace_id(collection, hyperspace, name)
+    end)
+  end
+
+  def update_hyperspace_id([], _hyperspace, _name) do
+    nil
+  end
+
+  def update_hyperspace_id(res, _hyperspace, name) when length(res) > 1 do
+    {:error, name}
+  end
+
+  def update_hyperspace_id([collection], hyperspace, name) do
+    SharkAttack.Collections.update_collection(collection, %{
+      hyperspace_id: Map.get(hyperspace, name)["hyperspaceId"]
+    })
   end
 
   def insert_nfts(_collection_id, nil) do

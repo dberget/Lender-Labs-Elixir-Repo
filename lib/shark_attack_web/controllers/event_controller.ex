@@ -72,4 +72,8 @@ defmodule SharkAttackWeb.EventController do
 
     :ok
   end
+
+  def send_message(_platform, _, _event) do
+    :ok
+  end
 end

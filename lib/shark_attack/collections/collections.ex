@@ -14,7 +14,8 @@ defmodule SharkAttack.Collections.Collection do
              :logo,
              :rain_fi_id,
              :loans,
-             :offers
+             :offers,
+             :fp
            ]}
   schema "collections" do
     field(:name, :string)
@@ -30,6 +31,7 @@ defmodule SharkAttack.Collections.Collection do
 
     field(:loans, :map, virtual: true)
     field(:offers, :map, virtual: true)
+    field(:fp, :integer, virtual: true)
 
     timestamps()
   end
