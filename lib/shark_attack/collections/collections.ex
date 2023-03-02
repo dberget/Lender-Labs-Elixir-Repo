@@ -11,7 +11,6 @@ defmodule SharkAttack.Collections.Collection do
              :foxy_address,
              :rain_address,
              :hyperspace_id,
-             :verified_creator_address,
              :logo,
              :rain_fi_id,
              :loans,
@@ -26,8 +25,6 @@ defmodule SharkAttack.Collections.Collection do
     field(:logo, :string)
     field(:rain_address, :string)
     field(:rain_fi_id, :integer)
-
-    field :verified_creator_address, :string
 
     field(:hyperspace_id, :string)
 
@@ -47,7 +44,6 @@ defmodule SharkAttack.Collections.Collection do
       :hyperspace_id,
       :foxy_address,
       :rain_address,
-      :verified_creator_address,
       :logo,
       :rain_fi_id
     ])

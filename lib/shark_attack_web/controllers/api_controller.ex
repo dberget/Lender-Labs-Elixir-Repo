@@ -116,17 +116,25 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{message: "Hello from the API!"})
   end
 
+  def flush_loans(conn, _params) do
+    SharkAttack.LoansWorker.flush()
+  end
+
   def get_collection_list(conn, params) do
     collections = SharkAttack.Collections.list_collections(%{sharky: params["sharky"]})
 
+    # [id, [loans]]
+    loans = SharkAttack.LoansWorker.get_all_collection_loans()
+
     collections =
       Enum.map(collections, fn c ->
-        loans = SharkAttack.LoansWorker.get_collection_loans(c.sharky_address)
+        {_ob, collection_loans} =
+          Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.sharky_address end)
 
         %{
           c
-          | offers: loans |> Enum.filter(&(&1["state"] == "offered")),
-            loans: loans |> Enum.filter(&(&1["state"] == "taken"))
+          | offers: collection_loans |> Enum.filter(&(&1["state"] == "offered")),
+            loans: collection_loans |> Enum.filter(&(&1["state"] == "taken"))
         }
       end)
 

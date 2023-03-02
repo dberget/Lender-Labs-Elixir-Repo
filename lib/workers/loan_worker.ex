@@ -98,6 +98,18 @@ defmodule SharkAttack.LoansWorker do
     # :ets.delete(:loans, loan["loan"])
   end
 
+  def flush() do
+    :ets.delete_all_objects(:loans)
+    :ets.delete_all_objects(:collections)
+
+    SharkyApi.get_all_loan_data()
+    |> Enum.each(fn loan ->
+      :ets.insert(:loans, {loan["loan"], loan["lender"], loan["orderBook"], loan})
+
+      :ets.insert(:collections, {loan["orderBook"], loan["loan"], loan})
+    end)
+  end
+
   @impl true
   def init([]) do
     generate_tables()

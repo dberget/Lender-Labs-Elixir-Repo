@@ -2,25 +2,25 @@ defmodule SharkAttack.SharkyApi do
   require Logger
 
   def get_order_books() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/order_book/list")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/list")
 
     Map.get(res, "orderBooks", []) |> Enum.filter(fn x -> x["name"] !== nil end)
   end
 
   def get_raw_order_books() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/order_book/rawlist")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/rawlist")
 
     Map.get(res, "orderBooks", []) |> Enum.filter(fn x -> x["name"] !== nil end)
   end
 
   def get_all_loans() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/taken")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/taken")
 
     Map.get(res, "loanData", [])
   end
 
   def get_loan(pk) do
-    case SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/loan/#{pk}") do
+    case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/#{pk}") do
       {:error, body} ->
         Logger.error(body)
 
@@ -32,7 +32,7 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_all_loan_data() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all")
 
     Map.get(res, "loanData", [])
   end
@@ -45,19 +45,19 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_mint_lists() do
-    SharkAttack.Helpers.do_get_request("http://localhost:5000/order_book/mintList")
+    SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/mintList")
   end
 
   def get_orderbook_offers(pubKey) do
-    SharkAttack.Helpers.do_get_request("http://localhost:5000/offers/ob/#{pubKey}")
+    SharkAttack.Helpers.do_get_request("http://localhost:5001/offers/ob/#{pubKey}")
   end
 
   def get_user_open_offers(address) do
-    SharkAttack.Helpers.do_get_request("http://localhost:5000/offers/#{address}")
+    SharkAttack.Helpers.do_get_request("http://localhost:5001/offers/#{address}")
   end
 
   def get_lender_loans(address) do
-    SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/#{address}")
+    SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/#{address}")
   end
 
   def get_user_open_offers_for_order_book(user_address, order_book_address) do
@@ -80,12 +80,12 @@ defmodule SharkAttack.SharkyApi do
         pubkey: pubkey
       }) do
     SharkAttack.Helpers.do_get_request(
-      "http://localhost:5000/offers/ix/#{address}/#{pubkey}/#{loan_amount}"
+      "http://localhost:5001/offers/ix/#{address}/#{pubkey}/#{loan_amount}"
     )
   end
 
   def revoke_offer(wallet_address, loan_pubkey) do
-    SharkAttack.Helpers.do_post_request("http://localhost:5000/offers/revoke", %{
+    SharkAttack.Helpers.do_post_request("http://localhost:5001/offers/revoke", %{
       wallet: wallet_address,
       loanPubKey: loan_pubkey
     })
