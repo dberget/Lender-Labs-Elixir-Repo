@@ -144,8 +144,14 @@ defmodule SharkAttackWeb.ApiController do
 
         %{
           c
-          | offers: collection_loans |> Enum.filter(&(&1["state"] == "offered")),
-            loans: collection_loans |> Enum.filter(&(&1["state"] == "taken")),
+          | offers:
+              collection_loans
+              |> Enum.filter(&(&1["state"] == "offered"))
+              |> Enum.sort_by(& &1["amountSol"], :desc),
+            loans:
+              collection_loans
+              |> Enum.filter(&(&1["state"] == "taken"))
+              |> Enum.sort_by(& &1["start"], :desc),
             fp: :ets.lookup(:floor_prices, c.id) |> List.first({c.id, 0.0}) |> elem(1)
         }
       end)
