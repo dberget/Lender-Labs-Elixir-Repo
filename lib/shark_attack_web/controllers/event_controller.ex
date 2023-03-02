@@ -2,14 +2,12 @@ defmodule SharkAttackWeb.EventController do
   use SharkAttackWeb, :controller
   require Logger
 
-  @debug_webhook "https://discord.com/api/webhooks/1079515258529521725/x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu"
-
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
     send_message(event["source"], event["type"], event)
 
-    # SharkAttack.LoansWorker.update_loan(event, event["type"])
+    SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn
     |> json(%{message: "ok"})

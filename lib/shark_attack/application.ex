@@ -19,6 +19,7 @@ defmodule SharkAttack.Application do
       SharkAttackWeb.Endpoint,
       SharkAttack.Vault,
       SharkAttack.Discord,
+      SharkAttack.LoansWorker,
       SharkAttack.NotificationWorker
       # {SharkAttack.SolanaWS, name: SharkAttack.SolanaWS}
       # Start a worker by calling: SharkAttack.Worker.start_link(arg)

@@ -2,7 +2,7 @@ defmodule SharkAttack.Repo.Migrations.CreateNfts do
   use Ecto.Migration
 
   def change do
-    create table(:nfts) do
+    create_if_not_exists table(:nfts) do
       add :name, :string
       add :image, :string
       add :mint, :string
@@ -11,7 +11,7 @@ defmodule SharkAttack.Repo.Migrations.CreateNfts do
       timestamps()
     end
 
-    create unique_index(:nfts, [:mint])
-    create index(:nfts, [:collection_id])
+    # create_if_not_exists unique_index(:nfts, [:mint])
+    # create index(:nfts, [:collection_id])
   end
 end

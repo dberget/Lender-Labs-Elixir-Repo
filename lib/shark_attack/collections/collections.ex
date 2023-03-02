@@ -13,7 +13,9 @@ defmodule SharkAttack.Collections.Collection do
              :hyperspace_id,
              :verified_creator_address,
              :logo,
-             :rain_fi_id
+             :rain_fi_id,
+             :loans,
+             :offers
            ]}
   schema "collections" do
     field(:name, :string)
@@ -28,6 +30,9 @@ defmodule SharkAttack.Collections.Collection do
     field :verified_creator_address, :string
 
     field(:hyperspace_id, :string)
+
+    field(:loans, :map, virtual: true)
+    field(:offers, :map, virtual: true)
 
     timestamps()
   end

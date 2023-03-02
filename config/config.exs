@@ -13,12 +13,13 @@ config :shark_attack,
 # Configures the endpoint
 config :shark_attack, SharkAttackWeb.Endpoint,
   url: [host: "localhost"],
+  compress: true,
   render_errors: [view: SharkAttackWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: SharkAttack.PubSub,
   live_view: [signing_salt: "EYLKcoEy"]
 
 config :cors_plug,
-  origin: ["https://lenderlabs.xyz"],
+  origin: ["https://lenderlabs.xyz", "https://stage--chimerical-custard-213af0.netlify.app"],
   max_age: 86400,
   headers: ["accept", "content-type", "origin", "authorization", "baggage"],
   methods: ["GET", "POST"]

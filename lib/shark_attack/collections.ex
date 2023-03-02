@@ -4,12 +4,24 @@ defmodule SharkAttack.Collections do
   alias SharkAttack.Collections.Collection
   alias SharkAttack.Collections.Nft
 
-  def list_collections() do
+  def list_collections(%{sharky: "1"}) do
+    query = from c in Collection, where: not is_nil(c.sharky_address)
+
+    Repo.all(query)
+  end
+
+  def list_collections(_opts) do
     Repo.all(Collection)
   end
 
   def get_collection_by_address(address) do
-    Repo.get_by(Collection, address: address)
+    query =
+      from c in Collection,
+        where: c.sharky_address == ^address,
+        or_where: c.foxy_address == ^address,
+        or_where: c.frakt_address == ^address
+
+    Repo.one(query)
   end
 
   def get_and_update_collection(%{name: name} = attrs) do
@@ -111,7 +123,7 @@ defmodule SharkAttack.Collections do
   def insert_nfts(collection_id, nfts) do
     Enum.each(
       nfts,
-      &(%SharkAttack.Collections.Nft{
+      &(%Nft{
           collection_id: collection_id,
           mint: &1
         }

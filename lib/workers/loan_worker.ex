@@ -8,56 +8,138 @@ defmodule SharkAttack.LoansWorker do
 
   require Logger
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, [], opts)
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
+  def get_all_loans() do
+    :ets.match_object(:loans, {:_, :_, :_, :"$1"})
+    # :ets.tab2list(:loans)
+    # |> Enum.map(fn {_key, _lender, _orderBook, value} -> value end)
+  end
+
+  def get_lender_loans(lender, nil) do
+    :ets.match_object(:loans, {:_, lender, :_, :"$1"})
+  end
+
+  def get_lender_loans(lender, collection) do
+    :ets.match_object(:loans, {:_, lender, collection, :"$1"})
+  end
+
+  def get_collection_loans(collection) do
+    :ets.lookup(:collections, collection)
+    |> Enum.map(fn {_key, _loan, value} -> value end)
+  end
+
+  def get_all_collection_loans() do
+    :ets.match(:collections, {:"$1", :_, :"$2"})
+    |> Enum.reduce(%{}, fn [orderbook_id, loan_data], acc ->
+      Map.update(acc, orderbook_id, [loan_data], fn list -> [loan_data | list] end)
+    end)
   end
 
   def update_loan(loan, "REPAY_LOAN") do
     loanAddress = Map.get(loan, "instructions") |> List.last() |> Map.get("accounts") |> hd
 
-    :ets.delete(:loans, loanAddress)
+    unless is_nil(loanAddress) do
+      GenServer.cast(__MODULE__, {:delete, loanAddress})
+    end
   end
 
   def update_loan(loan, "RESCIND_LOAN") do
     loanAddress = Map.get(loan, "instructions") |> hd() |> Map.get("accounts") |> hd
 
-    :ets.delete(:loans, loanAddress)
+    unless is_nil(loanAddress) do
+      GenServer.cast(__MODULE__, {:delete, loanAddress})
+    end
   end
 
   def update_loan(loan, "TAKE_LOAN") do
     loanAddress =
-      Map.get(loan, "instructions")
-      |> List.last()
+      loan
+      |> Map.get("instructions")
+      |> Enum.at(1)
       |> Map.get("accounts")
       |> Enum.at(5)
 
-    # loanData = SharkyApi.get_loan(loanAddress) |> IO.inspect(label: "TAKE_LOAN_RES")
+    case SharkyApi.get_loan(loanAddress) do
+      {:error, _message} ->
+        nil
 
-    # :ets.insert(:loans, {loanAddress, from, loan})
+      loanData ->
+        :ets.insert(:loans, {loanAddress, loanData["lender"], loanData["orderBook"], loanData})
+
+        :ets.match_delete(:collections, {:_, loanData, :_})
+        :ets.insert_new(:collections, {loanData["orderBook"], loanAddress, loanData})
+    end
   end
 
-  def update_loan(loan, _Status) do
-    # IO.inspect(loan)
+  def update_loan(loan, "OFFER_LOAN") do
+    loanAddress =
+      loan
+      |> Map.get("instructions")
+      |> hd()
+      |> Map.get("accounts")
+      |> Enum.at(3)
+
+    case SharkyApi.get_loan(loanAddress) do
+      {:error, _message} ->
+        nil
+
+      loanData ->
+        :ets.insert(:loans, {loanAddress, loanData["lender"], loanData["orderBook"], loanData})
+        :ets.insert(:collections, {loanData["orderBook"], loanAddress, loanData})
+    end
+  end
+
+  def update_loan(_loan, status) do
+    IO.inspect(status)
 
     # :ets.delete(:loans, loan["loan"])
   end
 
   @impl true
   def init([]) do
-    :ets.new(:loans, [:set, :public, :named_table])
+    generate_tables()
 
     SharkyApi.get_all_loan_data()
     |> Enum.each(fn loan ->
-      :ets.insert(:loans, {loan["loan"], loan["lender"], loan})
+      :ets.insert(:loans, {loan["loan"], loan["lender"], loan["orderBook"], loan})
+
+      :ets.insert(:collections, {loan["orderBook"], loan["loan"], loan})
     end)
 
     {:ok, []}
   end
 
   @impl true
-  def handle_info(:fetch, state) do
-    IO.inspect(state)
+  def handle_cast({:delete, key}, state) do
+    :ets.delete(:loans, key)
+    :ets.match_delete(:collections, {:_, key, :_})
 
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:fetch, state) do
+    {:noreply, state}
+  end
+
+  defp generate_tables() do
+    :ets.new(:loans, [
+      :set,
+      :public,
+      :named_table,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
+
+    :ets.new(:collections, [
+      :bag,
+      :public,
+      :named_table,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
   end
 end
