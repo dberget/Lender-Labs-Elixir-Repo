@@ -20,7 +20,7 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_loan(pk) do
-    case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/#{pk}") do
+    case SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/loan/#{pk}") do
       {:error, body} ->
         Logger.error(body)
 
@@ -32,7 +32,7 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_all_loan_data() do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all")
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5000/loans/all")
 
     Map.get(res, "loanData", [])
   end
