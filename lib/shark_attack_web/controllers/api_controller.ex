@@ -43,6 +43,67 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{data: loans})
   end
 
+  def get_all_collection_loans(conn, _params) do
+    loans = SharkAttack.LoansWorker.get_all_collection_loans()
+
+    conn
+    |> json(loans)
+  end
+
+  def get_lender_loans(conn, params) do
+    loans =
+      SharkAttack.LoansWorker.get_lender_loans(params["lender"], params["collection"])
+      |> Enum.map(&elem(&1, 3))
+
+    takenLoans = Enum.filter(loans, fn l -> l["state"] == "taken" end)
+    offers = Enum.filter(loans, fn l -> l["state"] == "offered" end)
+
+    loanSummary = %{
+      totalSolLoaned:
+        Enum.map(takenLoans, fn l -> String.to_float(l["amountSol"]) end) |> Enum.sum(),
+      totalEarnings: Enum.map(takenLoans, fn l -> l["earnings"] end) |> Enum.sum(),
+      activeLoans: takenLoans
+    }
+
+    offerSummary = %{
+      totalSolOffered:
+        Enum.map(offers, fn l -> String.to_float(l["amountSol"]) end) |> Enum.sum(),
+      activeOffers: offers
+    }
+
+    conn
+    |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
+  end
+
+  def get_collection(conn, params) do
+    collection = SharkAttack.Collections.get_collection_by_address(params["collection_id"])
+
+    loans_and_offers = SharkAttack.LoansWorker.get_collection_loans(collection.sharky_address)
+
+    offers =
+      loans_and_offers
+      |> Enum.filter(&(&1["state"] == "offered"))
+      |> Enum.sort_by(& &1["amountSol"], :desc)
+
+    loans =
+      loans_and_offers
+      |> Enum.filter(&(&1["state"] == "taken"))
+      |> Enum.sort_by(& &1["start"], :desc)
+
+    conn
+    |> json(%{collection: collection, offers: offers, loans: loans})
+  end
+
+  def get_collection_offers(conn, params) do
+    loans =
+      SharkAttack.LoansWorker.get_collection_loans(params["collection"])
+      |> Enum.filter(&(&1["state"] == "offered"))
+      |> Enum.sort_by(& &1["amountSol"], :desc)
+
+    conn
+    |> json(%{data: loans})
+  end
+
   def get_orderbooks(conn, _params) do
     data = SharkAttack.SharkyApi.get_order_books()
 
@@ -55,11 +116,22 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{message: "Hello from the API!"})
   end
 
-  def get_collection_list(conn, _params) do
-    collections = SharkAttack.Collections.list_collections()
+  def get_collection_list(conn, params) do
+    collections = SharkAttack.Collections.list_collections(%{sharky: params["sharky"]})
+
+    collections =
+      Enum.map(collections, fn c ->
+        loans = SharkAttack.LoansWorker.get_collection_loans(c.sharky_address)
+
+        %{
+          c
+          | offers: loans |> Enum.filter(&(&1["state"] == "offered")),
+            loans: loans |> Enum.filter(&(&1["state"] == "taken"))
+        }
+      end)
 
     conn
-    |> json(%{data: collections})
+    |> json(collections)
   end
 
   def save_nft_image(conn, params) do

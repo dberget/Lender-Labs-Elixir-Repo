@@ -20,12 +20,19 @@ defmodule SharkAttackWeb.Router do
     get "/", ApiController, :index
     get "/get_history", ApiController, :get_history
     get "/get_all_loans", ApiController, :get_all_loans
+    get "/get_lender_loans", ApiController, :get_lender_loans
+    get "/get_collection_offers", ApiController, :get_collection_offers
+
     get "/get_orderbooks", ApiController, :get_orderbooks
     post "/update_loan_earnings", ApiController, :update_loan_earnings
     get "/get_recent_loans", ApiController, :get_recent_loans
+
     get "/get_collection_list", ApiController, :get_collection_list
     get "/search_collections", ApiController, :search_collections
-    post "/save_nft_image", APiController, :save_nft_image
+    get "/get_collection", ApiController, :get_collection
+    get "/get_all_collection_loans", ApiController, :get_all_collection_loans
+
+    post "/save_nft_image", ApiController, :save_nft_image
   end
 
   scope "/event", SharkAttackWeb do
