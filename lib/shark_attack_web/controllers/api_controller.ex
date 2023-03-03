@@ -139,17 +139,77 @@ defmodule SharkAttackWeb.ApiController do
         {_ob, collection_loans} =
           Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.sharky_address end)
 
+        offers =
+          collection_loans
+          |> Enum.filter(&(&1["state"] == "offered"))
+          |> Enum.map(& &1["amountSol"])
+
+        highestOffer =
+          case offers do
+            [] ->
+              0
+
+            _ ->
+              Enum.max(offers, fn -> 0 end)
+          end
+
+        loans =
+          collection_loans
+          |> Enum.filter(&(&1["state"] == "taken"))
+          |> Enum.sort_by(& &1["start"], :desc)
+
+        last_24 =
+          loans
+          |> Enum.filter(fn l ->
+            DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(l["start"]), :second) < 86400
+          end)
+          |> length()
+
+        fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+
+        underWater =
+          case loans do
+            [] ->
+              {0, 0}
+
+            _ ->
+              underWaterLoans =
+                Enum.filter(loans, fn l -> l["amountSol"] + l["earnings"] > fp end)
+
+              case underWaterLoans do
+                [] ->
+                  {0, 0}
+
+                _ ->
+                  lengthUnderWaterLoans = length(underWaterLoans)
+
+                  averageUnderwater =
+                    (Enum.map(underWaterLoans, &(&1["amountSol"] + &1["earnings"]))
+                     |> Enum.sum()) /
+                      lengthUnderWaterLoans
+
+                  {lengthUnderWaterLoans, averageUnderwater}
+              end
+          end
+
         %{
-          c
-          | offers:
-              collection_loans
-              |> Enum.filter(&(&1["state"] == "offered"))
-              |> Enum.sort_by(& &1["amountSol"], :desc),
-            loans:
-              collection_loans
-              |> Enum.filter(&(&1["state"] == "taken"))
-              |> Enum.sort_by(& &1["start"], :desc),
-            fp: SharkAttack.FloorWorker.get_floor_price(c.id)
+          sharky_address: c.sharky_address,
+          duration: c.duration,
+          apy: c.apy,
+          name: c.name,
+          offers: length(offers),
+          loans: length(loans),
+          lastTaken: Enum.take(loans, 1),
+          logo: c.logo,
+          highestOffer: highestOffer,
+          countUnderWater: elem(underWater, 0),
+          averageUnderwater: elem(underWater, 1),
+          fp: fp,
+          last_24: last_24,
+          ltf:
+            unless highestOffer == 0 or fp == 0 do
+              highestOffer / fp * 100
+            end
         }
       end)
 

@@ -111,17 +111,19 @@ defmodule SharkAttack.Collections do
     Enum.map(collections, fn collection ->
       data = %{
         name: collection["name"],
-        sharky_address: collection["pubkey"]
+        sharky_address: collection["pubkey"],
+        duration: collection["duration"],
+        apy: collection["apy"]
       }
 
-      create_collection(data)
+      SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
 
   def create_collection(attrs \\ %{}) do
     %Collection{}
     |> Collection.changeset(attrs)
-    |> Repo.insert(on_conflict: :nothing)
+    |> Repo.insert(on_conflict: {:replace, [:apy, :duration]})
   end
 
   def update_logos() do
