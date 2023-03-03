@@ -149,7 +149,7 @@ defmodule SharkAttackWeb.ApiController do
               collection_loans
               |> Enum.filter(&(&1["state"] == "taken"))
               |> Enum.sort_by(& &1["start"], :desc),
-            fp: :ets.lookup(:floor_prices, c.id) |> List.first({c.id, 0.0}) |> elem(1)
+            fp: SharkAttack.FloorWorker.get_floor_price(c.id)
         }
       end)
 

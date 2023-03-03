@@ -14,7 +14,7 @@ defmodule SharkAttack.FloorWorker do
   def init(state) do
     create_and_hydrate_table()
 
-    :timer.send_after(:timer.minutes(1), :fetch)
+    :timer.send_after(:timer.seconds(30), :fetch)
 
     :timer.send_interval(:timer.minutes(5), :fetch)
 
@@ -47,13 +47,14 @@ defmodule SharkAttack.FloorWorker do
     floor_price =
       case :ets.whereis(:floor_prices) do
         :undefined ->
+          Logger.info("Floor prices table not found, creating and hydrating")
+
           create_and_hydrate_table()
 
           0
 
         _ ->
-          [{_id, floor_price}] = :ets.lookup(:floor_prices, id)
-          floor_price
+          :ets.lookup(:floor_prices, id) |> List.first({nil, 0.0}) |> elem(1)
       end
 
     floor_price
