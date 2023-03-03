@@ -12,6 +12,16 @@ defmodule SharkAttack.FloorWorker do
 
   @impl true
   def init(state) do
+    create_and_hydrate_table()
+
+    :timer.send_after(:timer.minutes(1), :fetch)
+
+    :timer.send_interval(:timer.minutes(5), :fetch)
+
+    {:ok, state}
+  end
+
+  def create_and_hydrate_table() do
     :ets.new(:floor_prices, [
       :named_table,
       :public,
@@ -24,12 +34,6 @@ defmodule SharkAttack.FloorWorker do
       SharkAttack.Collections.list_collections(%{sharky: "1"}) |> Enum.map(&{&1.id, 0})
 
     :ets.insert(:floor_prices, all_collections)
-
-    :timer.send_after(1, :fetch)
-
-    :timer.send_interval(300_000, :fetch)
-
-    {:ok, state}
   end
 
   @impl true
@@ -37,6 +41,22 @@ defmodule SharkAttack.FloorWorker do
     update_floor_prices()
 
     {:noreply, state}
+  end
+
+  def get_floor_price(id) do
+    floor_price =
+      case :ets.whereis(:floor_prices) do
+        :undefined ->
+          create_and_hydrate_table()
+
+          0
+
+        _ ->
+          [{_id, floor_price}] = :ets.lookup(:floor_prices, id)
+          floor_price
+      end
+
+    floor_price
   end
 
   def update_floor_prices() do

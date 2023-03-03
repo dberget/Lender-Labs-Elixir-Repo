@@ -88,8 +88,7 @@ defmodule SharkAttackWeb.ApiController do
       |> Enum.filter(&(&1["state"] == "taken"))
       |> Enum.sort_by(& &1["start"], :desc)
 
-    floor_price =
-      :ets.lookup(:floor_prices, collection.id) |> List.first({collection.id, 0.0}) |> elem(1)
+    floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
 
     conn
     |> json(%{
