@@ -6,7 +6,6 @@ defmodule SharkAttackWeb.EventController do
     event = Map.get(params, "_json") |> hd
 
     send_message(event["source"], event["type"], event)
-
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn
@@ -43,7 +42,7 @@ defmodule SharkAttackWeb.EventController do
   end
 
   def send_message("SHARKY_FI", "TAKE_LOAN", event) do
-    from = event["instructions"] |> List.last() |> Map.get("accounts") |> hd
+    from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> hd
 
     %{"nativeBalanceChange" => amount} = hd(event["accountData"])
 

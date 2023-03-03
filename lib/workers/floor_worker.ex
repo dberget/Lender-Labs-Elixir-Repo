@@ -66,8 +66,6 @@ defmodule SharkAttack.FloorWorker do
     all_collections
     |> SharkAttack.Hyperspace.get_floor_prices()
     |> Enum.each(fn {collection, %{fp: fp}} ->
-      Logger.info("Updating floor price for #{collection} to #{fp}")
-
       all_collections
       |> Enum.filter(&(&1.hyperspace_id == collection))
       |> Enum.each(fn token ->
