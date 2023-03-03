@@ -31,6 +31,7 @@ defmodule SharkAttackWeb.Router do
     get "/search_collections", ApiController, :search_collections
     get "/get_collection", ApiController, :get_collection
     get "/get_all_collection_loans", ApiController, :get_all_collection_loans
+    get "/flush_loans", ApiController, :flush_loans
 
     post "/save_nft_image", ApiController, :save_nft_image
   end

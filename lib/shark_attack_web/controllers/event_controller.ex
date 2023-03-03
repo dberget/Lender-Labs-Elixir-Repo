@@ -28,8 +28,6 @@ defmodule SharkAttackWeb.EventController do
 
       name = res |> hd |> Map.get("name")
 
-      Logger.info("Sending REPAY_LOAN message to #{user.discordId}")
-
       user.discordId
       |> SharkAttack.DiscordConsumer.create_dm_channel()
       |> SharkAttack.DiscordConsumer.send_raw_message(
@@ -58,8 +56,6 @@ defmodule SharkAttackWeb.EventController do
         )
 
       name = res |> hd |> Map.get("name")
-
-      Logger.info("Sending TAKE_LOAN message to #{user.discordId}")
 
       user.discordId
       |> SharkAttack.DiscordConsumer.create_dm_channel()

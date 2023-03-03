@@ -75,55 +75,63 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def update_loan(loan, "OFFER_LOAN") do
-    loanAddress =
-      loan
-      |> Map.get("instructions")
-      |> hd()
-      |> Map.get("accounts")
-      |> Enum.at(3)
+    loan
+    |> Map.get("nativeTransfers")
+    |> Enum.chunk_every(4)
+    |> Enum.each(fn offer ->
+      %{"toUserAccount" => loanAddress} = hd(offer)
 
-    case SharkyApi.get_loan(loanAddress) do
-      {:error, _message} ->
-        nil
+      case SharkyApi.get_loan(loanAddress) do
+        {:error, _message} ->
+          nil
 
-      loanData ->
-        :ets.insert(:loans, {loanAddress, loanData["lender"], loanData["orderBook"], loanData})
-        :ets.insert(:collection_loans, {loanData["orderBook"], loanAddress, loanData})
-    end
+        loanData ->
+          :ets.insert(:loans, {loanAddress, loanData["lender"], loanData["orderBook"], loanData})
+          :ets.insert(:collection_loans, {loanData["orderBook"], loanAddress, loanData})
+      end
+    end)
   end
 
   def update_loan(_loan, status) do
     IO.inspect(status)
-
-    # :ets.delete(:loans, loan["loan"])
   end
 
   def flush() do
+    loanData = SharkyApi.get_all_loan_data()
+
+    loans =
+      loanData
+      |> Enum.map(&{&1["loan"], &1["lender"], &1["orderBook"], &1})
+
     :ets.delete_all_objects(:loans)
+
+    :ets.insert(:loans, loans)
+
+    collection_loans =
+      loanData
+      |> Enum.map(&{&1["orderBook"], &1["loan"], &1})
+
     :ets.delete_all_objects(:collection_loans)
-
-    SharkyApi.get_all_loan_data()
-    |> Enum.each(fn loan ->
-      :ets.insert(:loans, {loan["loan"], loan["lender"], loan["orderBook"], loan})
-
-      :ets.insert(:collection_loans, {loan["orderBook"], loan["loan"], loan})
-    end)
+    :ets.insert(:collection_loans, collection_loans)
   end
 
   @impl true
   def init([]) do
     generate_tables()
 
-    # collections = SharkAttack.Collections.list_collections()
+    loanData = SharkyApi.get_all_loan_data()
 
-    SharkyApi.get_all_loan_data()
-    |> Enum.each(fn loan ->
-      :ets.insert(:loans, {loan["loan"], loan["lender"], loan["orderBook"], loan})
+    loans =
+      loanData
+      |> Enum.map(&{&1["loan"], &1["lender"], &1["orderBook"], &1})
 
-      # collection = collections.find(fn collection -> collection["sharky_address"] == loan["orderBook"] end)
+    :ets.insert(:loans, loans)
 
-      :ets.insert(:collection_loans, {loan["orderBook"], loan["loan"], loan})
-    end)
+    collection_loans =
+      loanData
+      |> Enum.map(&{&1["orderBook"], &1["loan"], &1})
+
+    :ets.insert(:collection_loans, collection_loans)
 
     {:ok, []}
   end
