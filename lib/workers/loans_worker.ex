@@ -87,7 +87,7 @@ defmodule SharkAttack.LoansWorker do
 
       case SharkyApi.get_loan(loanAddress) do
         {:error, _message} ->
-          nil
+          Logger.error("Loan not found: #{loanAddress}")
 
         loanData ->
           :ets.insert(
