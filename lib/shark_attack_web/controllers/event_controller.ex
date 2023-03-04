@@ -5,6 +5,8 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
+    IO.inspect(event)
+
     send_message(event["source"], event["type"], event)
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 

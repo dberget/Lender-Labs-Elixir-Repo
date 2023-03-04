@@ -13,26 +13,24 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def get_all_loans() do
-    :ets.match_object(:loans, {:_, :_, :_, :"$1"})
-    # :ets.tab2list(:loans)
-    # |> Enum.map(fn {_key, _lender, _orderBook, value} -> value end)
+    :ets.match_object(:collection_loans, {:_, :_, :_, :"$1"})
   end
 
   def get_lender_loans(lender, nil) do
-    :ets.match_object(:loans, {:_, lender, :_, :"$1"})
+    :ets.match_object(:collection_loans, {:_, :_, lender, :"$1"})
   end
 
   def get_lender_loans(lender, collection) do
-    :ets.match_object(:loans, {:_, lender, collection, :"$1"})
+    :ets.match_object(:collection_loans, {collection, :_, lender, :"$1"})
   end
 
   def get_collection_loans(collection) do
     :ets.lookup(:collection_loans, collection)
-    |> Enum.map(fn {_key, _loan, value} -> value end)
+    |> Enum.map(fn {_key, _loan, _lender, value} -> value end)
   end
 
   def get_all_collection_loans() do
-    :ets.match(:collection_loans, {:"$1", :_, :"$2"})
+    :ets.match(:collection_loans, {:"$1", :_, :_, :"$2"})
     |> Enum.reduce(%{}, fn [orderbook_id, loan_data], acc ->
       Map.update(acc, orderbook_id, [loan_data], fn list -> [loan_data | list] end)
     end)
@@ -67,10 +65,12 @@ defmodule SharkAttack.LoansWorker do
         nil
 
       loanData ->
-        :ets.insert(:loans, {loanAddress, loanData["lender"], loanData["orderBook"], loanData})
+        :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
 
-        :ets.match_delete(:collection_loans, {:_, loanData, :_})
-        :ets.insert_new(:collection_loans, {loanData["orderBook"], loanAddress, loanData})
+        :ets.insert(
+          :collection_loans,
+          {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
+        )
     end
   end
 
@@ -86,8 +86,10 @@ defmodule SharkAttack.LoansWorker do
           nil
 
         loanData ->
-          :ets.insert(:loans, {loanAddress, loanData["lender"], loanData["orderBook"], loanData})
-          :ets.insert(:collection_loans, {loanData["orderBook"], loanAddress, loanData})
+          :ets.insert(
+            :collection_loans,
+            {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
+          )
       end
     end)
   end
@@ -99,17 +101,9 @@ defmodule SharkAttack.LoansWorker do
   def flush() do
     loanData = SharkyApi.get_all_loan_data()
 
-    loans =
-      loanData
-      |> Enum.map(&{&1["loan"], &1["lender"], &1["orderBook"], &1})
-
-    :ets.delete_all_objects(:loans)
-
-    :ets.insert(:loans, loans)
-
     collection_loans =
       loanData
-      |> Enum.map(&{&1["orderBook"], &1["loan"], &1})
+      |> Enum.map(&{&1["orderBook"], &1["loan"], &1["lender"], &1})
 
     :ets.delete_all_objects(:collection_loans)
     :ets.insert(:collection_loans, collection_loans)
@@ -121,15 +115,9 @@ defmodule SharkAttack.LoansWorker do
 
     loanData = SharkyApi.get_all_loan_data()
 
-    loans =
-      loanData
-      |> Enum.map(&{&1["loan"], &1["lender"], &1["orderBook"], &1})
-
-    :ets.insert(:loans, loans)
-
     collection_loans =
       loanData
-      |> Enum.map(&{&1["orderBook"], &1["loan"], &1})
+      |> Enum.map(&{&1["orderBook"], &1["loan"], &1["lender"], &1})
 
     :ets.insert(:collection_loans, collection_loans)
 
@@ -138,8 +126,7 @@ defmodule SharkAttack.LoansWorker do
 
   @impl true
   def handle_cast({:delete, key}, state) do
-    :ets.delete(:loans, key)
-    :ets.match_delete(:collection_loans, {:_, key, :_})
+    :ets.match_delete(:collection_loans, {:_, key, :_, :_})
 
     {:noreply, state}
   end
@@ -150,14 +137,6 @@ defmodule SharkAttack.LoansWorker do
   end
 
   defp generate_tables() do
-    :ets.new(:loans, [
-      :set,
-      :public,
-      :named_table,
-      read_concurrency: true,
-      write_concurrency: true
-    ])
-
     :ets.new(:collection_loans, [
       :bag,
       :public,
