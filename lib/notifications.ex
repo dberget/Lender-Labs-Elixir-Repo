@@ -1,15 +1,12 @@
 defmodule SharkAttack.Notifications do
-  alias SharkAttack.SharkyApi
-
   def foreclosures() do
     users = SharkAttack.Users.list!()
 
-    all_loans =
-      SharkyApi.get_all_loans()
-      |> Enum.sort(fn a, b -> a["secondsUntilForeclosable"] < b["secondsUntilForeclosable"] end)
+    IO.inspect("FLUSH")
+    SharkAttack.LoansWorker.flush()
 
     Enum.map(users, fn user ->
-      loans = Enum.filter(all_loans, fn l -> l["lender"] == user.address end)
+      loans = SharkAttack.LoansWorker.get_lender_loans(user.address) |> Enum.map(&elem(&1, 3))
 
       Enum.map(loans, fn loan ->
         if(

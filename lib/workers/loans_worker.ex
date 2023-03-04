@@ -16,6 +16,10 @@ defmodule SharkAttack.LoansWorker do
     :ets.match_object(:collection_loans, {:_, :_, :_, :"$1"})
   end
 
+  def get_lender_loans(lender) do
+    :ets.match_object(:collection_loans, {:_, :_, lender, :"$1"})
+  end
+
   def get_lender_loans(lender, nil) do
     :ets.match_object(:collection_loans, {:_, :_, lender, :"$1"})
   end
