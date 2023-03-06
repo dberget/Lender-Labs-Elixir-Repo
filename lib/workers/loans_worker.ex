@@ -69,8 +69,6 @@ defmodule SharkAttack.LoansWorker do
         nil
 
       loanData ->
-        :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
-
         :ets.insert(
           :collection_loans,
           {loanData["orderBook"], loanAddress, loanData["lender"], loanData}

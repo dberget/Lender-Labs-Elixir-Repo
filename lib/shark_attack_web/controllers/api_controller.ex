@@ -55,8 +55,22 @@ defmodule SharkAttackWeb.ApiController do
       SharkAttack.LoansWorker.get_lender_loans(params["lender"], params["collection"])
       |> Enum.map(&elem(&1, 3))
 
-    takenLoans = Enum.filter(loans, fn l -> l["state"] == "taken" end)
-    offers = Enum.filter(loans, fn l -> l["state"] == "offered" end)
+    citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
+
+    takenLoans =
+      [
+        Enum.filter(loans, fn l -> l["state"] == "taken" end)
+        | Enum.filter(citrusLoans, fn l -> l["state"] == "active" end)
+      ]
+      |> List.flatten()
+
+    offers =
+      [
+        Enum.filter(loans, fn l -> l["state"] == "offered" end)
+        | Enum.filter(citrusLoans, fn l -> l["state"] == "waitingForBorrower" end)
+      ]
+      |> List.flatten()
+      |> Enum.sort_by(& &1["offerTime"], :desc)
 
     loanSummary = %{
       totalSolLoaned: Enum.map(takenLoans, fn l -> l["amountSol"] end) |> Enum.sum(),

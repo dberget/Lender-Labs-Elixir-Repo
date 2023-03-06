@@ -60,6 +60,12 @@ defmodule SharkAttack.SharkyApi do
     SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/#{address}")
   end
 
+  def get_lender_loans(address, "citrus") do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/citrus/#{address}")
+
+    Map.get(res, "loanData", [])
+  end
+
   def get_user_open_offers_for_order_book(user_address, order_book_address) do
     user_address
     |> get_user_open_offers()
