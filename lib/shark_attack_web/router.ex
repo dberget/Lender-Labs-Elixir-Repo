@@ -5,18 +5,13 @@ defmodule SharkAttackWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {SharkAttackWeb.LayoutView, :root}
+    plug :put_root_layout, {SharkAttackWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
 
   pipeline :api do
     plug :accepts, ["json"]
-  end
-
-  scope "/app", SharkAttackWeb do
-    get "/", WebappController, :index
-    get "/*path", WebappController, :index
   end
 
   scope "/api", SharkAttackWeb do
@@ -52,7 +47,7 @@ defmodule SharkAttackWeb.Router do
   scope "/", SharkAttackWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    get "/", PageController, :home
   end
 
   # Other scopes may use custom stacks.

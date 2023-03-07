@@ -5,9 +5,8 @@ defmodule SharkAttack.MixProject do
     [
       app: :shark_attack,
       version: "0.1.4",
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -33,15 +32,15 @@ defmodule SharkAttack.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.4"},
+      {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.6"},
       {:myxql, ">= 0.0.0"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.17.5"},
+      {:phoenix_live_view, "~> 0.18.3"},
+      {:phoenix_live_dashboard, "~> 0.7.2"},
       {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.6"},
       {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
       {:telemetry_metrics, "~> 0.6"},
@@ -59,6 +58,7 @@ defmodule SharkAttack.MixProject do
       {:sentry, "~> 8.0"},
       {:hackney, "~> 1.8"},
       {:cors_plug, "~> 3.0"},
+      {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
       {:gun, "== 2.0.1",
        [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},
       {:cowlib, "~> 2.11.1",
@@ -74,11 +74,17 @@ defmodule SharkAttack.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup"],
+      setup: ["deps.get", "ecto.setup", "cmd --cd assets npm install"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"],
+      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.build": ["tailwind default", "esbuild default"],
+      "assets.deploy": [
+        "tailwind default --minify",
+        "cmd --cd assets node build.js --deploy",
+        "phx.digest"
+      ],
       sentry_recompile: ["compile", "deps.compile sentry --force"]
     ]
   end

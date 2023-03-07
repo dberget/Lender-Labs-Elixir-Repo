@@ -24,8 +24,8 @@ config :shark_attack, SharkAttackWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "ECbwwDrJjFD/CHAsa5SF+ZHoLgg1EA1cuarmOxKP6pCtFZf0XPtQK+G9jN+W/k/u",
   watchers: [
-    # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+    node: ["build.js", "--watch", cd: Path.expand("../assets", __DIR__)],
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
 config :cors_plug,

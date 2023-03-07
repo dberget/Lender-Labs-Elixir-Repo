@@ -1,5 +1,4 @@
 defmodule SharkAttack.SharkyApi do
-  alias Phoenix.Tracker.Shard
   require Logger
 
   def get_order_books() do

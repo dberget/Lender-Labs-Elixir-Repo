@@ -24,6 +24,8 @@ defmodule SharkAttackWeb.ConnCase do
       import Phoenix.ConnTest
       import SharkAttackWeb.ConnCase
 
+      use SharkAttackWeb, :verified_routes
+
       alias SharkAttackWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing

@@ -13,7 +13,6 @@ mix assets.deploy
 mix phx.digest
 # mix sentry_recompile
 mix compile
-# mix webapp
 mix phx.gen.release
 mix release
 

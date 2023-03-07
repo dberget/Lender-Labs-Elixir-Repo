@@ -21,7 +21,7 @@ defmodule SharkAttackWeb.Endpoint do
     at: "/",
     from: :shark_attack,
     gzip: false,
-    only: ~w(assets fonts images webapp favicon.ico robots.txt)
+    only: SharkAttackWeb.static_paths()
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
