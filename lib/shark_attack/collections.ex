@@ -36,6 +36,7 @@ defmodule SharkAttack.Collections do
   def get_collection(address) do
     query =
       from c in Collection,
+        select: %{c | nfts: []},
         where: c.sharky_address == ^address,
         or_where: c.foxy_address == ^address,
         or_where: c.frakt_address == ^address
@@ -54,7 +55,10 @@ defmodule SharkAttack.Collections do
   end
 
   def search_collection_by_name(name) do
-    query = from c in Collection, where: like(c.name, ^"%#{name}%")
+    query =
+      from c in Collection,
+        select: map(c, [:name, :sharky_address]),
+        where: like(c.name, ^"%#{name}%")
 
     Repo.all(query)
   end
