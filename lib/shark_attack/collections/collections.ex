@@ -16,8 +16,7 @@ defmodule SharkAttack.Collections.Collection do
              :duration,
              :apy,
              :offers,
-             :fp,
-             :nfts
+             :fp
            ]}
   schema "collections" do
     field(:name, :string)
