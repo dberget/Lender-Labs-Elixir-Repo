@@ -18,6 +18,17 @@ defmodule SharkAttack.Collections do
     Repo.all(Collection)
   end
 
+  def get_collections_from_mint_list(mint_list) do
+    query =
+      from c in Collection,
+        join: n in Nft,
+        on: c.id == n.collection_id,
+        where: n.mint in ^mint_list,
+        preload: [nfts: n]
+
+    Repo.all(query)
+  end
+
   def get_collection(id) when is_integer(id) do
     Repo.get(Collection, id)
   end

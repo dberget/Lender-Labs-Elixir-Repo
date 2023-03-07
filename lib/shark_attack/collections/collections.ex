@@ -16,7 +16,8 @@ defmodule SharkAttack.Collections.Collection do
              :duration,
              :apy,
              :offers,
-             :fp
+             :fp,
+             :nfts
            ]}
   schema "collections" do
     field(:name, :string)
@@ -35,6 +36,7 @@ defmodule SharkAttack.Collections.Collection do
     field(:offers, :map, virtual: true)
     field(:fp, :integer, virtual: true)
 
+    has_many :nfts, SharkAttack.Collections.Nft
     timestamps()
   end
 

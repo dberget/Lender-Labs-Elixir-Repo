@@ -40,7 +40,7 @@ defmodule SharkAttackWeb.ApiController do
     loans = SharkAttack.LoansWorker.get_all_loans()
 
     conn
-    |> json(%{data: loans})
+    |> json(loans)
   end
 
   def get_all_collection_loans(conn, _params) do
@@ -116,13 +116,13 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_collection_offers(conn, params) do
-    loans =
+    offers =
       SharkAttack.LoansWorker.get_collection_loans(params["collection"])
       |> Enum.filter(&(&1["state"] == "offered"))
       |> Enum.sort_by(& &1["amountSol"], :desc)
 
     conn
-    |> json(%{data: loans})
+    |> json(offers)
   end
 
   def get_orderbooks(conn, _params) do
@@ -230,6 +230,26 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(collections)
+  end
+
+  def get_borrower_collections(conn, params) do
+    mints =
+      params["borrower"]
+      |> SharkAttack.Solana.get_user_token_mints()
+
+    collections =
+      mints
+      |> SharkAttack.Collections.get_collections_from_mint_list()
+
+    %{"indexes" => indexes} = SharkAttack.SharkyApi.get_sharky_indexes(mints)
+
+    conn |> json(%{collections: collections, indexes: indexes})
+  end
+
+  def get_sharky_indexes(conn, params) do
+    res = SharkAttack.SharkyApi.get_sharky_indexes(params["mints"])
+
+    conn |> json(res)
   end
 
   def save_nft_image(conn, params) do

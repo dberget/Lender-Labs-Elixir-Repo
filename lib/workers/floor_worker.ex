@@ -14,9 +14,9 @@ defmodule SharkAttack.FloorWorker do
   def init(state) do
     create_and_hydrate_table()
 
-    :timer.send_after(:timer.seconds(30), :fetch)
+    :timer.send_after(:timer.seconds(1), :fetch)
 
-    :timer.send_interval(:timer.minutes(5), :fetch)
+    :timer.send_interval(:timer.minutes(15), :fetch)
 
     {:ok, state}
   end

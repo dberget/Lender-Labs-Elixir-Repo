@@ -2,6 +2,12 @@ defmodule SharkAttack.Collections.Nft do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder,
+           only: [
+             :mint,
+             :image,
+             :name
+           ]}
   schema "nfts" do
     field :mint, :string
     field :image, :string

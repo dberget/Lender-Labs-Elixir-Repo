@@ -2,7 +2,6 @@ defmodule SharkAttack.Notifications do
   def foreclosures() do
     users = SharkAttack.Users.list!()
 
-    IO.inspect("FLUSH")
     SharkAttack.LoansWorker.flush()
 
     Enum.map(users, fn user ->

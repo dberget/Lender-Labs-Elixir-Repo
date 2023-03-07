@@ -105,6 +105,48 @@ defmodule SharkAttack.Solana do
     get_in(res, ["result", "value", "amount"])
   end
 
+  def get_user_token_mints(wallet) do
+    params = get_token_accounts_request(wallet)
+
+    res = do_post_request(@rpc_url, params)
+
+    res["result"]
+    |> Enum.map(fn x ->
+      get_in(x, ["account", "data", "parsed", "info", "mint"])
+    end)
+  end
+
+  def get_token_accounts(wallet) do
+    params = get_token_accounts_request(wallet)
+
+    do_post_request(@rpc_url, params)
+  end
+
+  def get_token_accounts_request(wallet) do
+    %{
+      "jsonrpc" => "2.0",
+      "id" => 1,
+      "method" => "getProgramAccounts",
+      "params" => [
+        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        %{
+          "encoding" => "jsonParsed",
+          "filters" => [
+            %{
+              "dataSize" => 165
+            },
+            %{
+              "memcmp" => %{
+                "offset" => 32,
+                "bytes" => wallet
+              }
+            }
+          ]
+        }
+      ]
+    }
+  end
+
   def get_program_accounts(programId, bytes, size) do
     params = get_program_account_request(programId, bytes, size)
 

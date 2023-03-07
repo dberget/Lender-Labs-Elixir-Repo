@@ -14,6 +14,11 @@ defmodule SharkAttackWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/app", SharkAttackWeb do
+    get "/", WebappController, :index
+    get "/*path", WebappController, :index
+  end
+
   scope "/api", SharkAttackWeb do
     pipe_through :api
 
@@ -32,7 +37,9 @@ defmodule SharkAttackWeb.Router do
     get "/get_collection", ApiController, :get_collection
     get "/get_all_collection_loans", ApiController, :get_all_collection_loans
     get "/flush_loans", ApiController, :flush_loans
+    get "/get_borrower_collections", ApiController, :get_borrower_collections
 
+    post "/get_sharky_indexes", ApiController, :get_sharky_indexes
     post "/save_nft_image", ApiController, :save_nft_image
   end
 

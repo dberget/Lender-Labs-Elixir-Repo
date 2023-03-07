@@ -1,4 +1,5 @@
 defmodule SharkAttack.SharkyApi do
+  alias Phoenix.Tracker.Shard
   require Logger
 
   def get_order_books() do
@@ -11,6 +12,14 @@ defmodule SharkAttack.SharkyApi do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/rawlist")
 
     Map.get(res, "orderBooks", []) |> Enum.filter(fn x -> x["name"] !== nil end)
+  end
+
+  def get_sharky_indexes(mints) do
+    res =
+      SharkAttack.Helpers.do_post_request(
+        "https://sharky-backend.herokuapp.com/nft-list/check-mints?network=mainnet&deployEnvironment=production",
+        %{"mints" => mints}
+      )
   end
 
   def get_all_loans() do

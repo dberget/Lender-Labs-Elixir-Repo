@@ -13,7 +13,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def get_all_loans() do
-    :ets.match_object(:collection_loans, {:_, :_, :_, :"$1"})
+    :ets.match(:collection_loans, {:_, :_, :_, :"$1"}) |> List.flatten()
   end
 
   def get_lender_loans(lender) do
@@ -119,7 +119,7 @@ defmodule SharkAttack.LoansWorker do
 
     collection_loans =
       loanData
-      |> Enum.map(&{&1["orderBook"], &1["loan"], &1["lender"], &1})
+      |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
 
     :ets.insert(:collection_loans, collection_loans)
 
