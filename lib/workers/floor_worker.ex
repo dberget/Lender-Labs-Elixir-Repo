@@ -16,7 +16,7 @@ defmodule SharkAttack.FloorWorker do
 
     :timer.send_after(:timer.seconds(1), :fetch)
 
-    :timer.send_interval(:timer.minutes(15), :fetch)
+    :timer.send_interval(:timer.minutes(5), :fetch)
 
     {:ok, state}
   end
