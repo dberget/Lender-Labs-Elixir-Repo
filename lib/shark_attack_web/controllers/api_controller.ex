@@ -109,6 +109,7 @@ defmodule SharkAttackWeb.ApiController do
       collection: %{
         collection
         | fp: floor_price,
+          nfts: [],
           offers: offers,
           loans: loans
       }
