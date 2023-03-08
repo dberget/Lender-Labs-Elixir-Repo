@@ -1,63 +1,140 @@
 const esbuild = require("esbuild");
 
-const NodeGlobalsPolyfillPlugin = require("@esbuild-plugins/node-globals-polyfill").NodeGlobalsPolyfillPlugin;
+const stdLibBrowser = require("node-stdlib-browser");
+const plugin = require("node-stdlib-browser/helpers/esbuild/plugin");
 
-const NodeModulesPolyfillPlugin =
-  require("@esbuild-plugins/node-modules-polyfill").NodeModulesPolyfillPlugin;
+const outdirectory = "../priv/static/assets";
 
 const args = process.argv.slice(2);
+
 const watch = args.includes("--watch");
 const deploy = args.includes("--deploy");
 
-const loader = {};
+async function dev() {
+  console.log("Building development bundle ⏳");
 
-const plugins = [
-  NodeModulesPolyfillPlugin(),
-  NodeGlobalsPolyfillPlugin({
-    process: true,
-    buffer: true,
-    crypto: true,
-    assert: true,
-    zlib: true,
-    path: true,
-    define: {
-      global: 'globalThis'
-  },
-  }),
-];
-
-let opts = {
-  entryPoints: ["js/app.jsx"],
-  bundle: true,
-  target: "esnext",
-  outdir: "../priv/static/assets",
-  logLevel: "info",
-  loader,
-  plugins,
-};
-
-if (watch) {
-  opts = {
-    ...opts,
+  const ctx = await esbuild.context({
+    entryPoints: ["js/app.jsx"],
+    outdir: outdirectory,
     sourcemap: "inline",
-  };
-}
-
-if (deploy) {
-  opts = {
-    ...opts,
-    minify: true,
-  };
-}
-
-const promise = esbuild.context(opts);
-
-if (watch) {
-  promise.then((result) => {
-    process.stdin.on("close", () => {
-      process.exit(0);
-    });
-
-    result.watch();
+    bundle: true,
+    define: {
+      "process.env.NODE_ENV": '"development"',
+      global: "global",
+      process: "process",
+      Buffer: "Buffer",
+    },
+    minify: false,
+    inject: [require.resolve("node-stdlib-browser/helpers/esbuild/shim")],
+    plugins: [plugin(stdLibBrowser)],
+    loader: {
+      ".js": "jsx",
+    },
   });
+
+  console.log("Development bundle built ✅");
+
+  ctx.watch();
 }
+
+async function prod() {
+  console.log("Build started ⏳");
+
+  await esbuild.build({
+    entryPoints: ["./js/app.jsx"],
+    outdir: outdirectory,
+    bundle: true,
+    define: {
+      "process.env.NODE_ENV": '"production"',
+      global: "global",
+      process: "process",
+      Buffer: "Buffer",
+    },
+    minify: true,
+    inject: [require.resolve("node-stdlib-browser/helpers/esbuild/shim")],
+    plugins: [plugin(stdLibBrowser)],
+    loader: {
+      ".js": "jsx",
+    },
+  });
+
+  console.log("Build completed ✅");
+
+  //   promise.then((result) => {
+  //     process.stdin.on("close", () => {
+  //       process.exit(0);
+  //     });
+
+  //     result.watch();
+  //   });
+}
+
+//defaults to build
+let config = "-build";
+if (process.argv.length > 2) {
+  config = process.argv[2];
+}
+
+// Builds the bundle for dvelopment and runs a local web server
+// with livereload when -watch is set
+watch && dev();
+
+// Builds optimized bundle for production
+deploy && prod();
+
+// const loader = {};
+
+// const plugins = [
+//   NodeModulesPolyfillPlugin(),
+//   NodeGlobalsPolyfillPlugin({
+//     process: true,
+//     buffer: true,
+//     path: true,
+//     define: {
+//       "process.env.NODE_ENV": '"development"',
+//       global: "global",
+//       process: "process",
+//       Buffer: "Buffer",
+//     },
+//   }),
+// ];
+
+// let opts = {
+//   entryPoints: ["js/app.jsx"],
+//   bundle: true,
+//   target: "esnext",
+//   outdir: "../priv/static/assets",
+//   logLevel: "info",
+//   loader,
+//   plugins,
+// };
+
+// if (watch) {
+//   opts = {
+//     ...opts,
+//     sourcemap: "inline",
+//   };
+// }
+
+// if (deploy) {
+//   opts = {
+//     ...opts,
+//     minify: true,
+//   };
+// }
+
+// if (watch) {
+//   const promise = esbuild.context(opts);
+
+//   promise.then((result) => {
+//     process.stdin.on("close", () => {
+//       process.exit(0);
+//     });
+
+//     result.watch();
+//   });
+// }
+
+// if (deploy) {
+//   esbuild.build(opts);
+// }

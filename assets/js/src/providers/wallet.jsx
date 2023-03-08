@@ -1,15 +1,18 @@
+import * as React from "react";
+
 import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
+
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
   LedgerWalletAdapter,
   SlopeWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import React, { useMemo } from "react";
 
 const WalletContext = ({ children }) => {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
@@ -17,13 +20,13 @@ const WalletContext = ({ children }) => {
 
   // You can also provide a custom RPC endpoint.
   // @ts-ignore
-  const endpoint = useMemo(
+  const endpoint = React.useMemo(
     () =>
       "https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
     []
   );
 
-  const wallets = useMemo(
+  const wallets = React.useMemo(
     () => [
       /**
        * Wallets that implement either of these standards will be available automatically.

@@ -41,7 +41,6 @@ defmodule SharkAttack.MixProject do
       {:phoenix_live_view, "~> 0.18.3"},
       {:phoenix_live_dashboard, "~> 0.7.2"},
       {:floki, ">= 0.30.0", only: :test},
-      {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
@@ -78,11 +77,11 @@ defmodule SharkAttack.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind default", "esbuild default"],
+      "assets.setup": ["tailwind.install --if-missing"],
+      "assets.build": ["tailwind default"],
       "assets.deploy": [
-        "tailwind default --minify",
-        "cmd --cd assets node build.js --deploy",
+        # "cmd --cd assets node build.js --deploy",
+        # "tailwind default --minify",
         "phx.digest"
       ],
       sentry_recompile: ["compile", "deps.compile sentry --force"]

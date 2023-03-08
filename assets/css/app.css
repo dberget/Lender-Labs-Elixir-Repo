@@ -2,8 +2,7 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-@import "@solana/wallet-adapter-react-ui/styles.css";
-
+@import "./wallet-adapter-styles.css";
 /* This file is for your main application CSS */
 
 html {
@@ -25,7 +24,6 @@ html {
   
   a {
     font-weight: 500;
-    color: #58BC98;
     text-decoration: inherit;
   }
   

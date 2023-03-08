@@ -48,15 +48,15 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.13.5",
-  default: [
-    args:
-      ~w(js/app.jsx --bundle --target=esnext --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
+# # Configure esbuild (the version is required)
+# config :esbuild,
+#   version: "0.13.5",
+#   default: [
+#     args:
+#       ~w(js/app.jsx --bundle --target=esnext --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+#     cd: Path.expand("../assets", __DIR__),
+#     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+#   ]
 
 config :shark_attack, SharkAttack.Vault,
   ciphers: [

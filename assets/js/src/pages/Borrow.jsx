@@ -6,55 +6,49 @@ import {
 } from "@solana/wallet-adapter-react";
 import BN from "bn.js";
 
-// import sharky, { aprToInterestRatio, apyToApr } from "@sharkyfi/client";
-import { createLoansService } from "@frakt-protocol/frakt-sdk/lib/loans/loansService";
+import sharky from "@sharkyfi/client";
+import { getSharkyInterest } from "../utils/sharky";
 import { Rain } from "@rainfi/sdk";
-import { CitrusSdk } from "@famousfoxfederation/citrus-sdk";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
 
 import { useBorrower } from "../providers/useBorrower";
+import { useFrakt } from "../hooks/useFrakt";
+import { useCitrus } from "../hooks/useCitrus";
+
+import { CitrusModal } from "../components/CitrusModal";
+import { SharkyModal } from "../components/SharkyModal";
+
 import useSwr from "swr";
 
 import { useModal } from "react-hooks-use-modal";
 
 const initSharkyClient = (connection, wallet) => {
-  // let provider = sharky.createProvider(connection, wallet);
-  // const sharkyClient = sharky.createSharkyClient(provider);
-  // return sharkyClient;
+  let provider = sharky.createProvider(connection, wallet);
+  const sharkyClient = sharky.createSharkyClient(provider);
+  return sharkyClient;
 };
 
 export function Borrow() {
   const wallet = useAnchorWallet();
   const { publicKey } = useWallet();
   const { connection } = useConnection();
-  const [fraktNfts, setFraktNfts] = React.useState(null);
   const [rainPools, setRainPools] = React.useState([]);
+  const metaplex = new Metaplex(connection);
+
+  const { nfts: fraktNfts } = useFrakt();
 
   const { data } = useBorrower();
 
-  // const sharkyClient = React.useMemo(
-  //   () => initSharkyClient(connection, wallet),
-  //   [connection, wallet]
-  // );
+  const sharkyClient = React.useMemo(
+    () => initSharkyClient(connection, wallet),
+    [connection, wallet]
+  );
 
   const rain = React.useMemo(
     () => new Rain(connection, publicKey),
     [publicKey]
   );
-
-  const citrusSdk = React.useMemo(
-    () => new CitrusSdk(wallet, connection),
-    [wallet]
-  );
-
-  const { fetchBulkSuggestion, proposeLoan, proposeLoans, fetchWalletNfts } =
-    React.useMemo(() =>
-      createLoansService({
-        apiDomain: "api.frakt.xyz",
-        programPublicKey: "A66HabVL3DzNzeJgcHYtRRNW1ZRMKwBfrdSR4kLsZ9DJ",
-        adminPublicKey: "9aTtUqAnuSMndCpjcPosRNf3fCkrTQAV8C8GERf3tZi3",
-      })
-    );
 
   React.useEffect(() => {
     if (publicKey) {
@@ -63,19 +57,13 @@ export function Borrow() {
   }, [publicKey]);
 
   const getMintsCollection = async () => {
-    const borrowNfts = await fetchWalletNfts({
-      walletPublicKey: publicKey,
-    });
-
-    setFraktNfts(borrowNfts);
-
     const pools = await rain.utils.getAllPools(connection);
 
     setRainPools(pools);
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full md:w-5/6 mx-auto justify-items-center pb-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
       {fraktNfts &&
         data?.collections?.map((collection) => {
           let fraktMatches = fraktNfts.filter((offer) =>
@@ -87,11 +75,12 @@ export function Borrow() {
               key={collection.id}
               collection={collection}
               rain={rain}
-              citrusSdk={citrusSdk}
+              sharkyIndexes={data?.indexes}
               fraktNfts={fraktNfts}
-              // sharkyClient={sharkyClient}
+              sharkyClient={sharkyClient}
               rainPools={rainPools}
               fraktOffers={fraktMatches}
+              metaplex={metaplex}
             />
           );
         })}
@@ -102,17 +91,23 @@ export function Borrow() {
 const CollectionCard = ({
   collection,
   rain,
-  citrusSdk,
-  // sharkyClient,
+  metaplex,
   rainPools,
   fraktOffers,
+  sharkyIndexes,
 }) => {
   const { connection } = useConnection();
+
+  const { offers: citrusOffers, getInterest } = useCitrus(
+    collection?.foxy_address
+  );
+
   const [rainFiCollection, setRainFiCollection] = React.useState(null);
+
   const [rainPoolsWithCollection, setRainPoolsWithCollection] =
     React.useState(null);
-  const [foxyOffers, setFoxyOffers] = React.useState([]);
-  const [selectdPlatform, setSelectedPlatform] = React.useState(null);
+
+  const [selectdPlatform, setSelectedPlatform] = React.useState("");
 
   const [Modal, open, close, isOpen] = useModal("app");
 
@@ -124,22 +119,10 @@ const CollectionCard = ({
 
   const { data: sharkyOffers } = useSwr(
     collection?.sharky_address
-      ? `http://localhost:4000/api/get_collection_offers?collection=${collection?.sharky_address}`
+      ? `/api/get_collection_offers?collection=${collection?.sharky_address}`
       : null,
     (...args) => fetch(...args, {}).then((res) => res.json())
   );
-
-  const getCitrusLoans = async () => {
-    let loans = await citrusSdk.fetchCollectionLoans(
-      new PublicKey(collection.foxy_address)
-    );
-
-    let offers = loans
-      .filter((l) => l.status == "waitingForBorrower")
-      .sort((a, b) => b.terms.principal - a.terms.principal);
-
-    setFoxyOffers(offers);
-  };
 
   const getRainCollection = async (rain_fi_id) => {
     let rain_collection = await rain.utils.getCollection(
@@ -177,10 +160,6 @@ const CollectionCard = ({
     if (collection?.rain_fi_id && rainPools.length > 0) {
       getRainCollection(collection?.rain_fi_id);
     }
-
-    if (collection?.foxy_address) {
-      getCitrusLoans();
-    }
   }, [collection, rainPools]);
 
   const calculateRainInterest = (pool) => {
@@ -200,15 +179,6 @@ const CollectionCard = ({
     return (interestLamports / LAMPORTS_PER_SOL).toFixed(2);
   };
 
-  // const getSharkyInterest = (offer) => {
-  //   const amount =
-  //     aprToInterestRatio(apyToApr(collection.apy), collection.duration) *
-  //     offer["amountSol"];
-
-  //   // Amount plus fee
-  //   return (amount + amount * 0.16).toFixed(2);
-  // };
-
   return (
     <div className="bg-[#28292B] p-4 my-2 w-full rounded flex">
       <div className="">
@@ -226,7 +196,11 @@ const CollectionCard = ({
               open={() => setOpen("SHARKY")}
               amount={sharkyOffers[0]["amountSol"]}
               duration={collection.duration / 60 / 60 / 24}
-              // interest={getSharkyInterest(sharkyOffers[0])}
+              interest={getSharkyInterest(
+                collection?.apy,
+                collection?.duration,
+                sharkyOffers[0]["amountSol"]
+              ).toFixed(2)}
             >
               <img className="w-8" src={"/images/sharky.png"} />
             </OfferDetailsBox>
@@ -259,19 +233,13 @@ const CollectionCard = ({
               />
             </OfferDetailsBox>
           )}
-          {foxyOffers.length > 0 && (
+          {citrusOffers.length > 0 && (
             <OfferDetailsBox
               className="cursor-pointer"
               open={() => setOpen("CITRUS")}
-              amount={foxyOffers[0].terms?.principal / LAMPORTS_PER_SOL}
-              duration={foxyOffers[0].terms?.duration / 60 / 60 / 24}
-              interest={(
-                citrusSdk.calculateInterest({
-                  duration: foxyOffers[0].terms?.duration / 3600 / 24,
-                  apy: foxyOffers[0].terms?.apy / 100,
-                  principal: foxyOffers[0].terms?.principal / LAMPORTS_PER_SOL,
-                }) / LAMPORTS_PER_SOL
-              ).toFixed(2)}
+              amount={citrusOffers[0].terms?.principal / LAMPORTS_PER_SOL}
+              duration={citrusOffers[0].terms?.duration / 60 / 60 / 24}
+              interest={getInterest(citrusOffers[0]).toFixed(2)}
             >
               <img
                 className="w-8"
@@ -285,13 +253,16 @@ const CollectionCard = ({
       <ModalViewer
         frakt={fraktOffers}
         sharky={sharkyOffers}
-        foxy={foxyOffers}
+        foxy={citrusOffers}
+        sharkyIndexes={sharkyIndexes}
         rainPools={rainPoolsWithCollection}
         Modal={Modal}
         platform={selectdPlatform}
         open={open}
+        isOpen={isOpen}
         collection={collection}
         close={close}
+        metaplex={metaplex}
       />
     </div>
   );
@@ -302,10 +273,14 @@ const ModalViewer = ({
   rainPools,
   frakt,
   platform,
+  open,
   close,
+  isOpen,
   collection,
   sharky,
   Modal,
+  metaplex,
+  sharkyIndexes,
 }) => {
   const offerMap = {
     FRAKT: frakt,
@@ -314,17 +289,62 @@ const ModalViewer = ({
     RAIN: rainPools,
   };
 
-  const offers = offerMap[platform];
+  const ModalViewMap = {
+    // FRAKT: <FraktModal />,
+    SHARKY: (props) => <SharkyModal sharkyIndexes={sharkyIndexes} {...props} />,
+    CITRUS: (props) => <CitrusModal {...props} />,
+    // RAIN: <RainModal />,
+    "": () => null,
+  };
+  const offers = offerMap[platform] || [];
+  const ModalView = ModalViewMap[platform] || null;
+
+  const [selectedOffer, setSelectedOffer] = React.useState(null);
+
+  const [nfts, setNfts] = React.useState([]);
+  const [selectedIndex, setSelectedNftIndex] = React.useState(0);
+  const [selectedNft, setSelectedNft] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    metaplex
+      .nfts()
+      .findAllByMintList({
+        mints: collection.nfts.map((nft) => new PublicKey(nft.mint)),
+      })
+      .then((nfts) => {
+        setNfts(nfts);
+        setSelectedOffer(offers[0]);
+      });
+  }, [collection, isOpen]);
+
+  const getNft = async (index) => {
+    const nft = await metaplex.nfts().load({ metadata: nfts[index] });
+
+    setSelectedNft(nft);
+  };
+
+  React.useEffect(() => {
+    if (!nfts.length) return;
+
+    if (isOpen) {
+      getNft(selectedIndex);
+    }
+  }, [selectedIndex, isOpen, nfts]);
 
   return (
     <Modal>
-      <div className="p-4" style={{ background: "#242424", width: 800 }}>
-        <h4 className="text-bold">
-          {platform} {collection?.name}
-        </h4>
-
-        <button onClick={() => close()}>Close</button>
-      </div>
+      <ModalView
+        selectedNft={selectedNft}
+        close={close}
+        setSelectedNft={setSelectedNft}
+        setSelectedNftIndex={setSelectedNftIndex}
+        offers={offers}
+        selectedOffer={selectedOffer}
+        setSelectedOffer={setSelectedOffer}
+        collection={collection}
+      />
     </Modal>
   );
 };
