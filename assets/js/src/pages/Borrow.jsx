@@ -4,11 +4,9 @@ import {
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-import BN from "bn.js";
 
 import sharky from "@sharkyfi/client";
 import { getSharkyInterest } from "../utils/sharky";
-import { Rain } from "@rainfi/sdk";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
 
@@ -19,10 +17,12 @@ import { useCitrus } from "../hooks/useCitrus";
 import { CitrusModal } from "../components/CitrusModal";
 import { SharkyModal } from "../components/SharkyModal";
 import { FraktModal } from "../components/FraktModal";
+import { RainModal } from "../components/RainModal";
 
 import useSwr from "swr";
 
 import { useModal } from "react-hooks-use-modal";
+import { useRain } from "../hooks/useRain";
 
 const initSharkyClient = (connection, wallet) => {
   let provider = sharky.createProvider(connection, wallet);
@@ -34,7 +34,6 @@ export function Borrow() {
   const wallet = useAnchorWallet();
   const { publicKey } = useWallet();
   const { connection } = useConnection();
-  const [rainPools, setRainPools] = React.useState([]);
   const metaplex = new Metaplex(connection);
 
   const { nfts: fraktNfts } = useFrakt();
@@ -45,23 +44,6 @@ export function Borrow() {
     () => initSharkyClient(connection, wallet),
     [connection, wallet]
   );
-
-  const rain = React.useMemo(
-    () => new Rain(connection, publicKey),
-    [publicKey]
-  );
-
-  React.useEffect(() => {
-    if (publicKey) {
-      getMintsCollection();
-    }
-  }, [publicKey]);
-
-  const getMintsCollection = async () => {
-    const pools = await rain.utils.getAllPools(connection);
-
-    setRainPools(pools);
-  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
@@ -75,11 +57,9 @@ export function Borrow() {
             <CollectionCard
               key={collection.id}
               collection={collection}
-              rain={rain}
               sharkyIndexes={data?.indexes}
               fraktNfts={fraktNfts}
               sharkyClient={sharkyClient}
-              rainPools={rainPools}
               fraktOffers={fraktMatches}
               metaplex={metaplex}
             />
@@ -91,9 +71,7 @@ export function Borrow() {
 
 const CollectionCard = ({
   collection,
-  rain,
   metaplex,
-  rainPools,
   fraktOffers,
   sharkyIndexes,
 }) => {
@@ -103,10 +81,9 @@ const CollectionCard = ({
     collection?.foxy_address
   );
 
-  const [rainFiCollection, setRainFiCollection] = React.useState(null);
-
-  const [rainPoolsWithCollection, setRainPoolsWithCollection] =
-    React.useState(null);
+  const { rainPoolsWithCollection, getInterest: getRainInterest } = useRain(
+    collection?.rain_fi_id
+  );
 
   const [selectdPlatform, setSelectedPlatform] = React.useState("");
 
@@ -124,61 +101,6 @@ const CollectionCard = ({
       : null,
     (...args) => fetch(...args, {}).then((res) => res.json())
   );
-
-  const getRainCollection = async (rain_fi_id) => {
-    let rain_collection = await rain.utils.getCollection(
-      connection,
-      rain_fi_id
-    );
-
-    setRainFiCollection(rain_collection);
-
-    let rainPoolsWithCollection = rainPools
-      .map((pool) => {
-        let collection = pool.collections.find(
-          (collection) => collection.collection == rain_fi_id
-        );
-
-        if (!collection) return null;
-
-        return {
-          ...pool,
-          loanToValue: collection?.collectionLtv,
-          floorPrice: rain_collection?.floorPrice,
-          loanAmount:
-            ((collection?.collectionLtv / 10000) *
-              rain_collection?.floorPrice) /
-            LAMPORTS_PER_SOL,
-        };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.loanToValue - a.loanToValue);
-
-    setRainPoolsWithCollection(rainPoolsWithCollection);
-  };
-
-  React.useEffect(() => {
-    if (collection?.rain_fi_id && rainPools.length > 0) {
-      getRainCollection(collection?.rain_fi_id);
-    }
-  }, [collection, rainPools]);
-
-  const calculateRainInterest = (pool) => {
-    const { interestLamports, interestPercentage, rainFees } =
-      rain.utils.computeInterest(
-        new BN(pool.loanAmount * LAMPORTS_PER_SOL),
-        pool.loanCurve.maxDuration / 60 / 60 / 24,
-        pool.loanCurve.interestRate,
-        new BN(pool.totalAmount),
-        new BN(pool.borrowedAmount),
-        pool.loanCurve?.baseInterest,
-        pool.loanCurve?.maxDuration / 60 / 60 / 24,
-        pool.loanCurve?.curveRate,
-        pool.loanCurve?.curveRateDay
-      );
-
-    return (interestLamports / LAMPORTS_PER_SOL).toFixed(2);
-  };
 
   return (
     <div className="bg-[#28292B] p-4 my-2 w-full rounded flex">
@@ -211,7 +133,7 @@ const CollectionCard = ({
             <OfferDetailsBox
               open={() => setOpen("RAIN")}
               amount={rainPoolsWithCollection[0].loanAmount.toFixed(2)}
-              interest={calculateRainInterest(rainPoolsWithCollection[0])}
+              interest={getRainInterest(rainPoolsWithCollection[0]).toFixed(2)}
               duration={
                 rainPoolsWithCollection[0].loanCurve.maxDuration / 60 / 60 / 24
               }
@@ -294,7 +216,7 @@ const ModalViewer = ({
     FRAKT: (props) => <FraktModal {...props} />,
     SHARKY: (props) => <SharkyModal sharkyIndexes={sharkyIndexes} {...props} />,
     CITRUS: (props) => <CitrusModal {...props} />,
-    // RAIN: <RainModal />,
+    RAIN: (props) => <RainModal {...props} />,
     "": () => null,
   };
   const offers = offerMap[platform] || [];
