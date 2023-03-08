@@ -1,5 +1,4 @@
 import React from "react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useCitrus } from "../hooks/useCitrus";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { SolIcon } from "./SolIcon";
@@ -11,11 +10,21 @@ export const CitrusModal = ({
   setSelectedOffer,
   collection,
   close,
+  selectedIndex,
+  setSelectedNftIndex,
+  nfts,
 }) => {
-  const wallet = useAnchorWallet();
-  const { connection } = useConnection();
-
   const { takeLoan, getInterest } = useCitrus(collection?.foxy_address);
+
+  const handleUpdateIndex = () => {
+    if (selectedIndex === nfts.length - 1) {
+      setSelectedNftIndex(0);
+
+      return;
+    }
+
+    setSelectedNftIndex(selectedIndex + 1);
+  };
 
   return (
     <div
@@ -23,9 +32,22 @@ export const CitrusModal = ({
       style={{ background: "#242424", width: 800 }}
     >
       <div className="flex flex-col items-center w-1/3">
-        <h4 className="text-bold">{collection?.name}</h4>
+        <div className="text-center">
+          <span className="font-bold"> {collection?.name}</span>{" "}
+          <div>{selectedNft?.name}</div>
+        </div>
 
-        <img className="w-32 my-2" src={selectedNft?.json?.image} />
+        <img
+          style={{ minHeight: 128 }}
+          className="w-32 my-2"
+          src={selectedNft?.json?.image}
+        />
+        {nfts.length > 1 && (
+          <img
+            onClick={() => handleUpdateIndex()}
+            className="hero-arrow-right-solid cursor-pointer p-4"
+          />
+        )}
 
         <div className="mt-auto">
           <button
@@ -40,33 +62,38 @@ export const CitrusModal = ({
         </div>
       </div>
 
-      <div className="flex w-1/4">
-        {selectedOffer && (
-          <div>
+      <div className="w-1/4 text-center">
+        <h4 className="font-bold pb-2">Loan Overview</h4>
+        <div className="">
+          {selectedOffer && (
             <div>
-              You Get:{" "}
-              <span className="font-bold">
-                {selectedOffer?.terms.principal / LAMPORTS_PER_SOL}
-              </span>
-            </div>
+              <div>
+                You Get:{" "}
+                <span className="font-bold">
+                  {selectedOffer?.terms?.principal / LAMPORTS_PER_SOL}{" "}
+                  <SolIcon />
+                </span>
+              </div>
 
-            <div>
-              You'll Owe:{" "}
-              <span className="font-bold">
-                {(
-                  selectedOffer?.terms?.principal / LAMPORTS_PER_SOL +
-                  getInterest(selectedOffer)
-                ).toFixed(3)}
-              </span>
+              <div>
+                You'll Owe:{" "}
+                <span className="font-bold">
+                  {(
+                    selectedOffer?.terms?.principal / LAMPORTS_PER_SOL +
+                    getInterest(selectedOffer)
+                  ).toFixed(3)}{" "}
+                  <SolIcon />
+                </span>
+              </div>
+              <div>
+                Due In:{" "}
+                <span className="font-bold">
+                  {selectedOffer?.terms?.duration / 60 / 60 / 24 + " days"}
+                </span>
+              </div>
             </div>
-            <div>
-              Due In:{" "}
-              <span className="font-bold">
-                {selectedOffer?.terms?.duration / 60 / 60 / 24 + " days"}
-              </span>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="overflow-scroll h-48 w-1/3 text-center">

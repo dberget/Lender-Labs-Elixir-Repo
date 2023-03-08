@@ -18,6 +18,7 @@ import { useCitrus } from "../hooks/useCitrus";
 
 import { CitrusModal } from "../components/CitrusModal";
 import { SharkyModal } from "../components/SharkyModal";
+import { FraktModal } from "../components/FraktModal";
 
 import useSwr from "swr";
 
@@ -290,7 +291,7 @@ const ModalViewer = ({
   };
 
   const ModalViewMap = {
-    // FRAKT: <FraktModal />,
+    FRAKT: (props) => <FraktModal {...props} />,
     SHARKY: (props) => <SharkyModal sharkyIndexes={sharkyIndexes} {...props} />,
     CITRUS: (props) => <CitrusModal {...props} />,
     // RAIN: <RainModal />,
@@ -338,11 +339,13 @@ const ModalViewer = ({
       <ModalView
         selectedNft={selectedNft}
         close={close}
+        selectedIndex={selectedIndex}
         setSelectedNft={setSelectedNft}
         setSelectedNftIndex={setSelectedNftIndex}
         offers={offers}
         selectedOffer={selectedOffer}
         setSelectedOffer={setSelectedOffer}
+        nfts={nfts}
         collection={collection}
       />
     </Modal>

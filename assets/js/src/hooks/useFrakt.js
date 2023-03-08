@@ -6,6 +6,7 @@ import {
   useAnchorWallet,
 } from "@solana/wallet-adapter-react";
 import { createLoansService } from "@frakt-protocol/frakt-sdk/lib/loans/loansService";
+import { toast } from "react-hot-toast";
 
 const API_DOMAIN = "api.frakt.xyz";
 const PROGRAM_PUBLIC_KEY = "A66HabVL3DzNzeJgcHYtRRNW1ZRMKwBfrdSR4kLsZ9DJ";
@@ -45,22 +46,10 @@ export const FraktProvider = (props) => {
       wallet, // Object that implements Wallet interface: {publicKey, signTransaction, signAllTransactions}
     });
 
-    console.log(res);
-
-    // await toast.promise(res, {
-    //   loading: "Taking loan...",
-    //   success: ({ sig }) => {
-    //     return (
-    //       <a
-    //         href={`https://solscan.io/tx/${sig}`}
-    //         target="_blank"
-    //         rel="noreferrer"
-    //       >
-    //         View on Solscan
-    //       </a>
-    //     );
-    //   },
-    // });
+    await toast.promise(res, {
+      loading: "Taking loan...",
+      success: "Success!",
+    });
   };
 
   return (

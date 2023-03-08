@@ -13,8 +13,6 @@ export const RainModal = ({
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
 
-  const sharkyClient = initSharkyClient(connection, wallet);
-
   return (
     <div
       className="p-4 flex justify-evenly"

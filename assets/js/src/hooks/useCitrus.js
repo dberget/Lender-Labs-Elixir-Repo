@@ -12,7 +12,6 @@ import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 export const CitrusContext = React.createContext({});
 
 export const CitrusProvider = (props) => {
-  const { publicKey } = useWallet();
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
 
