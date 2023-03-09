@@ -3,6 +3,7 @@ defmodule SharkAttack.Collections do
   import Ecto.Query
   alias SharkAttack.Collections.Collection
   alias SharkAttack.Collections.Nft
+  require Logger
 
   def list_collections() do
     Repo.all(Collection)
@@ -158,32 +159,32 @@ defmodule SharkAttack.Collections do
   end
 
   def update_hyperspace_ids do
-    SharkAttack.Collections.list_collections(%{sharky: "1"})
+    collections =
+      SharkAttack.Collections.list_collections()
+      |> Enum.filter(&(&1.hyperspace_id == nil))
 
-    hyperspace =
-      SharkAttack.SharkyApi.get_floor_prices()
-      |> Map.get("hyperspaceData")
+    collections
+    |> Enum.each(fn c ->
+      format_name = String.replace(c.name, " ", "") |> String.downcase()
 
-    hyperspace
-    |> Map.keys()
-    |> Enum.each(fn name ->
-      collection = SharkAttack.Collections.search_collection_by_name(name)
+      info = SharkAttack.Hyperspace.get_collection_info(format_name)
 
-      update_hyperspace_id(collection, hyperspace, name)
+      update_hyperspace_id(c, info)
     end)
   end
 
-  def update_hyperspace_id([], _hyperspace, _name) do
-    nil
+  def update_hyperspace_id(c, []) do
+    Logger.error(c.name)
   end
 
-  def update_hyperspace_id(res, _hyperspace, name) when length(res) > 1 do
-    {:error, name}
+  def update_hyperspace_id(c, hyperspace) when length(hyperspace) > 1 do
+    Logger.error(c.name)
   end
 
-  def update_hyperspace_id([collection], hyperspace, name) do
+  def update_hyperspace_id(collection, [%{"project" => hyperspace_info}]) do
     SharkAttack.Collections.update_collection(collection, %{
-      hyperspace_id: Map.get(hyperspace, name)["hyperspaceId"]
+      hyperspace_id: Map.get(hyperspace_info, "project_id"),
+      logo: Map.get(hyperspace_info, "img_url")
     })
   end
 

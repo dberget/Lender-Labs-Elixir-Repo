@@ -87,27 +87,34 @@ defmodule SharkAttack.Hyperspace do
     :error
   end
 
-  def get_marketplace_snapshot(
-        sid,
-        page_size \\ 1
-      ) do
+  def get_collection_info(name) do
     url = "https://beta.api.hyperspace.xyz/graphql"
 
     query = """
-    query GetMarketPlaceSnapshots($condition: GetMarketPlaceSnapshotCondition, $pagination_info: PaginationConfig, $order_by: [OrderConfig!]) {
-      getMarketPlaceSnapshots(
-        condition: $condition
-        pagination_info: $pagination_info
-        order_by: $order_by
+    query getProjectAttributesQuery($conditions: GetProjectStatsCondition, $orderBy: [OrderConfig!], $paginationInfo: PaginationConfig) {
+      getProjectStats(
+        conditions: $conditions
+        order_by: $orderBy
+        pagination_info: $paginationInfo
       ) {
-        market_place_snapshots {
-          token_address
-          lowest_listing_mpa {
-            price
-            marketplace_instance_id
-            marketplace_program_id
+        project_stats {
+          project {
+            project_id
+            display_name
+            twitter
+            discord
+            img_url
+            website
           }
         }
+        pagination_info {
+          current_page_number
+          current_page_size
+          has_next_page
+          total_page_number
+          __typename
+        }
+        __typename
       }
     }
     """
@@ -116,192 +123,42 @@ defmodule SharkAttack.Hyperspace do
       %{
         query: query,
         variables: %{
-          condition: %{
-            has_metadata: true,
+          conditions: %{
             project_ids: [
-              %{
-                project_id: sid
-              }
+              name
             ]
-          },
-          order_by: %{
-            field_name: "lowest_listing_price",
-            sort_order: "ASC"
-          },
-          pagination_info: %{
-            page_number: 1,
-            page_size: page_size
           }
         }
       }
       |> Jason.encode!()
 
-    Logger.debug("Making graphql query for floor item to #{url}")
+    Logger.debug("Making graphql query to get collection info - #{name}")
 
     request = Finch.build(:post, url, [{"Content-Type", "application/json"}], post_data)
 
-    Finch.request(request, SharkAttackWeb.Finch)
+    Finch.request(request, SharkAttackWeb.Finch) |> parse_info_response()
   end
 
-  def get_marketplace_arb(nil), do: nil
+  defp parse_info_response({:ok, %{status: 200, body: body}}) do
+    response =
+      body
+      |> Jason.decode!()
 
-  def get_marketplace_arb(sid) do
-    arb =
-      sid
-      |> get_marketplace_snapshot(20)
-      |> parse_arb_response()
+    %{"data" => %{"getProjectStats" => %{"project_stats" => project_stats}}} = response
 
-    %{
-      id: sid,
-      arb: arb
-    }
+    project_stats
   end
 
-  def get_floor_item(sid) do
-    sid
-    |> get_marketplace_snapshot()
-    |> parse_floor_item_response()
+  defp parse_info_response({:ok, %{status: 503, body: _body}}) do
+    Logger.warn("Error calling solanalysis: 503 Service Unavailable")
+
+    :error
   end
 
-  defp parse_floor_item_response({:ok, %{status: 200, body: body}}) do
-    with response <- body |> Jason.decode!(),
-         %{"data" => %{"getMarketPlaceSnapshots" => %{"market_place_snapshots" => [mp_snapshot]}}} <-
-           response,
-         %{
-           "token_address" => token_address,
-           "lowest_listing_mpa" => %{
-             "marketplace_instance_id" => marketplace_instance_id,
-             "marketplace_program_id" => marketplace_program_id
-           }
-         } <- mp_snapshot do
-      marketplace_id =
-        case marketplace_instance_id do
-          nil -> marketplace_program_id
-          _ -> marketplace_instance_id
-        end
+  defp parse_info_response({:ok, %{body: body}}) do
+    Logger.warn("Error calling solanalysis")
+    IO.inspect(body)
 
-      %{"marketplace_id" => marketplace_id, "token_address" => token_address}
-    else
-      %{"data" => %{"getMarketPlaceSnapshots" => %{"market_place_snapshots" => []}}} ->
-        {:error, "marketplace not found"}
-    end
+    :error
   end
-
-  defp parse_floor_item_response({:error, %Mint.TransportError{reason: :closed}}) do
-    {:error, "HTTP Connection Closed. Please try again."}
-  end
-
-  defp parse_arb_response({:ok, %{status: 200, body: body}}) do
-    response = body |> Jason.decode!()
-
-    process_for_arb(response)
-  end
-
-  defp process_for_arb(%{
-         "data" => %{"getMarketPlaceSnapshots" => %{"market_place_snapshots" => []}}
-       }),
-       do: nil
-
-  defp process_for_arb(%{"data" => nil}), do: nil
-
-  defp process_for_arb(%{
-         "data" => %{"getMarketPlaceSnapshots" => %{"market_place_snapshots" => nil}}
-       }),
-       do: nil
-
-  defp process_for_arb(%{
-         "data" => %{"getMarketPlaceSnapshots" => %{"market_place_snapshots" => mp_snapshots}}
-       }) do
-    floor = hd(mp_snapshots)
-
-    me_floor =
-      Enum.find(
-        mp_snapshots,
-        &(get_in(&1, ["lowest_listing_mpa", "marketplace_instance_id"]) ==
-            @magic_eden_instance_id ||
-            get_in(&1, ["lowest_listing_mpa", "marketplace_program_id"]) ==
-              @magic_eden_program_id)
-      )
-
-    is_magic_eden_or_nil =
-      get_in(floor, ["token_address"]) === get_in(me_floor, ["token_address"]) ||
-        is_nil(floor["lowest_listing_mpa"])
-
-    case is_magic_eden_or_nil do
-      true ->
-        nil
-
-      _ ->
-        lowest_price = get_in(floor, ["lowest_listing_mpa", "price"]) || 0
-        me_price = get_in(me_floor, ["lowest_listing_mpa", "price"]) || 0
-
-        %{
-          "profit" => me_price - lowest_price,
-          "floor_price" => lowest_price,
-          "me_floor_price" => me_price,
-          "token_address" => get_in(floor, ["token_address"])
-        }
-    end
-  end
-
-  # def get_top_projets() do
-  #   url = "https://beta.api.solanalysis.com/graphql"
-
-  #   query = """
-  #   query GetProjectStats($orderBy: [OrderConfig!], $paginationInfo: PaginationConfig, $conditions: GetProjectStatsCondition) {
-  #     getProjectStats(
-  #       order_by: $orderBy
-  #       pagination_info: $paginationInfo
-  #       conditions: $conditions
-  #     ) {
-  #       project_stats {
-  #         project_id
-  #         volume_1day_change
-  #         floor_price
-  #         floor_price_1day_change
-  #         average_price
-  #         volume_1day
-  #       }
-  #       pagination_info {
-  #         current_page_number
-  #         current_page_size
-  #         has_next_page
-  #       }
-  #     }
-  #   }
-  #   """
-
-  #   post_data =
-  #     %{
-  #       query: query,
-  #       variables: %{
-  #         conditions: %{},
-  #         order_by: [
-  #           %{
-  #             field_name: "volume_1day",
-  #             sort_order: "DESC"
-  #           }
-  #         ],
-  #         pagination_info: %{
-  #           page_number: 1,
-  #           page_size: 50
-  #         }
-  #       }
-  #     }
-  #     |> Jason.encode!()
-
-  #   Logger.debug("Making graphql query for top projects to #{url}")
-
-  #   request = Finch.build(:post, url, [{"Content-Type", "application/json"}], post_data)
-
-  #   Finch.request(request, Albatross.Finch)
-  #   |> parse_response()
-  # # end
-
-  # defp parse_response({:ok, %{status: 200, body: body}}) do
-  #   body
-  #   |> Jason.decode!()
-  #   |> get_in(["data", "getProjectStats", "project_stats"])
-  #   |> Enum.map(&get_in(&1, ["project_id"]))
-  # end
 end

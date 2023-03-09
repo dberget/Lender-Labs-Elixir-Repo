@@ -215,6 +215,7 @@ defmodule SharkAttackWeb.ApiController do
           end
 
         %{
+          id: c.id,
           sharky_address: c.sharky_address,
           duration: c.duration,
           apy: c.apy,
