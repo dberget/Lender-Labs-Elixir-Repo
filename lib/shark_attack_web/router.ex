@@ -33,6 +33,7 @@ defmodule SharkAttackWeb.Router do
     get "/get_all_collection_loans", ApiController, :get_all_collection_loans
     get "/flush_loans", ApiController, :flush_loans
     get "/get_borrower_collections", ApiController, :get_borrower_collections
+    get "/get_borrower_loans", ApiController, :get_borrower_loans
 
     post "/get_sharky_indexes", ApiController, :get_sharky_indexes
     post "/save_nft_image", ApiController, :save_nft_image
@@ -48,6 +49,7 @@ defmodule SharkAttackWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/loans", PageController, :home
   end
 
   # Other scopes may use custom stacks.

@@ -87,6 +87,14 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
   end
 
+  def get_borrower_loans(conn, params) do
+    loans =
+      SharkAttack.LoansWorker.get_all_loans()
+      |> Enum.filter(&(&1["borrower"] == params["borrower"]))
+
+    conn |> json(loans)
+  end
+
   def get_collection(conn, params) do
     collection = SharkAttack.Collections.get_collection(params["collection_id"])
 

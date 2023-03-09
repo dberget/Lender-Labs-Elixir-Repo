@@ -12,6 +12,7 @@ export const RainProvider = (props) => {
   const { connection } = useConnection();
   const { publicKey } = useWallet();
   const [rainPools, setRainPools] = React.useState([]);
+  const [rainLoans, setRainLoans] = React.useState([]);
 
   const rain = React.useMemo(
     () => new Rain(connection, publicKey),
@@ -24,9 +25,27 @@ export const RainProvider = (props) => {
     setRainPools(pools);
   };
 
+  const getLoans = async () => {
+    const loans = await rain.utils.getLoansFromBorrower(connection, publicKey);
+
+    const newLoans = [];
+    for (let index = 0; index < loans.length; index++) {
+      const loan = loans[index];
+
+      if (loan.status == "ongoing") {
+        loan.end = loan.expiredAt;
+
+        newLoans.push(loan);
+      }
+    }
+
+    setRainLoans(newLoans);
+  };
+
   React.useEffect(() => {
     if (publicKey) {
       getPools();
+      getLoans();
     }
   }, [publicKey]);
 
@@ -53,6 +72,8 @@ export const RainProvider = (props) => {
         rain,
         rainPools,
         getInterest,
+        getLoans,
+        rainLoans,
       }}
     >
       {props.children}
@@ -65,7 +86,8 @@ export const useRain = (collectionId) => {
   const [rainPoolsWithCollection, setRainPoolsWithCollection] =
     React.useState(null);
 
-  const { rain, rainPools, getInterest } = React.useContext(RainContext);
+  const { rain, rainPools, getInterest, rainLoans } =
+    React.useContext(RainContext);
 
   const getRainPoolsWithCollection = async (rain_fi_id) => {
     let rain_collection = await rain.utils.getCollection(
@@ -103,5 +125,5 @@ export const useRain = (collectionId) => {
     }
   }, [collectionId]);
 
-  return { rainPoolsWithCollection, rain, getInterest };
+  return { rainPoolsWithCollection, rain, getInterest, rainLoans };
 };

@@ -56,6 +56,19 @@ defmodule SharkAttack.LoansWorker do
     end
   end
 
+  def update_loan(loan, "FORECLOSE_LOAN") do
+    loanAddress =
+      loan
+      |> Map.get("instructions")
+      |> Enum.at(1)
+      |> Map.get("accounts")
+      |> hd()
+
+    unless is_nil(loanAddress) do
+      GenServer.cast(__MODULE__, {:delete, loanAddress})
+    end
+  end
+
   def update_loan(loan, "TAKE_LOAN") do
     loanAddress =
       loan

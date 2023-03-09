@@ -1,10 +1,6 @@
 import React from "react";
 
-import {
-  useWallet,
-  useConnection,
-  useAnchorWallet,
-} from "@solana/wallet-adapter-react";
+import { useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
 
 import { CitrusSdk } from "@famousfoxfederation/citrus-sdk";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -12,6 +8,7 @@ import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 export const CitrusContext = React.createContext({});
 
 export const CitrusProvider = (props) => {
+  const [loans, setLoans] = React.useState([]);
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
 
@@ -31,6 +28,29 @@ export const CitrusProvider = (props) => {
 
     return offers;
   };
+
+  const getLoans = async () => {
+    let loans = await citrusSdk.fetchUserLoans(wallet.publicKey, "borrower");
+
+    console.log(loans);
+
+    const newLoans = [];
+    for (let index = 0; index < loans.length; index++) {
+      const loan = loans[index];
+
+      loan.end = loan.startTime + loan?.terms?.duration;
+
+      newLoans.push(loan);
+    }
+
+    setLoans(newLoans);
+  };
+
+  React.useEffect(() => {
+    if (wallet?.publicKey) {
+      getLoans();
+    }
+  }, [wallet]);
 
   const takeLoan = async (loan, mint) => {
     res = citrusSdk.borrowLoan(loan, mint);
@@ -58,6 +78,7 @@ export const CitrusProvider = (props) => {
         takeLoan: takeLoan,
         getOffers: getOffers,
         getInterest: getInterest,
+        loans,
       }}
     >
       {props.children}
@@ -68,7 +89,7 @@ export const CitrusProvider = (props) => {
 export const useCitrus = (foxy_address) => {
   const [offers, setOffers] = React.useState([]);
 
-  const { citrusSdk, takeLoan, getOffers, getInterest } =
+  const { citrusSdk, takeLoan, getOffers, getInterest, loans } =
     React.useContext(CitrusContext);
 
   React.useEffect(() => {
@@ -79,5 +100,5 @@ export const useCitrus = (foxy_address) => {
     });
   }, [foxy_address]);
 
-  return { citrusSdk, takeLoan, offers, getInterest };
+  return { citrusSdk, takeLoan, offers, getInterest, loans };
 };

@@ -24,26 +24,14 @@ import useSwr from "swr";
 import { useModal } from "react-hooks-use-modal";
 import { useRain } from "../hooks/useRain";
 
-const initSharkyClient = (connection, wallet) => {
-  let provider = sharky.createProvider(connection, wallet);
-  const sharkyClient = sharky.createSharkyClient(provider);
-  return sharkyClient;
-};
-
 export function Borrow() {
   const wallet = useAnchorWallet();
-  const { publicKey } = useWallet();
   const { connection } = useConnection();
   const metaplex = new Metaplex(connection);
 
   const { nfts: fraktNfts } = useFrakt();
 
   const { data } = useBorrower();
-
-  const sharkyClient = React.useMemo(
-    () => initSharkyClient(connection, wallet),
-    [connection, wallet]
-  );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
@@ -59,7 +47,6 @@ export function Borrow() {
               collection={collection}
               sharkyIndexes={data?.indexes}
               fraktNfts={fraktNfts}
-              sharkyClient={sharkyClient}
               fraktOffers={fraktMatches}
               metaplex={metaplex}
             />
