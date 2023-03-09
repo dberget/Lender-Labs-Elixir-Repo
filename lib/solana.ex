@@ -112,7 +112,7 @@ defmodule SharkAttack.Solana do
 
     res["result"]
     |> Enum.map(fn x ->
-      get_in(x, ["account", "data", "parsed", "info", "mint"])
+      get_in(x, ["account", "data", "parsed", "info"])
     end)
   end
 

@@ -246,6 +246,8 @@ defmodule SharkAttackWeb.ApiController do
     mints =
       params["borrower"]
       |> SharkAttack.Solana.get_user_token_mints()
+      |> Enum.reject(&(&1["tokenAmount"]["amount"] == "0" || &1["state"] == "frozen"))
+      |> Enum.map(& &1["mint"])
 
     collections =
       mints
@@ -260,6 +262,13 @@ defmodule SharkAttackWeb.ApiController do
     res = SharkAttack.SharkyApi.get_sharky_indexes(params["mints"])
 
     conn |> json(res)
+  end
+
+  def remove_loan(conn, params) do
+    SharkAttack.LoansWorker.remove_loan(params["loanAddress"])
+
+    conn
+    |> json(%{message: "ok"})
   end
 
   def save_nft_image(conn, params) do

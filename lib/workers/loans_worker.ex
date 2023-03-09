@@ -113,6 +113,10 @@ defmodule SharkAttack.LoansWorker do
     IO.inspect(status)
   end
 
+  def remove_loan(loanAddress) do
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
+  end
+
   def flush() do
     loanData = SharkyApi.get_all_loan_data()
 

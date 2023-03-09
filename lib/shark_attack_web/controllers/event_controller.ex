@@ -13,7 +13,7 @@ defmodule SharkAttackWeb.EventController do
     |> json(%{message: "ok"})
   end
 
-  def send_message("SHARKY_FI", "REPAY_LOAN", event) do
+  defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
 
     user = SharkAttack.Users.get!(to)
@@ -40,7 +40,7 @@ defmodule SharkAttackWeb.EventController do
     :ok
   end
 
-  def send_message("SHARKY_FI", "TAKE_LOAN", event) do
+  defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> hd
 
     %{"nativeBalanceChange" => amount} = hd(event["accountData"])
@@ -69,7 +69,7 @@ defmodule SharkAttackWeb.EventController do
     :ok
   end
 
-  def send_message(_platform, _, _event) do
+  defp send_message(_platform, _, _event) do
     :ok
   end
 end
