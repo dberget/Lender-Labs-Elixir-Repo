@@ -222,7 +222,7 @@ defmodule SharkAttackWeb.ApiController do
           name: c.name,
           offers: length(offers),
           loans: length(loans),
-          lastTaken: Enum.take(loans, 2),
+          lastTaken: Enum.take(loans, 1),
           logo: c.logo,
           highestOffer: highestOffer,
           countUnderWater: elem(underWater, 0),
@@ -236,6 +236,7 @@ defmodule SharkAttackWeb.ApiController do
             end
         }
       end)
+      |> Enum.reject(fn c -> c.fp == 0 and c.loans == 0 and c.offers == 0 end)
 
     conn
     |> json(collections)

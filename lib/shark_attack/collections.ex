@@ -103,6 +103,7 @@ defmodule SharkAttack.Collections do
         rain_fi_id: c["collection_id"]
       }
 
+      Logger.info("Adding #{c["name"]}")
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
@@ -117,6 +118,7 @@ defmodule SharkAttack.Collections do
         foxy_address: c["id"]
       }
 
+      Logger.info("Adding #{c["name"]}")
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
@@ -132,6 +134,7 @@ defmodule SharkAttack.Collections do
         apy: collection["apy"]
       }
 
+      Logger.info("Adding #{collection["name"]}")
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
@@ -182,6 +185,8 @@ defmodule SharkAttack.Collections do
   end
 
   def update_hyperspace_id(collection, [%{"project" => hyperspace_info}]) do
+    Logger.info("Updating #{collection.name}")
+
     SharkAttack.Collections.update_collection(collection, %{
       hyperspace_id: Map.get(hyperspace_info, "project_id"),
       logo: Map.get(hyperspace_info, "img_url")
