@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  useAnchorWallet,
-  useConnection,
-  useWallet,
-} from "@solana/wallet-adapter-react";
+import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
-import sharky from "@sharkyfi/client";
 import { getSharkyInterest } from "../utils/sharky";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
@@ -104,7 +99,7 @@ const CollectionCard = ({
           {sharkyOffers?.length > 0 && (
             <OfferDetailsBox
               open={() => setOpen("SHARKY")}
-              amount={sharkyOffers[0]["amountSol"]}
+              amount={sharkyOffers[0]["amountSol"].toFixed(2)}
               duration={collection.duration / 60 / 60 / 24}
               interest={getSharkyInterest(
                 collection?.apy,
@@ -133,7 +128,10 @@ const CollectionCard = ({
               open={() => setOpen("FRAKT")}
               duration={fraktOffers[0].timeBased?.returnPeriodDays}
               amount={fraktOffers[0].maxLoanValue.toFixed(2)}
-              interest={fraktOffers[0]?.timeBased?.repayValue}
+              interest={(
+                fraktOffers[0]?.timeBased?.repayValue -
+                fraktOffers[0].maxLoanValue
+              ).toFixed(2)}
             >
               <img
                 className="w-8 rounded-full"

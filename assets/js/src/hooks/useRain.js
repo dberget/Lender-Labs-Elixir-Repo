@@ -3,14 +3,27 @@ import React from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import BN from "bn.js";
 
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { Rain } from "@rainfi/sdk";
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  VersionedTransaction,
+  TransactionMessage,
+  SystemProgram,
+} from "@solana/web3.js";
+import {
+  NATIVE_MINT,
+  createSyncNativeInstruction,
+  getAssociatedTokenAddress,
+} from "@solana/spl-token";
+
+import { toast } from "react-hot-toast";
+import { Rain, Pool } from "@rainfi/sdk";
 
 export const RainContext = React.createContext({});
 
 export const RainProvider = (props) => {
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
   const [rainPools, setRainPools] = React.useState([]);
   const [rainLoans, setRainLoans] = React.useState([]);
 
@@ -34,12 +47,121 @@ export const RainProvider = (props) => {
 
       if (loan.status == "ongoing") {
         loan.end = loan.expiredAt;
+        loan.platform = "Rain";
 
         newLoans.push(loan);
       }
     }
 
     setRainLoans(newLoans);
+  };
+
+  const takeLoan = async (mint, pool, collectionId) => {
+    const { getCollection, getFeesDetailed } = rain.utils;
+
+    const collection = await getCollection(connection, collectionId);
+    const bestOffer = (collection.floorPrice * pool.loanToValue) / 10000;
+
+    const durationDays = pool?.loanCurve.maxDuration / 60 / 60 / 24;
+    const fees = getFeesDetailed(pool, bestOffer, durationDays);
+
+    const { instruction, signers } = await rain.borrow({
+      nftMint: mint,
+      poolOwner: new PublicKey(pool.owner),
+      duration: durationDays,
+      amount: bestOffer,
+      interest: fees.feesInSol,
+      slippage: 50,
+    });
+
+    const blockhash = await connection.getLatestBlockhash();
+
+    const lookupTable = (
+      await connection.getAddressLookupTable(
+        new PublicKey("ztFFV6nfS7veRm2BbQgwaLnsenBjEfs6fpQde6reaco")
+      )
+    ).value;
+
+    const messageV0 = new TransactionMessage({
+      payerKey: publicKey,
+      recentBlockhash: blockhash.blockhash,
+      instructions: instruction,
+    }).compileToV0Message([lookupTable]);
+
+    const transaction = new VersionedTransaction(messageV0);
+
+    const signedTx = await signTransaction(transaction);
+
+    signedTx.sign([signers]);
+
+    let sig = connection.sendRawTransaction(signedTx.serialize());
+
+    await toast.promise(sig, {
+      loading: "Taking loan...",
+      success: (sig) => {
+        return (
+          <a
+            href={`https://solscan.io/tx/${sig}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on Solscan
+          </a>
+        );
+      },
+    });
+  };
+
+  const getPool = (poolAddress) => {
+    let pool = rainPools.find((pool) => pool.address == poolAddress);
+
+    return new Pool(connection, new PublicKey(pool.owner), publicKey);
+  };
+
+  const repayLoan = async (loan) => {
+    let pool = getPool(loan.poolAddress);
+
+    const repayIx = await pool.repay(
+      new PublicKey(loan.accountAddress),
+      loan.amount + loan.interest
+    );
+
+    const lookupTable = (
+      await connection.getAddressLookupTable(
+        new PublicKey("ztFFV6nfS7veRm2BbQgwaLnsenBjEfs6fpQde6reaco")
+      )
+    ).value;
+
+    const blockhash = await connection.getLatestBlockhash();
+
+    const messageV0 = new TransactionMessage({
+      payerKey: publicKey,
+      recentBlockhash: blockhash.blockhash,
+      instructions: repayIx,
+    }).compileToV0Message([lookupTable]);
+
+    const transaction = new VersionedTransaction(messageV0);
+
+    const signedTx = await signTransaction(transaction);
+
+    let sig = connection.sendRawTransaction(signedTx.serialize(), {
+      skipPreflight: true,
+    });
+
+    await toast.promise(sig, {
+      loading: "Taking loan...",
+      success: (sig) => {
+        return (
+          <a
+            href={`https://solscan.io/tx/${sig}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on Solscan
+          </a>
+        );
+      },
+    });
   };
 
   React.useEffect(() => {
@@ -71,9 +193,11 @@ export const RainProvider = (props) => {
       value={{
         rain,
         rainPools,
+        repayLoan,
         getInterest,
         getLoans,
         rainLoans,
+        takeLoan,
       }}
     >
       {props.children}
@@ -86,7 +210,7 @@ export const useRain = (collectionId) => {
   const [rainPoolsWithCollection, setRainPoolsWithCollection] =
     React.useState(null);
 
-  const { rain, rainPools, getInterest, rainLoans } =
+  const { rain, rainPools, getInterest, rainLoans, takeLoan, repayLoan } =
     React.useContext(RainContext);
 
   const getRainPoolsWithCollection = async (rain_fi_id) => {
@@ -125,5 +249,12 @@ export const useRain = (collectionId) => {
     }
   }, [collectionId]);
 
-  return { rainPoolsWithCollection, rain, getInterest, rainLoans };
+  return {
+    rainPoolsWithCollection,
+    rain,
+    getInterest,
+    rainLoans,
+    takeLoan,
+    repayLoan,
+  };
 };

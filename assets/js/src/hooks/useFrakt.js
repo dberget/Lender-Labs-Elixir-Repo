@@ -7,7 +7,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { createLoansService } from "@frakt-protocol/frakt-sdk/lib/loans/loansService";
 import { toast } from "react-hot-toast";
-import { each } from "lodash";
+import { getBondsPreview, getBondMarket, getMarketPairs } from "../utils/frakt";
 
 const API_DOMAIN = "api.frakt.xyz";
 const PROGRAM_PUBLIC_KEY = "A66HabVL3DzNzeJgcHYtRRNW1ZRMKwBfrdSR4kLsZ9DJ";
@@ -39,15 +39,23 @@ export const FraktProvider = (props) => {
       const loan = data[index];
 
       loan.end = loan.classicParams.timeBased.expiredAt;
+      loan.platform = "FRAKT";
     }
 
     setLoans(data);
+  };
+
+  const getMarket = async (marketAdd) => {
+    return getBondMarket(marketAdd);
   };
 
   React.useEffect(() => {
     if (!publicKey) return;
 
     getLoans();
+    getBondsPreview();
+    // getBondMarket
+
     fetchWalletNfts({
       walletPublicKey: publicKey,
     }).then((nfts) => {
@@ -72,14 +80,14 @@ export const FraktProvider = (props) => {
   };
 
   return (
-    <FraktContext.Provider value={{ takeLoan, nfts, loans }}>
+    <FraktContext.Provider value={{ takeLoan, nfts, loans, getMarket }}>
       {props.children}
     </FraktContext.Provider>
   );
 };
 
 export const useFrakt = () => {
-  const { takeLoan, nfts, loans } = React.useContext(FraktContext);
+  const { takeLoan, nfts, loans, getMarket } = React.useContext(FraktContext);
 
-  return { takeLoan, nfts, loans };
+  return { takeLoan, nfts, loans, getBondMarket: getMarket };
 };

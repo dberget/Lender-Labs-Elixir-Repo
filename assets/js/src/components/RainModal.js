@@ -15,7 +15,7 @@ export const RainModal = ({
   setSelectedNftIndex,
   nfts,
 }) => {
-  const { rain, getInterest } = useRain();
+  const { rain, getInterest, takeLoan } = useRain();
 
   const handleUpdateIndex = () => {
     if (selectedIndex === nfts.length - 1) {
@@ -53,7 +53,13 @@ export const RainModal = ({
         <div className="mt-auto">
           <button
             className="mx-1"
-            onClick={() => takeLoan(selectedOffer, selectedNft.mint.address)}
+            onClick={() =>
+              takeLoan(
+                selectedNft.mint.address,
+                selectedOffer,
+                collection?.rain_fi_id
+              )
+            }
           >
             Take
           </button>

@@ -13,7 +13,14 @@ export const FraktModal = ({
 }) => {
   // timeBased | priceBased | Bond
   const [loanType, setLoanType] = React.useState("timeBased");
-  const { takeLoan } = useFrakt();
+  const { takeLoan, getBondMarket } = useFrakt();
+  const [bondMarket, setBondMarket] = React.useState(null);
+
+  React.useEffect(() => {
+    getBondMarket().then((market) => setBondMarket(market));
+  }, []);
+
+  console.log(bondMarket);
 
   const handleUpdateIndex = () => {
     if (selectedIndex === offers.length - 1) {
