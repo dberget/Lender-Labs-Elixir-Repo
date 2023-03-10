@@ -70,7 +70,7 @@ defmodule SharkAttackWeb.ApiController do
         | Enum.filter(citrusLoans, fn l -> l["state"] == "waitingForBorrower" end)
       ]
       |> List.flatten()
-      |> Enum.sort_by(& &1["offerTime"], :desc)
+      |> Enum.sort_by(& &1["offerTime"], :asc)
 
     loanSummary = %{
       totalSolLoaned: Enum.map(takenLoans, fn l -> l["amountSol"] end) |> Enum.sum(),
