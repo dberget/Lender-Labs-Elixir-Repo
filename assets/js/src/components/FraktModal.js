@@ -2,6 +2,11 @@ import React from "react";
 import { useFrakt } from "../hooks/useFrakt";
 import { SolIcon } from "./SolIcon";
 
+import {
+  getMaxBorrowValueOptimized,
+  getBondLoansCombinations,
+} from "fbonds-core/lib/fbond-protocol/utils/cartManager";
+
 export const FraktModal = ({
   offers,
   selectedOffer,
@@ -13,14 +18,41 @@ export const FraktModal = ({
 }) => {
   // timeBased | priceBased | Bond
   const [loanType, setLoanType] = React.useState("timeBased");
-  const { takeLoan, getBondMarket } = useFrakt();
+  const { takeLoan, getBondMarket, getMarketPairs, buildBondLoan } = useFrakt();
   const [bondMarket, setBondMarket] = React.useState(null);
+  const [bondPairs, setBondPairs] = React.useState(null);
+  const [maxBondBorrow, setMaxBondBorrow] = React.useState(null);
+  const [bestPair, setBestPair] = React.useState(null);
 
   React.useEffect(() => {
     getBondMarket().then((market) => setBondMarket(market));
+    getMarketPairs().then((market) => setBondPairs(market));
   }, []);
 
-  console.log(bondMarket);
+  React.useEffect(() => {
+    if (bondMarket && bondPairs) {
+      let maxBorrow = getMaxBorrowValueOptimized({
+        pairs: bondPairs,
+        collectionFloor: bondMarket.oracleFloor.floor,
+      });
+
+      const pairCombos = getBondLoansCombinations({
+        nfts: [selectedOffer.mint],
+        collectionFloor: bondMarket.oracleFloor.floor,
+        pairs: bondPairs,
+        durationFilter: 604800,
+      });
+
+      const pair = bondPairs.find(
+        (pair) => pair.publicKey === pairCombos[0].orders[0].pairPubkey
+      );
+
+      console.log(pair);
+
+      setBestPair(pair);
+      setMaxBondBorrow(maxBorrow);
+    }
+  }, [bondPairs, bondMarket]);
 
   const handleUpdateIndex = () => {
     if (selectedIndex === offers.length - 1) {
@@ -60,12 +92,22 @@ export const FraktModal = ({
         )}
 
         <div className="mt-auto">
-          <button
-            className="mx-1"
-            onClick={() => takeLoan(offers[selectedIndex])}
-          >
-            Take
-          </button>
+          {bondMarket && bondPairs && (
+            <button
+              className="mx-1"
+              onClick={() =>
+                // buildBondLoan({
+                //   mint: offers[selectedIndex].mint,
+                //   pair: bondPairs[1],
+                //   market: bondMarket,
+                // })
+
+                takeLoan(offers[selectedIndex])
+              }
+            >
+              Take
+            </button>
+          )}
           <button className="mx-1" onClick={() => close()}>
             Close
           </button>

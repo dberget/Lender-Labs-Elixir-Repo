@@ -20,6 +20,13 @@ export const getMarketPairs = async (market) => {
   );
   const pairs = await res.json();
 
-  console.log(pairs);
   return pairs;
+};
+
+export const getNftMerkleTreeProof = async ({ mint }) => {
+  const data = await fetch.get(
+    `https://api.frakt.xyz/nft/proof/${mint?.toBase58()}`
+  );
+
+  return data.proof || null;
 };

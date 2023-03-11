@@ -7,7 +7,26 @@ import {
 } from "@solana/wallet-adapter-react";
 import { createLoansService } from "@frakt-protocol/frakt-sdk/lib/loans/loansService";
 import { toast } from "react-hot-toast";
-import { getBondsPreview, getBondMarket, getMarketPairs } from "../utils/frakt";
+import {
+  getBondsPreview,
+  getBondMarket,
+  getMarketPairs,
+  getNftMerkleTreeProof,
+} from "../utils/frakt";
+import { fbondFactory } from "fbonds-core/lib/fbond-protocol/functions";
+import { validateAndSellNftToTokenToNftPair } from "fbonds-core/lib/fbond-protocol/functions/router";
+import { PublicKey, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
+
+const BONDS_PROGRAM_PUBKEY = new PublicKey(
+  "4tdmkuY6EStxbS6Y8s5ueznL3VPMSugrvQuDeAHGZhSt"
+);
+const BONDS_ADMIN_PUBKEY = new PublicKey(
+  "9J4yDqU6wBkdhP5bmJhukhsEzBkaAXiBmii52kTdxpQq"
+);
+
+const BOND_DECIMAL_DELTA = 1e4;
+const BOND_SOL_DECIMAIL_DELTA = 1e5;
+const BOND_MAX_RETURN_AMOUNT_FILTER = 1000 * 1e9; //? 1000 SOL
 
 const API_DOMAIN = "api.frakt.xyz";
 const PROGRAM_PUBLIC_KEY = "A66HabVL3DzNzeJgcHYtRRNW1ZRMKwBfrdSR4kLsZ9DJ";
@@ -18,7 +37,7 @@ export const FraktContext = React.createContext({});
 export const FraktProvider = (props) => {
   const [nfts, setFraktNfts] = React.useState([]);
   const [loans, setLoans] = React.useState([]);
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
 
@@ -79,15 +98,111 @@ export const FraktProvider = (props) => {
     });
   };
 
+  const buildBondLoan = async ({ mint, pair, market }) => {
+    const amountToReturn =
+      Math.trunc((1 * LAMPORTS_PER_SOL) / pair.currentSpotPrice) *
+      BOND_DECIMAL_DELTA;
+
+    const proof = await (async () => {
+      if (market.whitelistEntry?.whitelistType !== "merkleTree") {
+        return [];
+      }
+      return await getNftMerkleTreeProof({ mint: new PublicKey(mint) });
+    })();
+
+    const {
+      fbond: bondPubkey,
+      collateralBox: collateralBoxPubkey,
+      fbondTokenMint: bondTokenMint,
+      instructions: createBondIxns,
+      signers: createBondSigners,
+    } = await fbondFactory.createBondWithSingleCollateral({
+      accounts: {
+        tokenMint: new PublicKey(mint),
+        userPubkey: publicKey,
+      },
+      args: {
+        amountToDeposit: 1,
+        amountToReturn: amountToReturn,
+        bondDuration: pair.validation.durationFilter,
+      },
+      connection,
+      programId: BONDS_PROGRAM_PUBKEY,
+      sendTxn: async () => await Promise.resolve(null),
+    });
+
+    const {
+      instructions: validateAndsellIxs,
+      signers: validateAndsellSigners,
+    } = await validateAndSellNftToTokenToNftPair({
+      accounts: {
+        collateralBox: collateralBoxPubkey,
+        fbond: bondPubkey,
+        fbondTokenMint: bondTokenMint,
+        collateralTokenMint: new PublicKey(mint),
+        fraktMarket: new PublicKey(market.fraktMarket.publicKey),
+        oracleFloor: new PublicKey(market.oracleFloor?.publicKey),
+        whitelistEntry: new PublicKey(market.whitelistEntry?.publicKey),
+        hadoMarket: new PublicKey(pair.hadoMarket),
+        pair: new PublicKey(pair.publicKey),
+        userPubkey: publicKey,
+        protocolFeeReceiver: new PublicKey(BONDS_ADMIN_PUBKEY),
+        assetReceiver: new PublicKey(pair.assetReceiver),
+      },
+      args: {
+        proof: proof,
+        amountToSell: amountToReturn / BOND_DECIMAL_DELTA, //? amount of fbond tokens decimals
+        minAmountToGet:
+          (amountToReturn / BOND_DECIMAL_DELTA) * pair.currentSpotPrice, //? SOL lamports
+        skipFailed: false,
+      },
+      connection,
+      programId: BONDS_PROGRAM_PUBKEY,
+      sendTxn: async () => await Promise.resolve(null),
+    });
+
+    const transaction = new Transaction().add(
+      ...createBondIxns,
+      ...validateAndsellIxs
+    );
+
+    const blockhash = await connection.getLatestBlockhash();
+
+    transaction.feePayer = publicKey;
+    transaction.recentBlockhash = blockhash.blockhash;
+
+    transaction.sign(...createBondSigners, ...validateAndsellSigners);
+
+    const signedTx = await signTransaction(transaction);
+
+    console.log(signedTx);
+
+    let sig = await connection.sendRawTransaction(signedTx.serialize(), {
+      skipPreflight: true,
+    });
+
+    console.log(sig);
+  };
+
   return (
-    <FraktContext.Provider value={{ takeLoan, nfts, loans, getMarket }}>
+    <FraktContext.Provider
+      value={{ takeLoan, nfts, loans, getMarket, buildBondLoan }}
+    >
       {props.children}
     </FraktContext.Provider>
   );
 };
 
 export const useFrakt = () => {
-  const { takeLoan, nfts, loans, getMarket } = React.useContext(FraktContext);
+  const { takeLoan, nfts, loans, getMarket, buildBondLoan } =
+    React.useContext(FraktContext);
 
-  return { takeLoan, nfts, loans, getBondMarket: getMarket };
+  return {
+    takeLoan,
+    nfts,
+    loans,
+    getBondMarket: getMarket,
+    getMarketPairs,
+    buildBondLoan,
+  };
 };

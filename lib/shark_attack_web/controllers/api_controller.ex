@@ -51,9 +51,10 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, params) do
-    loans =
-      SharkAttack.LoansWorker.get_lender_loans(params["lender"], params["collection"])
-      |> Enum.map(&elem(&1, 3))
+    loans = SharkAttack.SharkyApi.get_lender_loans(params["lender"])
+
+    # SharkAttack.LoansWorker.get_lender_loans(params["lender"], params["collection"])
+    # |> Enum.map(&elem(&1, 3))
 
     citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
 
@@ -265,7 +266,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def remove_loan(conn, params) do
-    SharkAttack.LoansWorker.remove_loan(params["loanAddress"])
+    SharkAttack.LoansWorker.remove_loan(params["loanAddress"]) |> IO.inspect()
 
     conn
     |> json(%{message: "ok"})

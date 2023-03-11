@@ -114,7 +114,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def remove_loan(loanAddress) do
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
+    :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
   end
 
   def flush() do
