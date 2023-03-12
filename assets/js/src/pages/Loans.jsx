@@ -37,7 +37,7 @@ export function Loans() {
 
   const { loans: sharkyLoans, isLoading } = useBorrower();
 
-  if (!sharkyLoans) return <div>Loading...</div>;
+  if (!sharkyLoans) return <div></div>;
 
   const handleFilterLoans = async (newFilter) => {
     if (filter === newFilter) {
@@ -57,26 +57,54 @@ export function Loans() {
   return (
     <div className="w-full">
       <div className="flex justify-evenly mx-auto w-1/4">
-        <img
-          onClick={() => handleFilterLoans("Sharky")}
-          className={"w-auto h-12 cursor-pointer"}
-          src={"/images/sharky.png"}
-        />
-        <img
-          onClick={() => handleFilterLoans("FRAKT")}
-          className={"w-auto h-12 cursor-pointer"}
-          src={"/images/frakt.png"}
-        />
-        <img
-          onClick={() => handleFilterLoans("Rain")}
-          className={"w-auto h-12 cursor-pointer"}
-          src={"/images/rainfi.png"}
-        />
-        <img
-          onClick={() => handleFilterLoans("Citrus")}
-          className={"w-auto h-12 cursor-pointer"}
-          src={"https://famousfoxes.com/logo.b8610686.svg"}
-        />
+        <div
+          style={{
+            backgroundColor: filter == "Sharky" ? "#28292B" : "transparent",
+          }}
+          className="p-4"
+        >
+          <img
+            onClick={() => handleFilterLoans("Sharky")}
+            className={"w-auto h-12 cursor-pointer"}
+            src={"/images/sharky.png"}
+          />
+        </div>
+        <div
+          style={{
+            backgroundColor: filter == "FRAKT" ? "#28292B" : "transparent",
+          }}
+          className="p-4"
+        >
+          <img
+            onClick={() => handleFilterLoans("FRAKT")}
+            className={"h-12 cursor-pointer"}
+            src={"/images/frakt.png"}
+          />
+        </div>
+        <div
+          style={{
+            backgroundColor: filter == "Rain" ? "#28292B" : "transparent",
+          }}
+          className="p-4"
+        >
+          <img
+            onClick={() => handleFilterLoans("Rain")}
+            className={"w-auto h-12 cursor-pointer"}
+            src={"/images/rainfi.png"}
+          />
+        </div>
+        <div
+          style={{
+            backgroundColor: filter == "Citrus" ? "#28292B" : "transparent",
+          }}
+          className="p-4"
+        >
+          <img
+            onClick={() => handleFilterLoans("Citrus")}
+            className={"w-auto h-12 cursor-pointer"}
+            src={"/images/citrus-logo.png"}
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
         {allLoans.length > 0 && (
