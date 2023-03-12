@@ -91,6 +91,12 @@ export const useCitrus = (foxy_address) => {
   const { citrusSdk, takeLoan, getOffers, getInterest, loans } =
     React.useContext(CitrusContext);
 
+  const repayLoan = async (loan) => {
+    let sig = citrusSdk.repayLoan(loan);
+
+    toast.promise(sig, { loading: "Repaying Loan", success: "Repayed Loan!" });
+  };
+
   React.useEffect(() => {
     if (!foxy_address) return;
 
@@ -99,5 +105,5 @@ export const useCitrus = (foxy_address) => {
     });
   }, [foxy_address]);
 
-  return { citrusSdk, takeLoan, offers, getInterest, loans };
+  return { citrusSdk, takeLoan, offers, getInterest, loans, repayLoan };
 };

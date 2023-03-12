@@ -6,6 +6,7 @@ import {
   useAnchorWallet,
 } from "@solana/wallet-adapter-react";
 import { createLoansService } from "@frakt-protocol/frakt-sdk/lib/loans/loansService";
+import { loans as loanSDK } from "@frakt-protocol/frakt-sdk";
 import { toast } from "react-hot-toast";
 import {
   getBondsPreview,
@@ -66,6 +67,36 @@ export const FraktProvider = (props) => {
 
   const getMarket = async (marketAdd) => {
     return getBondMarket(marketAdd);
+  };
+
+  const repayLoan = async (loan) => {
+    const { ixs } = await loanSDK.paybackLoanIx({
+      user: publicKey,
+      loan: new PublicKey(loan.pubkey),
+      liquidityPool: new PublicKey(loan.classicParams.liquidityPool),
+      collectionInfo: new PublicKey(loan.classicParams.collectionInfo),
+      royaltyAddress: new PublicKey(loan.classicParams.royaltyAddress),
+      connection,
+      nftMint: new PublicKey(loan.nft.mint),
+      admin: new PublicKey(ADMIN_PUBLIC_KEY),
+      programId: new PublicKey(PROGRAM_PUBLIC_KEY),
+    });
+
+    const transaction = new Transaction().add(...ixs);
+
+    const blockhash = await connection.getLatestBlockhash();
+
+    transaction.feePayer = publicKey;
+    transaction.recentBlockhash = blockhash.blockhash;
+
+    const signedTx = await signTransaction(transaction);
+
+    let sig = connection.sendRawTransaction(signedTx.serialize());
+
+    toast.promise(sig, {
+      loading: "Repaying loan...",
+      success: (sig) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
+    });
   };
 
   React.useEffect(() => {
@@ -175,8 +206,6 @@ export const FraktProvider = (props) => {
 
     const signedTx = await signTransaction(transaction);
 
-    console.log(signedTx);
-
     let sig = await connection.sendRawTransaction(signedTx.serialize(), {
       skipPreflight: true,
     });
@@ -186,7 +215,7 @@ export const FraktProvider = (props) => {
 
   return (
     <FraktContext.Provider
-      value={{ takeLoan, nfts, loans, getMarket, buildBondLoan }}
+      value={{ takeLoan, nfts, loans, getMarket, buildBondLoan, repayLoan }}
     >
       {props.children}
     </FraktContext.Provider>
@@ -194,13 +223,14 @@ export const FraktProvider = (props) => {
 };
 
 export const useFrakt = () => {
-  const { takeLoan, nfts, loans, getMarket, buildBondLoan } =
+  const { takeLoan, nfts, loans, getMarket, buildBondLoan, repayLoan } =
     React.useContext(FraktContext);
 
   return {
     takeLoan,
     nfts,
     loans,
+    repayLoan,
     getBondMarket: getMarket,
     getMarketPairs,
     buildBondLoan,

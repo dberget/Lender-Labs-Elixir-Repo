@@ -58,6 +58,38 @@ export const takeLoan = async (offer, mint, sharkyClient, nftIndex) => {
   });
 };
 
+export const repayLoan = async (loan, sharkyClient, connection) => {
+  const account = await connection.getAccountInfo(
+    new PublicKey(loan.pubkey),
+    "confirmed"
+  );
+
+  const keyedAccountInfo = {
+    accountId: new PublicKey(loan.pubkey),
+    accountInfo: account,
+  };
+
+  const parsedLoan = await sharkyClient.parseLoan({
+    program: sharkyClient.program,
+    keyedAccountInfo,
+  });
+
+  const { orderBook } = await sharkyClient.fetchOrderBook({
+    program: sharkyClient.program,
+    orderBookPubKey: new PublicKey(loan.orderBook),
+  });
+
+  let sig = await parsedLoan.repay({
+    program: sharkyClient.program,
+    orderBook,
+  });
+
+  await toast.promise(sig, {
+    loading: "Repaying loan...",
+    success: ({ sig }) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
+  });
+};
+
 export const getSharkyInterest = (apy, duration, amountSol) => {
   const amount = aprToInterestRatio(apyToApr(apy), duration) * amountSol;
 

@@ -19,12 +19,16 @@ export const useBorrower = () => {
 
   //   let pubKey = pkOverride ?? publicKey;
 
-  const { data, isLoading } = useSwr(
+  const { data } = useSwr(
     publicKey ? `/api/get_borrower_collections?borrower=${publicKey}` : null,
     (...args) => fetch(...args, {}).then((res) => res.json())
   );
 
-  const { data: loans } = useSwr(
+  const {
+    data: loans,
+    isLoading,
+    isValidating,
+  } = useSwr(
     publicKey ? `/api/get_borrower_loans?borrower=${publicKey}` : null,
     (...args) => fetch(...args, {}).then((res) => res.json())
   );
