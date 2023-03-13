@@ -10,6 +10,17 @@ export const initSharkyClient = (connection, wallet) => {
   return sharkyClient;
 };
 
+export const takeAllLoans = async (offers, mints, sharkyClient, indexes) => {
+  for (let i = 0; i < mints.length; i++) {
+    await takeLoan(
+      offers[i],
+      mints[i],
+      sharkyClient,
+      indexes[mints[i].address?.toString()]
+    );
+  }
+};
+
 export const takeLoan = async (offer, mint, sharkyClient, nftListIndex) => {
   const { connection } = sharkyClient.program.provider;
 

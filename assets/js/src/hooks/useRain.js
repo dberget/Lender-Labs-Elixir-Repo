@@ -24,7 +24,7 @@ export const RainContext = React.createContext({});
 
 export const RainProvider = (props) => {
   const { connection } = useConnection();
-  const { publicKey, signTransaction } = useWallet();
+  const { publicKey, signTransaction, signAllTransactions } = useWallet();
   const [rainPools, setRainPools] = React.useState([]);
   const [rainLoans, setRainLoans] = React.useState([]);
 
@@ -122,28 +122,26 @@ export const RainProvider = (props) => {
   };
 
   const repayAll = async () => {
-    for (let index = 0; index < rainLoans.length; index++) {
-      const loan = rainLoans[index];
+    const transactions = await Promise.all(
+      rainLoans.map((loan) => repayLoan(loan, true))
+    );
 
-      const transactions = Promise.all(repayLoan(loan, true));
+    const signedTxs = await signAllTransactions(transactions);
 
-      const signedTxs = await signAllTransactions(transactions);
-
-      signedTxs.map(async (tx) => {
-        let res = connection.sendRawTransaction(tx.serialize(), {
-          commitment: "confirmed",
-        });
-
-        toast.promise(res, {
-          loading: "Repaying...",
-          success: (data) => (
-            <a target="_blank" href={`https://solscan.io/tx/${data}`}>
-              https://solscan.io/tx/{data.substr(0, 5)}...
-            </a>
-          ),
-        });
+    signedTxs.map(async (tx) => {
+      let res = connection.sendRawTransaction(tx.serialize(), {
+        commitment: "confirmed",
       });
-    }
+
+      toast.promise(res, {
+        loading: "Repaying...",
+        success: (data) => (
+          <a target="_blank" href={`https://solscan.io/tx/${data}`}>
+            https://solscan.io/tx/{data.substr(0, 5)}...
+          </a>
+        ),
+      });
+    });
   };
 
   const repayLoan = async (loan, returnTx) => {

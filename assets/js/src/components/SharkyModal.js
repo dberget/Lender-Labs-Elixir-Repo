@@ -1,6 +1,12 @@
 import React from "react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { initSharkyClient, takeLoan, getSharkyInterest } from "../utils/sharky";
+import {
+  initSharkyClient,
+  takeLoan,
+  getSharkyInterest,
+  takeAllLoans,
+} from "../utils/sharky";
+import { PublicKey } from "@solana/web3.js";
 
 export const SharkyModal = ({
   offers,
@@ -66,9 +72,23 @@ export const SharkyModal = ({
           >
             Take
           </button>
-          <button className="mx-1" onClick={() => close()}>
-            Close
-          </button>
+          {nfts.length > 1 && (
+            <button
+              className="mx-1"
+              onClick={() =>
+                takeAllLoans(
+                  offers,
+                  nfts.map((nft) => ({
+                    address: new PublicKey(nft?.mintAddress?.toString()),
+                  })),
+                  sharkyClient,
+                  sharkyIndexes
+                )
+              }
+            >
+              Take All
+            </button>
+          )}
         </div>
       </div>
 
