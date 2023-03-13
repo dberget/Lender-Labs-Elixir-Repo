@@ -1,6 +1,7 @@
+import React from "react";
 import sharky, { aprToInterestRatio, apyToApr } from "@sharkyfi/client";
 import toast from "react-hot-toast";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import { notify } from "./discord";
 
 export const initSharkyClient = (connection, wallet) => {
@@ -9,7 +10,7 @@ export const initSharkyClient = (connection, wallet) => {
   return sharkyClient;
 };
 
-export const takeLoan = async (offer, mint, sharkyClient, nftIndex) => {
+export const takeLoan = async (offer, mint, sharkyClient, nftListIndex) => {
   const { connection } = sharkyClient.program.provider;
 
   const account = await connection.getAccountInfo(
@@ -26,8 +27,6 @@ export const takeLoan = async (offer, mint, sharkyClient, nftIndex) => {
     program: sharkyClient.program,
     keyedAccountInfo,
   });
-
-  let nftListIndex = nftIndex;
 
   const metadata = await connection.getParsedAccountInfo(
     mint.address,
@@ -55,6 +54,9 @@ export const takeLoan = async (offer, mint, sharkyClient, nftIndex) => {
           View on Solscan
         </a>
       );
+    },
+    error: (err) => {
+      console.log(err.message);
     },
   });
 
@@ -100,4 +102,67 @@ export const getSharkyInterest = (apy, duration, amountSol) => {
 
   // Amount plus fee
   return amount + amount * 0.16;
+};
+
+export const repayAll = async (
+  sharkyClient,
+  loans,
+  signAllTransactions,
+  publicKey,
+  connection
+) => {
+  let transactions = await Promise.all(
+    loans.map(async (loan) => {
+      let accountInfo = {
+        data: new Buffer.from(loan.rawData.data),
+        executable: false,
+        lamports: 3243360,
+        owner: new PublicKey("SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"),
+        rentEpoch: 0,
+      };
+
+      const parsedLoan = await sharkyClient.parseLoan({
+        program: sharkyClient.program,
+        keyedAccountInfo: {
+          accountId: new PublicKey(loan.pubkey),
+          accountInfo: accountInfo,
+        },
+      });
+
+      let ix = await parsedLoan.createRepayInstruction({
+        program: sharkyClient.program,
+        valueMint: new PublicKey(parsedLoan.data.valueTokenMint),
+        orderBookPubKey: new PublicKey(parsedLoan.data.orderBook),
+        feeAuthorityPubKey: new PublicKey(
+          "feegKBq3GAfqs9G6muPjdn8xEEZhALLTr2xsigDyxnV"
+        ),
+      });
+
+      const blockhash = await connection.getLatestBlockhash();
+
+      let transaction = new Transaction().add(ix);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = blockhash.blockhash;
+
+      return transaction;
+    })
+  );
+
+  const signedTxs = await signAllTransactions(transactions);
+
+  signedTxs.map(async (tx) => {
+    let res = connection.sendRawTransaction(tx.serialize(), {
+      commitment: "confirmed",
+    });
+
+    await toast.promise(res, {
+      loading: "Repaying...",
+      success: (data) => (
+        <a target="_blank" href={`https://solscan.io/tx/${data}`}>
+          https://solscan.io/tx/{data.substr(0, 5)}...
+        </a>
+      ),
+      error: (err) => console.log(err.message),
+    });
+  });
 };

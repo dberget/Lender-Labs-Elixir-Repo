@@ -53,6 +53,7 @@ export const CitrusProvider = (props) => {
   }, [wallet]);
 
   const takeLoan = async (loan, mint) => {
+    debugger;
     res = citrusSdk.borrowLoan(loan, mint);
 
     await toast.promise(res, {

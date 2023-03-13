@@ -20,7 +20,6 @@ import { useModal } from "react-hooks-use-modal";
 import { useRain } from "../hooks/useRain";
 
 export function Borrow() {
-  const wallet = useAnchorWallet();
   const { connection } = useConnection();
   const metaplex = new Metaplex(connection);
 

@@ -121,7 +121,32 @@ export const RainProvider = (props) => {
     return new Pool(connection, new PublicKey(pool.owner), publicKey);
   };
 
-  const repayLoan = async (loan) => {
+  const repayAll = async () => {
+    for (let index = 0; index < rainLoans.length; index++) {
+      const loan = rainLoans[index];
+
+      const transactions = Promise.all(repayLoan(loan, true));
+
+      const signedTxs = await signAllTransactions(transactions);
+
+      signedTxs.map(async (tx) => {
+        let res = connection.sendRawTransaction(tx.serialize(), {
+          commitment: "confirmed",
+        });
+
+        toast.promise(res, {
+          loading: "Repaying...",
+          success: (data) => (
+            <a target="_blank" href={`https://solscan.io/tx/${data}`}>
+              https://solscan.io/tx/{data.substr(0, 5)}...
+            </a>
+          ),
+        });
+      });
+    }
+  };
+
+  const repayLoan = async (loan, returnTx) => {
     let pool = getPool(loan.poolAddress);
 
     const repayIx = await pool.repay(
@@ -144,6 +169,8 @@ export const RainProvider = (props) => {
     }).compileToV0Message([lookupTable]);
 
     const transaction = new VersionedTransaction(messageV0);
+
+    if (returnTx) return transaction;
 
     const signedTx = await signTransaction(transaction);
 
@@ -203,6 +230,7 @@ export const RainProvider = (props) => {
         getLoans,
         rainLoans,
         takeLoan,
+        repayAll,
       }}
     >
       {props.children}
@@ -215,8 +243,15 @@ export const useRain = (collectionId) => {
   const [rainPoolsWithCollection, setRainPoolsWithCollection] =
     React.useState(null);
 
-  const { rain, rainPools, getInterest, rainLoans, takeLoan, repayLoan } =
-    React.useContext(RainContext);
+  const {
+    rain,
+    rainPools,
+    getInterest,
+    rainLoans,
+    takeLoan,
+    repayLoan,
+    repayAll,
+  } = React.useContext(RainContext);
 
   const getRainPoolsWithCollection = async (rain_fi_id) => {
     let rain_collection = await rain.utils.getCollection(
@@ -261,5 +296,6 @@ export const useRain = (collectionId) => {
     rainLoans,
     takeLoan,
     repayLoan,
+    repayAll,
   };
 };

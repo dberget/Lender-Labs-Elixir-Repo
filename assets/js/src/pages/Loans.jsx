@@ -15,7 +15,13 @@ import { useFrakt } from "../hooks/useFrakt";
 import { useCitrus } from "../hooks/useCitrus";
 import { useRain } from "../hooks/useRain";
 import { SolIcon } from "../components/SolIcon";
-import { repayLoan as repaySharkyLoan } from "../utils/sharky";
+import {
+  repayLoan as repaySharkyLoan,
+  repayAll,
+  takeLoan,
+} from "../utils/sharky";
+import toast from "react-hot-toast";
+import useSwr from "swr";
 
 const initSharkyClient = (connection, wallet) => {
   let provider = sharky.createProvider(connection, wallet);
@@ -26,12 +32,13 @@ const initSharkyClient = (connection, wallet) => {
 export function Loans() {
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
+  const { signAllTransactions } = useWallet();
   const metaplex = new Metaplex(connection);
   const [filter, setFilter] = React.useState(null);
 
   const { loans: fraktLoans } = useFrakt();
   const { citrus, loans: citrusLoans } = useCitrus();
-  const { rainLoans } = useRain();
+  const { rainLoans, repayAll: repayAllRain } = useRain();
 
   const sharkyClient = initSharkyClient(connection, wallet);
 
@@ -53,6 +60,24 @@ export function Loans() {
     ...fraktLoans,
     ...sharkyLoans,
   ].sort((a, b) => a.end - b.end);
+
+  const handleRepayAll = async () => {
+    if (sharkyLoans.length > 0) {
+      toast("Building Sharky repay transactions...");
+      await repayAll(
+        sharkyClient,
+        sharkyLoans,
+        signAllTransactions,
+        wallet.publicKey,
+        connection
+      );
+    }
+
+    if (rainLoans.length > 0) {
+      toast("Building Rain repay transactions...");
+      await repayAllRain(rainLoans);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -106,7 +131,11 @@ export function Loans() {
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
+      <div className="flex justify-evenly mx-auto w-1/4">
+        <button onClick={() => handleRepayAll()}>Repay All</button>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
         {allLoans.length > 0 && (
           <LoanCards
             sharkyClient={sharkyClient}
@@ -186,6 +215,7 @@ const FraktCard = ({ loan }) => {
 };
 
 const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
+  const { data } = useBorrower();
   const { connection } = useConnection();
   const [nft, setNft] = React.useState(null);
 
@@ -200,6 +230,24 @@ const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
 
     getNft();
   }, []);
+
+  const { data: sharkyOffers } = useSwr(
+    `/api/get_collection_offers?collection=${loan?.orderBook}`,
+    (...args) => fetch(...args, {}).then((res) => res.json())
+  );
+
+  const renewSharkyLoan = async (loan, sharkyClient, connection) => {
+    await repaySharkyLoan(loan, sharkyClient, connection);
+
+    setTimeout(() => {
+      takeLoan(
+        sharkyOffers[0],
+        nft.mint,
+        sharkyClient,
+        data?.indexes[nft?.mint?.address.toString()]
+      );
+    }, 5000);
+  };
 
   return (
     <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#FF1757]">
@@ -220,8 +268,16 @@ const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
 
         <div className="ml-auto flex-col flex">
           {/* <img className={"w-auto h-8 ml-auto"} src={"/images/sharky.png"} /> */}
+          {/* {sharkyOffers && sharkyOffers.length > 0 && (
+            <button
+              className="mt-auto"
+              onClick={() => renewSharkyLoan(loan, sharkyClient, connection)}
+            >
+              Renew ({`${sharkyOffers[0].amountSol}`})
+            </button>
+          )} */}
           <button
-            className="mt-auto"
+            className="mt-2"
             onClick={() => repaySharkyLoan(loan, sharkyClient, connection)}
           >
             Repay
@@ -234,7 +290,7 @@ const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
 
 const CitrusCard = ({ loan, metaplex }) => {
   const [nft, setNft] = React.useState(null);
-  const { repayLoan } = useCitrus();
+  const { citrusSdk, repayLoan } = useCitrus();
 
   React.useEffect(() => {
     const getNft = async () => {

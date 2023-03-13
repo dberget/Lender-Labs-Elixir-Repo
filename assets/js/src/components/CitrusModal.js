@@ -29,7 +29,7 @@ export const CitrusModal = ({
   return (
     <div
       className="p-4 flex justify-evenly"
-      style={{ background: "#242424", width: 800 }}
+      style={{ background: "#242424", width: 600 }}
     >
       <div className="flex flex-col items-center w-1/3">
         <div className="text-center">

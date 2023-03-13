@@ -253,6 +253,13 @@ defmodule SharkAttackWeb.ApiController do
     collections =
       mints
       |> SharkAttack.Collections.get_collections_from_mint_list()
+      |> Enum.map(fn c ->
+        %{
+          c
+          | fp: SharkAttack.FloorWorker.get_floor_price(c.id)
+        }
+      end)
+      |> Enum.sort_by(& &1.fp, :desc)
 
     %{"indexes" => indexes} = SharkAttack.SharkyApi.get_sharky_indexes(mints)
 
