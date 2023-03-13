@@ -4,6 +4,7 @@ import { useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
 
 import { CitrusSdk } from "@famousfoxfederation/citrus-sdk";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { notify } from "../utils/discord";
 
 export const CitrusContext = React.createContext({});
 
@@ -54,10 +55,14 @@ export const CitrusProvider = (props) => {
   const takeLoan = async (loan, mint) => {
     res = citrusSdk.borrowLoan(loan, mint);
 
-    toast.promise(res, {
+    await toast.promise(res, {
       loading: "Taking Loan",
       success: (sig) => <a href={`https://solscan.io/tx/${sig}`}>solscan</a>,
     });
+
+    notify(
+      `Citrus Loan taken! ${loan.terms.principal / LAMPORTS_PER_SOL} SOL}`
+    );
   };
 
   const getInterest = (offer) => {

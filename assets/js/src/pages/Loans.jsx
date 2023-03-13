@@ -122,11 +122,22 @@ export function Loans() {
 
 const LoanCards = ({ loans, metaplex, sharkyClient, filter }) => {
   const CardMap = {
-    Rain: (props) => <RainCard {...props} metaplex={metaplex} />,
-    Citrus: (props) => <CitrusCard {...props} metaplex={metaplex} />,
-    FRAKT: (props) => <FraktCard {...props} metaplex={metaplex} />,
+    Rain: (props) => (
+      <RainCard key={props.index} {...props} metaplex={metaplex} />
+    ),
+    Citrus: (props) => (
+      <CitrusCard key={props.index} {...props} metaplex={metaplex} />
+    ),
+    FRAKT: (props) => (
+      <FraktCard key={props.index} {...props} metaplex={metaplex} />
+    ),
     Sharky: (props) => (
-      <SharkyCard {...props} sharkyClient={sharkyClient} metaplex={metaplex} />
+      <SharkyCard
+        key={props.index}
+        sharkyClient={sharkyClient}
+        metaplex={metaplex}
+        {...props}
+      />
     ),
   };
 

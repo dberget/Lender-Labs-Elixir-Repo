@@ -1,6 +1,7 @@
 import sharky, { aprToInterestRatio, apyToApr } from "@sharkyfi/client";
 import toast from "react-hot-toast";
 import { PublicKey } from "@solana/web3.js";
+import { notify } from "./discord";
 
 export const initSharkyClient = (connection, wallet) => {
   let provider = sharky.createProvider(connection, wallet);
@@ -56,6 +57,8 @@ export const takeLoan = async (offer, mint, sharkyClient, nftIndex) => {
       );
     },
   });
+
+  notify(`Sharky loan taken! ${offer.amountSol} - ${mint.address}`);
 };
 
 export const repayLoan = async (loan, sharkyClient, connection) => {
@@ -79,7 +82,7 @@ export const repayLoan = async (loan, sharkyClient, connection) => {
     orderBookPubKey: new PublicKey(loan.orderBook),
   });
 
-  let sig = await parsedLoan.repay({
+  let sig = parsedLoan.repay({
     program: sharkyClient.program,
     orderBook,
   });
@@ -88,6 +91,8 @@ export const repayLoan = async (loan, sharkyClient, connection) => {
     loading: "Repaying loan...",
     success: ({ sig }) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
   });
+
+  notify(`Sharky loan repaid! ${loan.amountSol}`);
 };
 
 export const getSharkyInterest = (apy, duration, amountSol) => {

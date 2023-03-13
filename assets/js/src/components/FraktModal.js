@@ -24,35 +24,33 @@ export const FraktModal = ({
   const [maxBondBorrow, setMaxBondBorrow] = React.useState(null);
   const [bestPair, setBestPair] = React.useState(null);
 
-  React.useEffect(() => {
-    getBondMarket().then((market) => setBondMarket(market));
-    getMarketPairs().then((market) => setBondPairs(market));
-  }, []);
+  // React.useEffect(() => {
+  //   getBondMarket().then((market) => setBondMarket(market));
+  //   getMarketPairs().then((market) => setBondPairs(market));
+  // }, []);
 
-  React.useEffect(() => {
-    if (bondMarket && bondPairs) {
-      let maxBorrow = getMaxBorrowValueOptimized({
-        pairs: bondPairs,
-        collectionFloor: bondMarket.oracleFloor.floor,
-      });
+  // React.useEffect(() => {
+  //   if (bondMarket && bondPairs) {
+  //     let maxBorrow = getMaxBorrowValueOptimized({
+  //       pairs: bondPairs,
+  //       collectionFloor: bondMarket.oracleFloor.floor,
+  //     });
 
-      const pairCombos = getBondLoansCombinations({
-        nfts: [selectedOffer.mint],
-        collectionFloor: bondMarket.oracleFloor.floor,
-        pairs: bondPairs,
-        durationFilter: 604800,
-      });
+  //     const pairCombos = getBondLoansCombinations({
+  //       nfts: [selectedOffer.mint],
+  //       collectionFloor: bondMarket.oracleFloor.floor,
+  //       pairs: bondPairs,
+  //       durationFilter: 604800,
+  //     });
 
-      const pair = bondPairs.find(
-        (pair) => pair.publicKey === pairCombos[0].orders[0].pairPubkey
-      );
+  //     const pair = bondPairs.find(
+  //       (pair) => pair.publicKey === pairCombos[0].orders[0].pairPubkey
+  //     );
 
-      console.log(pair);
-
-      setBestPair(pair);
-      setMaxBondBorrow(maxBorrow);
-    }
-  }, [bondPairs, bondMarket]);
+  //     setBestPair(pair);
+  //     setMaxBondBorrow(maxBorrow);
+  //   }
+  // }, [bondPairs, bondMarket]);
 
   const handleUpdateIndex = () => {
     if (selectedIndex === offers.length - 1) {
@@ -92,22 +90,20 @@ export const FraktModal = ({
         )}
 
         <div className="mt-auto">
-          {bondMarket && bondPairs && (
-            <button
-              className="mx-1"
-              onClick={() =>
-                // buildBondLoan({
-                //   mint: offers[selectedIndex].mint,
-                //   pair: bondPairs[1],
-                //   market: bondMarket,
-                // })
+          <button
+            className="mx-1"
+            onClick={() =>
+              // buildBondLoan({
+              //   mint: offers[selectedIndex].mint,
+              //   pair: bondPairs[1],
+              //   market: bondMarket,
+              // })
 
-                takeLoan(offers[selectedIndex])
-              }
-            >
-              Take
-            </button>
-          )}
+              takeLoan(offers[selectedIndex])
+            }
+          >
+            Take
+          </button>
           <button className="mx-1" onClick={() => close()}>
             Close
           </button>

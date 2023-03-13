@@ -3,6 +3,7 @@ import React from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import BN from "bn.js";
 
+import { notify } from "../utils/discord";
 import {
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -110,6 +111,8 @@ export const RainProvider = (props) => {
         );
       },
     });
+
+    notify(`Rain Loan Taken, ${bestOffer / LAMPORTS_PER_SOL} SOL}`);
   };
 
   const getPool = (poolAddress) => {
@@ -162,6 +165,8 @@ export const RainProvider = (props) => {
         );
       },
     });
+
+    notify(`Rain loan repaid! ${loan.accountAddress}`);
   };
 
   React.useEffect(() => {

@@ -17,6 +17,7 @@ import {
 import { fbondFactory } from "fbonds-core/lib/fbond-protocol/functions";
 import { validateAndSellNftToTokenToNftPair } from "fbonds-core/lib/fbond-protocol/functions/router";
 import { PublicKey, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
+import { notify } from "../utils/discord";
 
 const BONDS_PROGRAM_PUBKEY = new PublicKey(
   "4tdmkuY6EStxbS6Y8s5ueznL3VPMSugrvQuDeAHGZhSt"
@@ -97,6 +98,8 @@ export const FraktProvider = (props) => {
       loading: "Repaying loan...",
       success: (sig) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
     });
+
+    notify(`Frakt loan repaid! ${loan.nft.mint}`);
   };
 
   React.useEffect(() => {
@@ -127,6 +130,8 @@ export const FraktProvider = (props) => {
       loading: "Taking loan...",
       success: "Success!",
     });
+
+    notify(`Frakt loan taken! ${fraktNft?.timeBased?.loanValue}`);
   };
 
   const buildBondLoan = async ({ mint, pair, market }) => {
