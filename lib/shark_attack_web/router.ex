@@ -35,6 +35,7 @@ defmodule SharkAttackWeb.Router do
     get "/get_borrower_collections", ApiController, :get_borrower_collections
     get "/get_borrower_loans", ApiController, :get_borrower_loans
     get "/remove_loan", ApiController, :remove_loan
+    get "/analyze_collection_data", ApiController, :analyze_collection_data
 
     post "/get_sharky_indexes", ApiController, :get_sharky_indexes
     post "/save_nft_image", ApiController, :save_nft_image

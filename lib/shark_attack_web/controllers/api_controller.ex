@@ -243,6 +243,50 @@ defmodule SharkAttackWeb.ApiController do
     |> json(collections)
   end
 
+  def analyze_collection_data(conn, params) do
+    loans = SharkAttack.LoansWorker.get_all_collection_loans()
+
+    collections =
+      SharkAttack.Collections.list_collections(%{sharky: params["sharky"]})
+      |> Enum.map(fn c ->
+        fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+
+        {_ob, collection_loans} =
+          Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.sharky_address end)
+
+        citrus_loans = SharkAttack.SharkyApi.get_collection_loans(c.foxy_address, "citrus")
+
+        sharky = SharkAttack.Analytics.build_overview(c.id, collection_loans, "sharky")
+
+        citrus = SharkAttack.Analytics.build_overview(c.id, citrus_loans, "citrus")
+
+        rollup = %{
+          offers: sharky.offers + citrus.offers,
+          loans: sharky.loans + citrus.loans,
+          countUnderWater: sharky.countUnderWater + citrus.countUnderWater,
+          averageUnderwater: SharkAttack.Analytics.average_underwater(sharky, citrus),
+          last_24: sharky.last_24 + citrus.last_24,
+          tvl: sharky.tvl + citrus.tvl
+        }
+
+        %{
+          id: c.id,
+          name: c.name,
+          sharky_address: c.sharky_address,
+          rollup: rollup,
+          citrus: citrus,
+          sharky: sharky,
+          logo: c.logo,
+          hyperspace_id: c.hyperspace_id,
+          fp: fp
+        }
+      end)
+      |> Enum.reject(fn c -> c.fp == 0 and c.sharky.loans == 0 and c.sharky.offers == 0 end)
+
+    conn
+    |> json(collections)
+  end
+
   def get_borrower_collections(conn, params) do
     mints =
       params["borrower"]
@@ -273,7 +317,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def remove_loan(conn, params) do
-    SharkAttack.LoansWorker.remove_loan(params["loanAddress"]) |> IO.inspect()
+    SharkAttack.LoansWorker.remove_loan(params["loanAddress"])
 
     conn
     |> json(%{message: "ok"})

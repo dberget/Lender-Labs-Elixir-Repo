@@ -70,6 +70,14 @@ defmodule SharkAttack.SharkyApi do
     Map.get(res, "data", [])
   end
 
+  def get_collection_loans(nil, "citrus"), do: []
+
+  def get_collection_loans(address, "citrus") do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/citrus/#{address}")
+
+    Map.get(res, "loanData", [])
+  end
+
   def get_lender_loans(address, "citrus") do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/citrus/#{address}")
 
