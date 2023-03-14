@@ -148,10 +148,7 @@ const CollectionCard = ({
               duration={citrusOffers[0].terms?.duration / 60 / 60 / 24}
               interest={getInterest(citrusOffers[0]).toFixed(2)}
             >
-              <img
-                className="w-8"
-                src={"https://famousfoxes.com/logo.b8610686.svg"}
-              />
+              <img className="w-8" src={"/images/citrus-logo.png"} />
             </OfferDetailsBox>
           )}
         </div>

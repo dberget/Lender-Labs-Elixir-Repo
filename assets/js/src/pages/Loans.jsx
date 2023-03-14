@@ -15,13 +15,8 @@ import { useFrakt } from "../hooks/useFrakt";
 import { useCitrus } from "../hooks/useCitrus";
 import { useRain } from "../hooks/useRain";
 import { SolIcon } from "../components/SolIcon";
-import {
-  repayLoan as repaySharkyLoan,
-  repayAll,
-  takeLoan,
-} from "../utils/sharky";
+import { repayAll } from "../utils/sharky";
 import toast from "react-hot-toast";
-import useSwr from "swr";
 
 const initSharkyClient = (connection, wallet) => {
   let provider = sharky.createProvider(connection, wallet);
@@ -35,9 +30,10 @@ export function Loans() {
   const { signAllTransactions } = useWallet();
   const metaplex = new Metaplex(connection);
   const [filter, setFilter] = React.useState(null);
+  const [selectedForRepay, setSelectedForRepay] = React.useState([]);
 
-  const { loans: fraktLoans } = useFrakt();
-  const { citrus, loans: citrusLoans } = useCitrus();
+  const { loans: fraktLoans, repayLoan: repayFraktLoan } = useFrakt();
+  const { citrus, loans: citrusLoans, repayLoan } = useCitrus();
   const { rainLoans, repayAll: repayAllRain } = useRain();
 
   const sharkyClient = initSharkyClient(connection, wallet);
@@ -63,7 +59,8 @@ export function Loans() {
 
   const handleRepayAll = async () => {
     if (sharkyLoans.length > 0) {
-      toast("Building Sharky repay transactions...");
+      toast("Building Sharky.fi transactions...");
+
       await repayAll(
         sharkyClient,
         sharkyLoans,
@@ -74,14 +71,83 @@ export function Loans() {
     }
 
     if (rainLoans.length > 0) {
-      toast("Building Rain repay transactions...");
+      toast("Building Rain.fi transactions...");
       await repayAllRain(rainLoans);
+    }
+  };
+
+  const handleRepaySelected = async () => {
+    const selectedSharkyLoans = selectedForRepay.filter(
+      (l) => l.loan.platform === "Sharky"
+    );
+
+    if (selectedSharkyLoans.length > 0) {
+      toast("Building bulk Sharky.fi transactions...");
+
+      await repayAll(
+        sharkyClient,
+        selectedSharkyLoans.map((l) => l.loan),
+        signAllTransactions,
+        wallet.publicKey,
+        connection
+      );
+    }
+
+    const selectedRainLoans = selectedForRepay.filter(
+      (l) => l.loan.platform === "Rain"
+    );
+
+    if (selectedRainLoans.length > 0) {
+      toast("Building bulk Rain.fi transactions...");
+
+      await repayAllRain(selectedRainLoans.map((l) => l.loan));
+    }
+
+    const selectedFraktLoans = selectedForRepay.filter(
+      (l) => l.loan.platform === "FRAKT"
+    );
+
+    if (selectedFraktLoans.length > 0) {
+      toast("Building Frakt repay transactions...");
+
+      for (let i = 0; i < selectedFraktLoans.length; i++) {
+        const loan = selectedFraktLoans[i].loan;
+
+        toast("Building Citrus repay transaction...");
+        await repayFraktLoan(loan);
+      }
+    }
+
+    const selectedCitrusLoans = selectedForRepay.filter(
+      (l) => l.loan.platform === "Citrus"
+    );
+
+    if (selectedCitrusLoans.length > 0) {
+      toast("Building Citrus transactions...");
+
+      for (let i = 0; i < selectedCitrusLoans.length; i++) {
+        const loan = selectedCitrusLoans[i].loan;
+
+        await repayLoan(loan);
+      }
+    }
+  };
+
+  const handleSetSelectedForRepay = (loan) => {
+    const pk = loan.pubkey ?? loan.loanAccount ?? loan.accountAddress;
+
+    const found = selectedForRepay.find((l) => l.key == pk);
+
+    if (found) {
+      setSelectedForRepay(selectedForRepay.filter((l) => l.key !== pk));
+    } else {
+      setSelectedForRepay([...selectedForRepay, { key: pk, loan }]);
     }
   };
 
   return (
     <div className="w-full">
-      <div className="flex justify-evenly mx-auto w-1/4">
+      <div className="flex justify-evenly mx-auto w-full md:w-1/4">
         <div
           style={{
             backgroundColor: filter == "Sharky" ? "#28292B" : "transparent",
@@ -131,17 +197,23 @@ export function Loans() {
           />
         </div>
       </div>
-      <div className="flex justify-evenly mx-auto w-1/4">
+      <div className="flex justify-around mx-auto w-full md:w-1/4">
         <button onClick={() => handleRepayAll()}>Repay All</button>
+
+        <button onClick={() => handleRepaySelected()}>
+          Repay Selected ({selectedForRepay.length})
+        </button>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
         {allLoans.length > 0 && (
           <LoanCards
             sharkyClient={sharkyClient}
+            setSelectedForRepay={handleSetSelectedForRepay}
             filter={filter}
             metaplex={metaplex}
             loans={allLoans}
+            selectedForRepay={selectedForRepay}
           />
         )}
       </div>
@@ -149,7 +221,14 @@ export function Loans() {
   );
 }
 
-const LoanCards = ({ loans, metaplex, sharkyClient, filter }) => {
+const LoanCards = ({
+  loans,
+  metaplex,
+  sharkyClient,
+  filter,
+  setSelectedForRepay,
+  selectedForRepay,
+}) => {
   const CardMap = {
     Rain: (props) => (
       <RainCard key={props.index} {...props} metaplex={metaplex} />
@@ -177,17 +256,33 @@ const LoanCards = ({ loans, metaplex, sharkyClient, filter }) => {
   }
 
   filteredLoans = filteredLoans.map((loan, index) =>
-    CardMap[loan.platform]({ loan, index })
+    CardMap[loan.platform]({
+      loan,
+      index,
+      setSelectedForRepay,
+      selectedForRepay,
+    })
   );
 
   return filteredLoans;
 };
 
-const FraktCard = ({ loan }) => {
+const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
   const { repayLoan } = useFrakt();
 
+  const [isSelected, setIsSelected] = React.useState(false);
+
+  React.useEffect(() => {
+    const selected = selectedForRepay.find((l) => l.key == loan.pubkey);
+
+    setIsSelected(selected);
+  }, [selectedForRepay]);
+
   return (
-    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#A2FF2F]">
+    <div
+      onClick={() => setSelectedForRepay(loan)}
+      className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#A2FF2F]"
+    >
       <img src={loan?.nft.imageUrl} className="w-20 h-20 rounded" />
 
       <div className="flex w-full ml-2">
@@ -205,7 +300,18 @@ const FraktCard = ({ loan }) => {
         </div>
 
         <div className="ml-auto flex-col flex">
-          <button className="mt-auto" onClick={() => repayLoan(loan)}>
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } ml-auto w-7 h-7 text-[#58BC98]`}
+          />
+          <button
+            className="mt-auto"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              repayLoan(loan);
+            }}
+          >
             Repay
           </button>
         </div>
@@ -214,10 +320,20 @@ const FraktCard = ({ loan }) => {
   );
 };
 
-const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
-  const { data } = useBorrower();
-  const { connection } = useConnection();
+const SharkyCard = ({
+  loan,
+  metaplex,
+  selectedForRepay,
+  setSelectedForRepay,
+}) => {
   const [nft, setNft] = React.useState(null);
+  const [isSelected, setIsSelected] = React.useState(false);
+
+  React.useEffect(() => {
+    const selected = selectedForRepay.find((l) => l.key == loan.pubkey);
+
+    setIsSelected(selected);
+  }, [selectedForRepay]);
 
   React.useEffect(() => {
     const getNft = async () => {
@@ -231,26 +347,11 @@ const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
     getNft();
   }, []);
 
-  const { data: sharkyOffers } = useSwr(
-    `/api/get_collection_offers?collection=${loan?.orderBook}`,
-    (...args) => fetch(...args, {}).then((res) => res.json())
-  );
-
-  const renewSharkyLoan = async (loan, sharkyClient, connection) => {
-    await repaySharkyLoan(loan, sharkyClient, connection);
-
-    setTimeout(() => {
-      takeLoan(
-        sharkyOffers[0],
-        nft.mint,
-        sharkyClient,
-        data?.indexes[nft?.mint?.address.toString()]
-      );
-    }, 5000);
-  };
-
   return (
-    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#FF1757]">
+    <div
+      onClick={() => setSelectedForRepay(loan)}
+      className="cursor-pointer bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#FF1757]"
+    >
       <img src={nft?.json?.image} className="w-20 h-20 rounded" />
 
       <div className="flex w-full ml-2">
@@ -267,18 +368,17 @@ const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
         </div>
 
         <div className="ml-auto flex-col flex">
-          {/* <img className={"w-auto h-8 ml-auto"} src={"/images/sharky.png"} /> */}
-          {/* {sharkyOffers && sharkyOffers.length > 0 && (
-            <button
-              className="mt-auto"
-              onClick={() => renewSharkyLoan(loan, sharkyClient, connection)}
-            >
-              Renew ({`${sharkyOffers[0].amountSol}`})
-            </button>
-          )} */}
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } ml-auto w-7 h-7 text-[#58BC98]`}
+          />
           <button
-            className="mt-2"
-            onClick={() => repaySharkyLoan(loan, sharkyClient, connection)}
+            className="mt-auto"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              repayLoan(loan);
+            }}
           >
             Repay
           </button>
@@ -288,9 +388,21 @@ const SharkyCard = ({ loan, metaplex, sharkyClient }) => {
   );
 };
 
-const CitrusCard = ({ loan, metaplex }) => {
+const CitrusCard = ({
+  loan,
+  metaplex,
+  setSelectedForRepay,
+  selectedForRepay,
+}) => {
   const [nft, setNft] = React.useState(null);
   const { citrusSdk, repayLoan } = useCitrus();
+  const [isSelected, setIsSelected] = React.useState(false);
+
+  React.useEffect(() => {
+    const selected = selectedForRepay.find((l) => l.key == loan.loanAccount);
+
+    setIsSelected(selected);
+  }, [selectedForRepay]);
 
   React.useEffect(() => {
     const getNft = async () => {
@@ -304,7 +416,10 @@ const CitrusCard = ({ loan, metaplex }) => {
   }, []);
 
   return (
-    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#F97315]">
+    <div
+      onClick={() => setSelectedForRepay(loan)}
+      className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#F97315] cursor-pointer"
+    >
       <img src={nft?.json?.image} className="w-20 h-20 rounded" />
 
       <div className="flex w-full ml-2">
@@ -321,7 +436,18 @@ const CitrusCard = ({ loan, metaplex }) => {
         </div>
 
         <div className="ml-auto flex-col flex">
-          <button className="mt-auto" onClick={() => repayLoan(loan)}>
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } ml-auto w-7 h-7 text-[#58BC98]`}
+          />
+          <button
+            className="mt-auto"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              repayLoan(loan);
+            }}
+          >
             Repay
           </button>
         </div>
@@ -330,9 +456,22 @@ const CitrusCard = ({ loan, metaplex }) => {
   );
 };
 
-const RainCard = ({ loan, metaplex }) => {
+const RainCard = ({
+  loan,
+  metaplex,
+  setSelectedForRepay,
+  selectedForRepay,
+}) => {
   const [nft, setNft] = React.useState(null);
   const { rain, repayLoan } = useRain();
+
+  const [isSelected, setIsSelected] = React.useState(false);
+
+  React.useEffect(() => {
+    const selected = selectedForRepay.find((l) => l.key == loan.accountAddress);
+
+    setIsSelected(selected);
+  }, [selectedForRepay]);
 
   const getNft = async () => {
     const nft = await metaplex
@@ -347,7 +486,10 @@ const RainCard = ({ loan, metaplex }) => {
   }, []);
 
   return (
-    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#2FB5FE]">
+    <div
+      onClick={() => setSelectedForRepay(loan)}
+      className="bg-[#28292B] cursor-pointer p-4 my-2 w-full rounded flex border-b-4 border-[#2FB5FE]"
+    >
       <img src={nft?.json?.image} className="w-20 h-20 rounded" />
 
       <div className="flex w-full ml-2">
@@ -363,8 +505,18 @@ const RainCard = ({ loan, metaplex }) => {
           </div>
         </div>
         <div className="ml-auto flex-col flex">
-          {/* <img className={"w-auto h-8 ml-auto"} src={"/images/rainfi.png"} /> */}
-          <button className="mt-auto" onClick={() => repayLoan(loan)}>
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } ml-auto w-7 h-7 text-[#58BC98]`}
+          />
+          <button
+            className="mt-auto"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              repayLoan(loan);
+            }}
+          >
             Repay
           </button>
         </div>
