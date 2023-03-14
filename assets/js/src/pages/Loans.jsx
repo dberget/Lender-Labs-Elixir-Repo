@@ -58,7 +58,7 @@ export function Loans() {
   ].sort((a, b) => a.end - b.end);
 
   const handleRepayAll = async () => {
-    if (sharkyLoans.length > 0) {
+    if (sharkyLoans.length > 0 && (filter === "Sharky" || filter === null)) {
       toast("Building Sharky.fi transactions...");
 
       await repayAll(
@@ -70,9 +70,30 @@ export function Loans() {
       );
     }
 
-    if (rainLoans.length > 0) {
+    if (rainLoans.length > 0 && (filter === "Rain" || filter === null)) {
       toast("Building Rain.fi transactions...");
+
       await repayAllRain(rainLoans);
+    }
+
+    if (fraktLoans.length > 0 && (filter === "FRAKT" || filter === null)) {
+      toast("Building Frakt transactions...");
+
+      for (let i = 0; i < fraktLoans.length; i++) {
+        const loan = fraktLoans[i];
+
+        await repayFraktLoan(loan);
+      }
+    }
+
+    if (citrusLoans.length > 0 && (filter === "Citrus" || filter === null)) {
+      toast("Building Citrus transactions...");
+
+      for (let i = 0; i < citrusLoans.length; i++) {
+        const loan = citrusLoans[i];
+
+        await repayLoan(loan);
+      }
     }
   };
 

@@ -100,7 +100,10 @@ export const useCitrus = (foxy_address) => {
   const repayLoan = async (loan) => {
     let sig = citrusSdk.repayLoan(loan);
 
-    toast.promise(sig, { loading: "Repaying Loan", success: "Repayed Loan!" });
+    await toast.promise(sig, {
+      loading: "Repaying Loan",
+      success: "Repayed Loan!",
+    });
   };
 
   React.useEffect(() => {

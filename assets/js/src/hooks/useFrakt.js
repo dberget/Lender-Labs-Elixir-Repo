@@ -94,12 +94,12 @@ export const FraktProvider = (props) => {
 
     let sig = connection.sendRawTransaction(signedTx.serialize());
 
-    toast.promise(sig, {
+    notify(`Frakt loan repaid! ${loan.nft.mint}`);
+
+    await toast.promise(sig, {
       loading: "Repaying loan...",
       success: (sig) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
     });
-
-    notify(`Frakt loan repaid! ${loan.nft.mint}`);
   };
 
   React.useEffect(() => {
