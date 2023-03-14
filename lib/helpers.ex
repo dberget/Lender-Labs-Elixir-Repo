@@ -10,10 +10,11 @@ defmodule SharkAttack.Helpers do
     |> parse_response()
   end
 
-  def do_get_request(url) do
+  def do_get_request(url, headers \\ []) do
     Finch.build(
       :get,
-      url
+      url,
+      headers
     )
     |> Finch.request(SharkAttackWeb.Finch,
       receive_timeout: 15_000_000_000

@@ -27,28 +27,57 @@ export function Borrow() {
 
   const { data } = useBorrower();
 
+  if (data?.collections?.length === 0) {
+    return (
+      <div className="w-full text-center">
+        No currently loanable NFT's Found! If they are staked or already loaned
+        they won't show up here.
+        <div>
+          Let us know in{" "}
+          <a
+            target={"_blank"}
+            className="underline"
+            href="https://discord.gg/2kwFGMNndR"
+          >
+            discord
+          </a>{" "}
+          if a collection is missing.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center mb-48">
-      {fraktNfts &&
-        data?.collections?.map((collection) => {
-          let fraktMatches = fraktNfts.filter((offer) =>
-            collection.nfts.find((nft) => nft.mint === offer.mint)
-          );
-
-          return (
-            <CollectionCard
-              key={collection.id}
-              collection={collection}
-              sharkyIndexes={data?.indexes}
-              fraktNfts={fraktNfts}
-              fraktOffers={fraktMatches}
-              metaplex={metaplex}
-            />
-          );
-        })}
+      {fraktNfts && (
+        <DisplayCollections
+          collections={data?.collections}
+          metaplex={metaplex}
+          fraktNfts={fraktNfts}
+        />
+      )}
     </div>
   );
 }
+
+const DisplayCollections = ({ collections, metaplex }) => {
+  return collections?.map((collection) => {
+    let fraktMatches = fraktNfts.filter((offer) =>
+      collection.nfts.find((nft) => nft.mint === offer.mint)
+    );
+
+    return (
+      <CollectionCard
+        key={collection.id}
+        collection={collection}
+        sharkyIndexes={data?.indexes}
+        fraktNfts={fraktNfts}
+        fraktOffers={fraktMatches}
+        metaplex={metaplex}
+      />
+    );
+  });
+};
 
 const CollectionCard = ({
   collection,
