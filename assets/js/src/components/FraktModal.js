@@ -67,13 +67,12 @@ export const FraktModal = ({
 
   return (
     <div
-      className="p-4 flex justify-evenly"
-      style={{ background: "#242424", width: 600 }}
+      className="modal-size p-1 md:p-4 flex justify-evenly"
+      style={{ background: "#242424" }}
     >
-      <div className="flex flex-col items-center w-1/3">
+      <div className="flex flex-col items-center w-1/2 md:w-1/3">
         <div className="text-center">
-          <span className="font-bold"> {collection?.name}</span>{" "}
-          <div>{selectedOffer?.name}</div>
+          <span>{selectedOffer?.name ?? collection?.name}</span>
         </div>
 
         <img
@@ -104,25 +103,22 @@ export const FraktModal = ({
           >
             Take
           </button>
-          <button className="mx-1" onClick={() => close()}>
-            Close
-          </button>
         </div>
       </div>
 
-      <div className="flex flex-col w-2/3">
+      <div className="flex flex-col w-1/2 md:w-2/3">
         {selectedOffer?.priceBased !== undefined && (
           <div className="flex justify-center mx-auto">
             <button
               style={{ lineHeight: 0 }}
-              className="mx-1 px-8 py-4"
+              className="mr-1 px-4 md:mx-1 md:px-8 py-4"
               onClick={() => setLoanType("timeBased")}
             >
               Time
             </button>
             <button
               style={{ lineHeight: 0 }}
-              className="mx-1 px-8 py-4"
+              className="md:mx-1 px-2 md:px-8 py-4"
               onClick={() => setLoanType("priceBased")}
             >
               Perpetual
@@ -130,7 +126,7 @@ export const FraktModal = ({
           </div>
         )}
 
-        <div className="mt-4 w-1/2 mx-auto">
+        <div className="mt-4 flex w-full mx-auto">
           {loanType === "timeBased" ? (
             <TimeBased selectedOffer={selectedOffer} />
           ) : (
@@ -144,7 +140,7 @@ export const FraktModal = ({
 
 const TimeBased = ({ selectedOffer }) => {
   return (
-    <div className="flex">
+    <div className="flex mx-auto">
       {selectedOffer && (
         <div>
           <div>
@@ -188,7 +184,7 @@ const PriceBased = ({ selectedOffer }) => {
     selectedOffer?.maxLoanValue * collaterizationRateValue;
 
   return (
-    <div className="flex">
+    <div className="flex mx-auto">
       {selectedOffer && (
         <div>
           <div>
@@ -218,7 +214,7 @@ const PriceBased = ({ selectedOffer }) => {
             </span>
           </div>
           <div>
-            FP Liquidation Threshold:{" "}
+            FP Liq. Threshold:{" "}
             <span className="font-bold text-red-700">
               {liquidationPrice.toFixed(2)} <SolIcon />
             </span>

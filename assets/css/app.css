@@ -66,6 +66,18 @@ html {
   button:focus-visible {
     outline: 4px auto -webkit-focus-ring-color;
   }
+
+  .modal-size {
+    min-width: 600px;
+  }
+
+@media (max-width: 599px) {
+  .modal-size {
+      margin: .5rem;
+      min-width: calc(100vw - 2rem); /* 100vh - 2 * margin */
+  }
+}
+
   
   @media (prefers-color-scheme: light) {
     a:hover {

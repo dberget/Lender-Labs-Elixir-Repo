@@ -28,7 +28,7 @@ export function Borrow() {
   const { data } = useBorrower();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center mb-48">
       {fraktNfts &&
         data?.collections?.map((collection) => {
           let fraktMatches = fraktNfts.filter((offer) =>
@@ -94,7 +94,7 @@ const CollectionCard = ({
           {collection?.name}
         </div>
 
-        <div className="flex justify-around mx-auto w-full">
+        <div className="flex flex-col md:flex-row justify-around mx-auto w-full">
           {sharkyOffers?.length > 0 && (
             <OfferDetailsBox
               open={() => setOpen("SHARKY")}
@@ -213,8 +213,6 @@ const ModalViewer = ({
   const [selectedNft, setSelectedNft] = React.useState(null);
 
   React.useEffect(() => {
-    if (!isOpen) return;
-
     metaplex
       .nfts()
       .findAllByMintList({
@@ -222,8 +220,15 @@ const ModalViewer = ({
       })
       .then((nfts) => {
         setNfts(nfts);
-        setSelectedOffer(offers[0]);
       });
+
+    if (!isOpen) return;
+
+    setSelectedOffer(offers[0]);
+
+    return () => {
+      setSelectedOffer(null);
+    };
   }, [collection, isOpen]);
 
   const getNft = async (index) => {
@@ -262,7 +267,7 @@ const OfferDetailsBox = ({ open, amount, duration, interest, children }) => {
   return (
     <div
       onClick={() => open()}
-      className="p-2 bg-[#242424] rounded w-1/3 mx-2 cursor-pointer"
+      className="p-2 bg-[#242424] rounded md:w-1/3 mx-1 my-1 md:my-0 md:mx-2 cursor-pointer"
     >
       <div className="flex">
         <div className="mx-1">{children}</div>

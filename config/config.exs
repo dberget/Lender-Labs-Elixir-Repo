@@ -19,7 +19,11 @@ config :shark_attack, SharkAttackWeb.Endpoint,
   live_view: [signing_salt: "EYLKcoEy"]
 
 config :cors_plug,
-  origin: ["https://lenderlabs.xyz", "https://stage--chimerical-custard-213af0.netlify.app"],
+  origin: [
+    "https://lenderlabs.xyz",
+    "https://stage.lenderlabs.xyz",
+    "https://stage--chimerical-custard-213af0.netlify.app"
+  ],
   max_age: 86400,
   headers: ["accept", "content-type", "origin", "authorization", "baggage"],
   methods: ["GET", "POST"]

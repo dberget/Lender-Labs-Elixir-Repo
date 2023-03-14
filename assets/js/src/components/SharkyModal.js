@@ -36,111 +36,146 @@ export const SharkyModal = ({
   };
 
   return (
-    <div
-      className="p-4 flex justify-evenly"
-      style={{ background: "#242424", width: 600 }}
-    >
-      <div className="flex flex-col items-center w-1/3">
-        <div className="text-center">
-          <span className="font-bold"> {collection?.name}</span>{" "}
-          <div>{selectedNft?.name}</div>
-        </div>
+    <div className="modal-size" style={{ background: "#242424" }}>
+      <div className="md:hidden">
+        {selectedOffer && (
+          <div className="flex justify-around pt-2">
+            <div>
+              You Get:{" "}
+              <span className="font-bold">
+                {selectedOffer?.amountSol
+                  ? selectedOffer?.amountSol?.toFixed(2)
+                  : 0}
+              </span>
+            </div>
 
-        <img
-          style={{ minHeight: 128 }}
-          className="w-32 my-2"
-          src={selectedNft?.json?.image}
-        />
-        {nfts.length > 1 && (
-          <img
-            onClick={() => handleUpdateIndex()}
-            className="hero-arrow-right-solid cursor-pointer p-4"
-          />
+            <div>
+              You'll Owe:{" "}
+              <span className="font-bold">
+                {(
+                  selectedOffer.amountSol +
+                  getSharkyInterest(
+                    collection?.apy,
+                    collection?.duration,
+                    selectedOffer.amountSol
+                  )
+                ).toFixed(3)}
+              </span>
+            </div>
+            <div>
+              Due In:{" "}
+              <span className="font-bold">
+                {collection.duration / 60 / 60 / 24 + " days"}
+              </span>
+            </div>
+          </div>
         )}
+      </div>
 
-        <div className="mt-auto">
-          <button
-            className="mx-1"
-            onClick={() =>
-              takeLoan(
-                selectedOffer,
-                selectedNft.mint,
-                sharkyClient,
-                sharkyIndexes[selectedNft?.mint?.address.toString()]
-              )
-            }
-          >
-            Take
-          </button>
+      <div className="p-4 flex justify-evenly">
+        <div className="flex flex-col items-center w-1/2 md:w-1/3">
+          <div className="text-center">
+            <div>{selectedNft?.name ?? collection?.name}</div>
+          </div>
+
+          <img
+            style={{ minHeight: 128 }}
+            className="w-32 my-2"
+            src={selectedNft?.json?.image}
+          />
           {nfts.length > 1 && (
+            <img
+              onClick={() => handleUpdateIndex()}
+              className="hero-arrow-right-solid cursor-pointer p-4"
+            />
+          )}
+
+          <div className="mt-auto">
             <button
-              className="mx-1"
+              className="mr-1 p-3 md:px-4 md:py-3"
               onClick={() =>
-                takeAllLoans(
-                  offers,
-                  nfts.map((nft) => ({
-                    address: new PublicKey(nft?.mintAddress?.toString()),
-                  })),
+                takeLoan(
+                  selectedOffer,
+                  selectedNft.mint,
                   sharkyClient,
-                  sharkyIndexes
+                  sharkyIndexes[selectedNft?.mint?.address.toString()]
                 )
               }
             >
-              Take All
+              Take
             </button>
-          )}
-        </div>
-      </div>
-
-      <div className="w-1/4 text-center">
-        <h4 className="font-bold pb-2">Loan Overview</h4>
-        <div className="">
-          {selectedOffer && (
-            <div>
-              <div>
-                You Get:{" "}
-                <span className="font-bold">{selectedOffer.amountSol}</span>
-              </div>
-
-              <div>
-                You'll Owe:{" "}
-                <span className="font-bold">
-                  {(
-                    selectedOffer.amountSol +
-                    getSharkyInterest(
-                      collection?.apy,
-                      collection?.duration,
-                      selectedOffer.amountSol
-                    )
-                  ).toFixed(3)}
-                </span>
-              </div>
-              <div>
-                Due In:{" "}
-                <span className="font-bold">
-                  {collection.duration / 60 / 60 / 24 + " days"}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="overflow-scroll h-48 w-1/4 text-center">
-        <h4 className="font-bold pb-2">Available Offers</h4>
-        {offers?.map((offer) => (
-          <div
-            style={{
-              color:
-                offer.pubkey === selectedOffer?.pubkey ? "#58BC98" : "white",
-            }}
-            className={`mb-1 cursor-pointer hover:text-[#58BC98]`}
-            onClick={() => setSelectedOffer(offer)}
-            key={offer.pubkey}
-          >
-            {offer.amountSol}
+            {nfts.length > 1 && (
+              <button
+                className="mr-1 p-3 md:px-4 md:py-3"
+                onClick={() =>
+                  takeAllLoans(
+                    offers,
+                    nfts.map((nft) => ({
+                      address: new PublicKey(nft?.mintAddress?.toString()),
+                    })),
+                    sharkyClient,
+                    sharkyIndexes
+                  )
+                }
+              >
+                Take All
+              </button>
+            )}
           </div>
-        ))}
+        </div>
+
+        <div className="w-1/4 text-center hidden md:block">
+          <h4 className="font-bold pb-2">Loan Overview</h4>
+          <div className="">
+            {selectedOffer && (
+              <div>
+                <div>
+                  You Get:{" "}
+                  <span className="font-bold">
+                    {selectedOffer?.amountSol?.toFixed(2)}
+                  </span>
+                </div>
+
+                <div>
+                  You'll Owe:{" "}
+                  <span className="font-bold">
+                    {(
+                      selectedOffer.amountSol +
+                      getSharkyInterest(
+                        collection?.apy,
+                        collection?.duration,
+                        selectedOffer.amountSol
+                      )
+                    ).toFixed(3)}
+                  </span>
+                </div>
+                <div>
+                  Due In:{" "}
+                  <span className="font-bold">
+                    {collection.duration / 60 / 60 / 24 + " days"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="overflow-scroll h-48 w-1/2 md:w-1/4 text-center">
+          <h4 className="font-bold pb-2">Available Offers</h4>
+          {offers?.map((offer) => (
+            <div
+              style={{
+                color:
+                  offer.pubkey === selectedOffer?.pubkey ? "#58BC98" : "white",
+              }}
+              className={`mb-1 cursor-pointer hover:text-[#58BC98]`}
+              onClick={() => setSelectedOffer(offer)}
+              key={offer.pubkey}
+            >
+              {offer.amountSol}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

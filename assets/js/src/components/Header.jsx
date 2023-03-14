@@ -1,10 +1,13 @@
 import React from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link } from "react-router-dom";
+import { useOutsideClick } from "../hooks/useOutsideClick";
 
 export const Header = () => {
+  const [open, setOpen] = React.useState(false);
+
   return (
-    <header className="w-screen text-white">
+    <header className="w-screen text-white relative">
       <nav
         className="mx-auto flex items-center justify-between p-6 lg:px-8"
         aria-label="Global"
@@ -19,6 +22,7 @@ export const Header = () => {
           <button
             type="button"
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
+            onClick={() => setOpen(!open)}
           >
             <span className="sr-only">Open main menu</span>
             <svg
@@ -47,14 +51,38 @@ export const Header = () => {
           >
             Loans
           </Link>
-          {/* <a href="#" className="text-sm font-semibold leading-6 text-white">
-            Profile
-          </a> */}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <WalletMultiButton />
         </div>
+
+        {open && <MobileDropdown setOpen={setOpen} />}
       </nav>
     </header>
+  );
+};
+
+const MobileDropdown = ({ setOpen }) => {
+  let ref = useOutsideClick(() => setOpen(false));
+
+  return (
+    <div ref={ref} className="absolute bg-[#242424] right-0 top-10 p-4">
+      <div className="lg:flex-1 lg:justify-end">
+        <WalletMultiButton />
+      </div>
+      <div>
+        <Link to="/" className="text-sm font-semibold leading-6 text-white">
+          Borrow
+        </Link>
+      </div>
+      <div>
+        <Link
+          to="/loans"
+          className="text-sm font-semibold leading-6 text-white"
+        >
+          Loans
+        </Link>
+      </div>
+    </div>
   );
 };

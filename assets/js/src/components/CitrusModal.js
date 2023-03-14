@@ -1,7 +1,6 @@
 import React from "react";
 import { useCitrus } from "../hooks/useCitrus";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { SolIcon } from "./SolIcon";
 
 export const CitrusModal = ({
   offers,
@@ -26,83 +25,123 @@ export const CitrusModal = ({
     setSelectedNftIndex(selectedIndex + 1);
   };
 
+  const takeAllLoans = async () => {
+    for (let index = 0; index < nfts.length; index++) {
+      const offer = offers[index];
+
+      const mint = nfts[index].mintAddress;
+
+      await takeLoan(offer, mint);
+    }
+  };
+
   return (
-    <div
-      className="p-4 flex justify-evenly"
-      style={{ background: "#242424", width: 600 }}
-    >
-      <div className="flex flex-col items-center w-1/3">
-        <div className="text-center">
-          <span className="font-bold"> {collection?.name}</span>{" "}
-          <div>{selectedNft?.name}</div>
-        </div>
-
-        <img
-          style={{ minHeight: 128 }}
-          className="w-32 my-2"
-          src={selectedNft?.json?.image}
-        />
-        {nfts.length > 1 && (
-          <img
-            onClick={() => handleUpdateIndex()}
-            className="hero-arrow-right-solid cursor-pointer p-4"
-          />
-        )}
-
-        <div className="mt-auto">
-          <button
-            className="mx-1"
-            onClick={() => takeLoan(selectedOffer, selectedNft.mint.address)}
-          >
-            Take
-          </button>
-          <button className="mx-1" onClick={() => close()}>
-            Close
-          </button>
-        </div>
-      </div>
-
-      <div className="w-1/4 text-center">
-        <h4 className="font-bold pb-2">Loan Overview</h4>
-        <div className="">
-          {selectedOffer && (
+    <div className="modal-size" style={{ background: "#242424" }}>
+      <div className="md:hidden">
+        {selectedOffer && (
+          <div className="flex justify-around pt-2">
             <div>
-              <div>
-                You Get:{" "}
-                <span className="font-bold">
-                  {selectedOffer?.terms?.principal / LAMPORTS_PER_SOL}{" "}
-                  <SolIcon />
-                </span>
-              </div>
-
-              <div>
-                You'll Owe:{" "}
-                <span className="font-bold">
-                  {(
-                    selectedOffer?.terms?.principal / LAMPORTS_PER_SOL +
-                    getInterest(selectedOffer)
-                  ).toFixed(3)}{" "}
-                  <SolIcon />
-                </span>
-              </div>
-              <div>
-                Due In:{" "}
-                <span className="font-bold">
-                  {selectedOffer?.terms?.duration / 60 / 60 / 24 + " days"}
-                </span>
-              </div>
+              You Get:{" "}
+              <span className="font-bold">
+                {selectedOffer?.terms?.principal / LAMPORTS_PER_SOL}
+              </span>
             </div>
-          )}
-        </div>
+
+            <div>
+              You'll Owe:{" "}
+              <span className="font-bold">
+                {(
+                  selectedOffer?.terms?.principal / LAMPORTS_PER_SOL +
+                  getInterest(selectedOffer)
+                ).toFixed(3)}{" "}
+              </span>
+            </div>
+            <div>
+              Due In:{" "}
+              <span className="font-bold">
+                {selectedOffer?.terms?.duration / 60 / 60 / 24 + " days"}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="overflow-scroll h-48 w-1/3 text-center">
-        <h4 className="font-bold">Available Offers</h4>
-        <OfferTable
-          offers={offers}
-          selectedOffer={selectedOffer}
-          setSelectedOffer={setSelectedOffer}
-        />
+      <div className="p-4 flex justify-evenly">
+        <div className="flex flex-col items-center w-1/2 md:w-1/3">
+          <div className="text-center">
+            <div>{selectedNft?.name ?? collection?.name}</div>
+          </div>
+
+          <img
+            style={{ minHeight: 128 }}
+            className="w-32 my-2"
+            src={selectedNft?.json?.image}
+          />
+          {nfts.length > 1 && (
+            <img
+              onClick={() => handleUpdateIndex()}
+              className="hero-arrow-right-solid cursor-pointer p-4"
+            />
+          )}
+
+          <div className="mt-auto">
+            <button
+              className="mx-1 p-3 md:px-4 md:py-3"
+              onClick={() => takeLoan(selectedOffer, selectedNft.mint.address)}
+            >
+              Take
+            </button>
+            {nfts.length > 1 && (
+              <button
+                className="mr-1 p-3 md:px-4 md:py-3"
+                onClick={() => takeAllLoans()}
+              >
+                Take All
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="w-1/4 text-center hidden md:block">
+          <h4 className="font-bold pb-2">Loan Overview</h4>
+          <div className="">
+            {selectedOffer && (
+              <div>
+                <div>
+                  You Get:{" "}
+                  <span className="font-bold">
+                    {selectedOffer?.terms?.principal / LAMPORTS_PER_SOL}{" "}
+                  </span>
+                </div>
+
+                <div>
+                  You'll Owe:{" "}
+                  <span className="font-bold">
+                    {(
+                      selectedOffer?.terms?.principal / LAMPORTS_PER_SOL +
+                      getInterest(selectedOffer)
+                    ).toFixed(3)}{" "}
+                  </span>
+                </div>
+                <div>
+                  Due In:{" "}
+                  <span className="font-bold">
+                    {selectedOffer?.terms?.duration / 60 / 60 / 24 + " days"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="overflow-scroll h-48  w-1/2 md:w-1/3 text-center">
+          <h4 className="font-bold">Available Offers</h4>
+          <OfferTable
+            offers={offers}
+            selectedOffer={selectedOffer}
+            setSelectedOffer={setSelectedOffer}
+          />
+        </div>
       </div>
     </div>
   );
@@ -139,7 +178,6 @@ const OfferTable = ({ offers, selectedOffer, setSelectedOffer }) => {
                 <span className="mr-1">
                   {loan?.terms?.principal / LAMPORTS_PER_SOL}
                 </span>
-                <SolIcon />
               </div>
             </td>
             <td>{getInterest(loan).toFixed(2)}</td>
