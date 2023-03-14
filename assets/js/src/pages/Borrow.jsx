@@ -52,6 +52,7 @@ export function Borrow() {
       {fraktNfts && (
         <DisplayCollections
           collections={data?.collections}
+          indexes={data?.indexes}
           metaplex={metaplex}
           fraktNfts={fraktNfts}
         />
@@ -60,7 +61,7 @@ export function Borrow() {
   );
 }
 
-const DisplayCollections = ({ collections, metaplex }) => {
+const DisplayCollections = ({ collections, metaplex, fraktNfts, indexes }) => {
   return collections?.map((collection) => {
     let fraktMatches = fraktNfts.filter((offer) =>
       collection.nfts.find((nft) => nft.mint === offer.mint)
@@ -70,7 +71,7 @@ const DisplayCollections = ({ collections, metaplex }) => {
       <CollectionCard
         key={collection.id}
         collection={collection}
-        sharkyIndexes={data?.indexes}
+        sharkyIndexes={indexes}
         fraktNfts={fraktNfts}
         fraktOffers={fraktMatches}
         metaplex={metaplex}
