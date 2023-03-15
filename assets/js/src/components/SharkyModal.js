@@ -7,6 +7,7 @@ import {
   takeAllLoans,
 } from "../utils/sharky";
 import { PublicKey } from "@solana/web3.js";
+import Button from "./Button";
 
 export const SharkyModal = ({
   offers,
@@ -91,7 +92,7 @@ export const SharkyModal = ({
           )}
 
           <div className="mt-auto">
-            <button
+            <Button
               className="mr-1 p-3 md:px-4 md:py-3"
               onClick={() =>
                 takeLoan(
@@ -103,9 +104,9 @@ export const SharkyModal = ({
               }
             >
               Take
-            </button>
+            </Button>
             {nfts.length > 1 && (
-              <button
+              <Button
                 className="mr-1 p-3 md:px-4 md:py-3"
                 onClick={() =>
                   takeAllLoans(
@@ -119,7 +120,7 @@ export const SharkyModal = ({
                 }
               >
                 Take All
-              </button>
+              </Button>
             )}
           </div>
         </div>

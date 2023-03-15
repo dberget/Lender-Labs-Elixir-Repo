@@ -81,7 +81,7 @@ defmodule SharkAttack.MixProject do
       "assets.build": ["tailwind default"],
       "assets.deploy": [
         # "cmd --cd assets node build.js --deploy",
-        # "tailwind default --minify",
+        "tailwind default --minify",
         "phx.digest"
       ],
       sentry_recompile: ["compile", "deps.compile sentry --force"]

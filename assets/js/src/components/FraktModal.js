@@ -7,6 +7,8 @@ import {
   getBondLoansCombinations,
 } from "fbonds-core/lib/fbond-protocol/utils/cartManager";
 
+import Button from "./Button";
+
 export const FraktModal = ({
   offers,
   selectedOffer,
@@ -89,8 +91,8 @@ export const FraktModal = ({
         )}
 
         <div className="mt-auto">
-          <button
-            className="mx-1"
+          <Button
+            className="mr-1 p-3 md:px-4 md:py-3"
             onClick={() =>
               // buildBondLoan({
               //   mint: offers[selectedIndex].mint,
@@ -102,27 +104,27 @@ export const FraktModal = ({
             }
           >
             Take
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-col w-1/2 md:w-2/3">
         {selectedOffer?.priceBased !== undefined && (
           <div className="flex justify-center mx-auto">
-            <button
+            <Button
               style={{ lineHeight: 0 }}
-              className="mr-1 px-4 md:mx-1 md:px-8 py-4"
+              className="mr-1 px-4"
               onClick={() => setLoanType("timeBased")}
             >
               Time
-            </button>
-            <button
+            </Button>
+            <Button
               style={{ lineHeight: 0 }}
-              className="md:mx-1 px-2 md:px-8 py-4"
+              className="md:mx-1 px-4"
               onClick={() => setLoanType("priceBased")}
             >
               Perpetual
-            </button>
+            </Button>
           </div>
         )}
 

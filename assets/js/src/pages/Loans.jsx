@@ -15,8 +15,10 @@ import { useFrakt } from "../hooks/useFrakt";
 import { useCitrus } from "../hooks/useCitrus";
 import { useRain } from "../hooks/useRain";
 import { SolIcon } from "../components/SolIcon";
-import { repayAll } from "../utils/sharky";
+import { repayAll, repayLoan as repaySharkyLoan } from "../utils/sharky";
 import toast from "react-hot-toast";
+
+import Button from "../components/Button";
 
 const initSharkyClient = (connection, wallet) => {
   let provider = sharky.createProvider(connection, wallet);
@@ -219,11 +221,11 @@ export function Loans() {
         </div>
       </div>
       <div className="flex justify-around mx-auto w-full md:w-1/4">
-        <button onClick={() => handleRepayAll()}>Repay All</button>
+        <Button onClick={() => handleRepayAll()}>Repay All</Button>
 
-        <button onClick={() => handleRepaySelected()}>
+        <Button onClick={() => handleRepaySelected()}>
           Repay Selected ({selectedForRepay.length})
-        </button>
+        </Button>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
@@ -326,7 +328,7 @@ const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
             } ml-auto w-7 h-7 text-[#58BC98]`}
           />
-          <button
+          <Button
             className="mt-auto"
             onClick={(ev) => {
               ev.stopPropagation();
@@ -334,7 +336,7 @@ const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
             }}
           >
             Repay
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -346,7 +348,9 @@ const SharkyCard = ({
   metaplex,
   selectedForRepay,
   setSelectedForRepay,
+  sharkyClient,
 }) => {
+  const { connection } = useConnection();
   const [nft, setNft] = React.useState(null);
   const [isSelected, setIsSelected] = React.useState(false);
 
@@ -394,15 +398,16 @@ const SharkyCard = ({
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
             } ml-auto w-7 h-7 text-[#58BC98]`}
           />
-          <button
+          <Button
             className="mt-auto"
             onClick={(ev) => {
+              repaySharkyLoan(loan, sharkyClient, connection);
+
               ev.stopPropagation();
-              repayLoan(loan);
             }}
           >
             Repay
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -462,7 +467,7 @@ const CitrusCard = ({
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
             } ml-auto w-7 h-7 text-[#58BC98]`}
           />
-          <button
+          <Button
             className="mt-auto"
             onClick={(ev) => {
               ev.stopPropagation();
@@ -470,7 +475,7 @@ const CitrusCard = ({
             }}
           >
             Repay
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -531,7 +536,7 @@ const RainCard = ({
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
             } ml-auto w-7 h-7 text-[#58BC98]`}
           />
-          <button
+          <Button
             className="mt-auto"
             onClick={(ev) => {
               ev.stopPropagation();
@@ -539,7 +544,7 @@ const RainCard = ({
             }}
           >
             Repay
-          </button>
+          </Button>
         </div>
       </div>
     </div>

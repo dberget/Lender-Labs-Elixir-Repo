@@ -1,6 +1,7 @@
 import React from "react";
 import { useCitrus } from "../hooks/useCitrus";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import Button from "./Button";
 
 export const CitrusModal = ({
   offers,
@@ -85,19 +86,19 @@ export const CitrusModal = ({
           )}
 
           <div className="mt-auto">
-            <button
+            <Button
               className="mx-1 p-3 md:px-4 md:py-3"
               onClick={() => takeLoan(selectedOffer, selectedNft.mint.address)}
             >
               Take
-            </button>
+            </Button>
             {nfts.length > 1 && (
-              <button
+              <Button
                 className="mr-1 p-3 md:px-4 md:py-3"
                 onClick={() => takeAllLoans()}
               >
                 Take All
-              </button>
+              </Button>
             )}
           </div>
         </div>

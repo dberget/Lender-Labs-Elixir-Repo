@@ -2,6 +2,7 @@ import React from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link } from "react-router-dom";
 import { useOutsideClick } from "../hooks/useOutsideClick";
+import Button from "./Button";
 
 export const Header = () => {
   const [open, setOpen] = React.useState(false);
@@ -19,7 +20,7 @@ export const Header = () => {
           </a>
         </div>
         <div className="flex lg:hidden">
-          <button
+          <Button
             type="button"
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
             onClick={() => setOpen(!open)}
@@ -39,7 +40,7 @@ export const Header = () => {
                 d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
               />
             </svg>
-          </button>
+          </Button>
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
           <Link to="/" className="text-sm font-semibold leading-6 text-white">

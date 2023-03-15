@@ -74,7 +74,7 @@ export const RainModal = ({
           )}
 
           <div className="mt-auto">
-            <button
+            <Button
               className="mx-1"
               onClick={() =>
                 takeLoan(
@@ -85,7 +85,7 @@ export const RainModal = ({
               }
             >
               Take
-            </button>
+            </Button>
           </div>
         </div>
 

@@ -32,7 +32,11 @@ export const CitrusProvider = (props) => {
   };
 
   const getLoans = async () => {
-    let loans = await citrusSdk.fetchUserLoans(wallet.publicKey, "borrower");
+    let loans = await citrusSdk.fetchUserLoans(
+      wallet.publicKey,
+      "borrower",
+      "active"
+    );
 
     const newLoans = [];
     for (let index = 0; index < loans.length; index++) {

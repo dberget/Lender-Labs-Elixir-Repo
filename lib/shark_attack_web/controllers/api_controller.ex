@@ -125,10 +125,23 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_collection_offers(conn, params) do
+    # users = SharkAttack.Users.list!() |> Enum.map(& &1.address)
+
     offers =
       SharkAttack.LoansWorker.get_collection_loans(params["collection"])
       |> Enum.filter(&(&1["state"] == "offered"))
       |> Enum.sort_by(& &1["amountSol"], :desc)
+
+    # grouped_offers =
+    #   offers
+    #   |> Enum.group_by(&(round(&1["amountSol"] * 100) / 100))
+
+    # max =
+    #   grouped_offers
+    #   |> Map.keys()
+    #   |> Enum.max()
+
+    # Map.get(grouped_offers, max)
 
     conn
     |> json(offers)
