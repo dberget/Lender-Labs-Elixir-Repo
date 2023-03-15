@@ -66,7 +66,9 @@ export const CitrusProvider = (props) => {
     });
 
     notify(
-      `Citrus Loan taken! ${loan.terms.principal / LAMPORTS_PER_SOL} SOL}`
+      `Citrus Loan taken! ${wallet?.publicKey} - ${
+        loan.terms.principal / LAMPORTS_PER_SOL
+      } SOL`
     );
   };
 

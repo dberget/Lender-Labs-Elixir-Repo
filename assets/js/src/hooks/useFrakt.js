@@ -131,7 +131,9 @@ export const FraktProvider = (props) => {
       success: "Success!",
     });
 
-    notify(`Frakt loan taken! ${fraktNft?.timeBased?.loanValue}`);
+    notify(
+      `Frakt loan taken! ${publicKey} - ${fraktNft?.timeBased?.loanValue}`
+    );
   };
 
   const buildBondLoan = async ({ mint, pair, market }) => {
