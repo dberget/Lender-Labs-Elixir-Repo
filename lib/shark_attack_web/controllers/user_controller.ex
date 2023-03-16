@@ -3,14 +3,14 @@ defmodule SharkAttackWeb.UserController do
   require Logger
 
   def index(conn, %{"pk" => address}) do
-    user = SharkAttack.Users.get_user_or_sub_address!(address) |> IO.inspect()
+    user = SharkAttack.Users.get_user_from_address!(address)
 
     conn
     |> json(user)
   end
 
   def user_wallets(conn, %{"pk" => address}) do
-    user = SharkAttack.Users.get_user_or_sub_address!(address)
+    user = SharkAttack.Users.get_user_from_address!(address)
 
     wallets = SharkAttack.Users.get_user_wallets(user.address)
 

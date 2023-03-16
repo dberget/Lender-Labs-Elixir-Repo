@@ -18,14 +18,21 @@ defmodule SharkAttack.Users do
 
   def get!(address), do: Repo.get(User, address)
 
-  def get_user_or_sub_address!(address) do
-    case Repo.get(User, address) do
-      nil -> get_sub_wallet!(address)
-      user -> user
+  def get_user_from_address!(address, preloads \\ []) do
+    user =
+      case Repo.get(User, address) do
+        nil -> get_user_from_sub_wallet!(address)
+        user -> user
+      end
+
+    unless is_nil(user) do
+      user |> Repo.preload(preloads)
+    else
+      nil
     end
   end
 
-  def get_sub_wallet!(address) do
+  def get_user_from_sub_wallet!(address) do
     case Repo.get_by(SharkAttack.Accounts.UserWallet, address: address) do
       %SharkAttack.Accounts.UserWallet{user_address: user_address} ->
         get!(user_address)
@@ -38,8 +45,25 @@ defmodule SharkAttack.Users do
   def list!(), do: Repo.all(User)
 
   def create_user(attrs \\ %{}) do
-    %User{}
+    user =
+      %User{}
+      |> User.changeset(attrs)
+      |> Repo.insert(on_conflict: :nothing)
+
+    create_default_user_setting(attrs[:address])
+
+    user
+  end
+
+  def update_user(%User{} = user, attrs) do
+    user
     |> User.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_default_user_setting(user_address) do
+    %SharkAttack.Accounts.UserSetting{}
+    |> SharkAttack.Accounts.UserSetting.changeset(%{user_address: user_address})
     |> Repo.insert(on_conflict: :nothing)
   end
 

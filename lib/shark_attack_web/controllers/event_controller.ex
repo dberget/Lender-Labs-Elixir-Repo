@@ -1,5 +1,8 @@
 defmodule SharkAttackWeb.EventController do
   use SharkAttackWeb, :controller
+  alias SharkAttack.Repo
+  alias SharkAttack.Accounts.{User, UserSetting}
+
   require Logger
 
   def index(conn, params) do
@@ -16,14 +19,14 @@ defmodule SharkAttackWeb.EventController do
   defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
 
-    # loanAddress = Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> hd
-
-    # loan = SharkAttack.LoansWorker.get_loan(loanAddress)
-    # IO.inspect(loan)
-
-    user = SharkAttack.Users.get!(to)
-
-    if user do
+    with %User{} = user <-
+           SharkAttack.Users.get_user_from_address!(
+             to,
+             :user_settings
+           ),
+         %User{discordId: discordId, user_settings: %UserSetting{} = settings} <- user,
+         false <- is_nil(discordId),
+         %UserSetting{loan_repaid: true} <- settings do
       %{"mint" => mint} = hd(event["tokenTransfers"])
 
       res =
@@ -34,15 +37,15 @@ defmodule SharkAttackWeb.EventController do
 
       name = res |> hd |> Map.get("name")
 
-      user.discordId
+      discordId
       |> SharkAttack.DiscordConsumer.create_dm_channel()
       |> SharkAttack.DiscordConsumer.send_raw_message(
         "#{name} Repaid",
-        "Your loan has been repaid! You have earned #{Float.round(amount / 1_000_000_000, 2)} SOL."
+        "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
       )
+    else
+      _ -> nil
     end
-
-    :ok
   end
 
   defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
@@ -50,9 +53,14 @@ defmodule SharkAttackWeb.EventController do
 
     %{"nativeBalanceChange" => amount} = hd(event["accountData"])
 
-    user = SharkAttack.Users.get!(from)
-
-    if user do
+    with %User{} = user <-
+           SharkAttack.Users.get_user_from_address!(
+             from,
+             :user_settings
+           ),
+         %User{discordId: discordId, user_settings: %UserSetting{} = settings} <- user,
+         false <- is_nil(discordId),
+         %UserSetting{loan_taken: true} <- settings do
       %{"mint" => mint} = hd(event["tokenTransfers"])
 
       res =
@@ -63,15 +71,15 @@ defmodule SharkAttackWeb.EventController do
 
       name = res |> hd |> Map.get("name")
 
-      user.discordId
+      discordId
       |> SharkAttack.DiscordConsumer.create_dm_channel()
       |> SharkAttack.DiscordConsumer.send_raw_message(
         "Offer accepted for #{name}!",
-        "#{Float.round(amount / 1_000_000_000, 2)} SOL Offer accepted for #{name}! https://solscan.io/tx/#{event["signature"]}"
+        "#{Float.round(amount / 1_000_000_000, 2)} SOL offer accepted!"
       )
+    else
+      _ -> nil
     end
-
-    :ok
   end
 
   defp send_message(_platform, _, _event) do
