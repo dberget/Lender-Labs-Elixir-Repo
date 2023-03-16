@@ -16,6 +16,11 @@ defmodule SharkAttackWeb.EventController do
   defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
 
+    # loanAddress = Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> hd
+
+    # loan = SharkAttack.LoansWorker.get_loan(loanAddress)
+    # IO.inspect(loan)
+
     user = SharkAttack.Users.get!(to)
 
     if user do
@@ -33,7 +38,7 @@ defmodule SharkAttackWeb.EventController do
       |> SharkAttack.DiscordConsumer.create_dm_channel()
       |> SharkAttack.DiscordConsumer.send_raw_message(
         "#{name} Repaid",
-        "Your loan for #{name} has been repaid! You have earned #{Float.round(amount / 1_000_000_000, 2)} SOL. https://solscan.io/tx/#{event["signature"]}"
+        "Your loan has been repaid! You have earned #{Float.round(amount / 1_000_000_000, 2)} SOL."
       )
     end
 

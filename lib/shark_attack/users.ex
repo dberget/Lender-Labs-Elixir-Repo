@@ -18,12 +18,48 @@ defmodule SharkAttack.Users do
 
   def get!(address), do: Repo.get(User, address)
 
+  def get_user_or_sub_address!(address) do
+    case Repo.get(User, address) do
+      nil -> get_sub_wallet!(address)
+      user -> user
+    end
+  end
+
+  def get_sub_wallet!(address) do
+    case Repo.get_by(SharkAttack.Accounts.UserWallet, address: address) do
+      %SharkAttack.Accounts.UserWallet{user_address: user_address} ->
+        get!(user_address)
+
+      nil ->
+        nil
+    end
+  end
+
   def list!(), do: Repo.all(User)
 
   def create_user(attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)
     |> Repo.insert(on_conflict: :nothing)
+  end
+
+  def get_user_wallets(address) do
+    Repo.all(
+      from(uw in SharkAttack.Accounts.UserWallet,
+        where: uw.user_address == ^address
+      )
+    )
+  end
+
+  def add_user_wallet(address, user_address) do
+    %SharkAttack.Accounts.UserWallet{}
+    |> SharkAttack.Accounts.UserWallet.changeset(%{address: address, user_address: user_address})
+    |> Repo.insert(on_conflict: :nothing)
+  end
+
+  def delete_user_wallet(id) do
+    %SharkAttack.Accounts.UserWallet{id: id}
+    |> Repo.delete()
   end
 
   def get_purchases() do

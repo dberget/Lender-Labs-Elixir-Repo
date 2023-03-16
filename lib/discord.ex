@@ -118,8 +118,6 @@ defmodule SharkAttack.DiscordConsumer do
         Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})
 
       {:error, changeset} ->
-        IO.inspect(changeset)
-
         Api.create_interaction_response(interaction, %{
           type: 4,
           data: %{content: "Error subscribing"}

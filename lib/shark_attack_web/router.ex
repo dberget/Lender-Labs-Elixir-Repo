@@ -2,56 +2,65 @@ defmodule SharkAttackWeb.Router do
   use SharkAttackWeb, :router
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, {SharkAttackWeb.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, {SharkAttackWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug(:accepts, ["json"])
+  end
+
+  scope "/user", SharkAttackWeb do
+    pipe_through(:api)
+    get("/", UserController, :index)
+    get("/update_purchases", UserController, :update_purchases)
+    get("/user_wallets", UserController, :user_wallets)
+    post("/update_user_wallet", UserController, :update_user_wallet)
+    post("/remove_user_wallet", UserController, :remove_user_wallet)
   end
 
   scope "/api", SharkAttackWeb do
-    pipe_through :api
+    pipe_through(:api)
 
-    get "/", ApiController, :index
-    get "/get_history", ApiController, :get_history
-    get "/get_all_loans", ApiController, :get_all_loans
-    get "/get_lender_loans", ApiController, :get_lender_loans
-    get "/get_collection_offers", ApiController, :get_collection_offers
+    get("/", ApiController, :index)
+    get("/get_history", ApiController, :get_history)
+    get("/get_all_loans", ApiController, :get_all_loans)
+    get("/get_lender_loans", ApiController, :get_lender_loans)
+    get("/get_collection_offers", ApiController, :get_collection_offers)
 
-    get "/get_orderbooks", ApiController, :get_orderbooks
-    post "/update_loan_earnings", ApiController, :update_loan_earnings
-    get "/get_recent_loans", ApiController, :get_recent_loans
+    get("/get_orderbooks", ApiController, :get_orderbooks)
+    post("/update_loan_earnings", ApiController, :update_loan_earnings)
+    get("/get_recent_loans", ApiController, :get_recent_loans)
 
-    get "/get_collection_list", ApiController, :get_collection_list
-    get "/search_collections", ApiController, :search_collections
-    get "/get_collection", ApiController, :get_collection
-    get "/get_all_collection_loans", ApiController, :get_all_collection_loans
-    get "/flush_loans", ApiController, :flush_loans
-    get "/get_borrower_collections", ApiController, :get_borrower_collections
-    get "/get_borrower_loans", ApiController, :get_borrower_loans
-    get "/remove_loan", ApiController, :remove_loan
-    get "/analyze_collection_data", ApiController, :analyze_collection_data
+    get("/get_collection_list", ApiController, :get_collection_list)
+    get("/search_collections", ApiController, :search_collections)
+    get("/get_collection", ApiController, :get_collection)
+    get("/get_all_collection_loans", ApiController, :get_all_collection_loans)
+    get("/flush_loans", ApiController, :flush_loans)
+    get("/get_borrower_collections", ApiController, :get_borrower_collections)
+    get("/get_borrower_loans", ApiController, :get_borrower_loans)
+    get("/remove_loan", ApiController, :remove_loan)
+    get("/analyze_collection_data", ApiController, :analyze_collection_data)
 
-    post "/get_sharky_indexes", ApiController, :get_sharky_indexes
-    post "/save_nft_image", ApiController, :save_nft_image
+    post("/get_sharky_indexes", ApiController, :get_sharky_indexes)
+    post("/save_nft_image", ApiController, :save_nft_image)
   end
 
   scope "/event", SharkAttackWeb do
-    pipe_through :api
+    pipe_through(:api)
 
-    post "/", EventController, :index
+    post("/", EventController, :index)
   end
 
   scope "/", SharkAttackWeb do
-    pipe_through :browser
+    pipe_through(:browser)
 
-    get "/", PageController, :home
-    get "/loans", PageController, :home
+    get("/", PageController, :home)
+    get("/loans", PageController, :home)
   end
 
   # Other scopes may use custom stacks.
@@ -70,9 +79,9 @@ defmodule SharkAttackWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      live_dashboard "/dashboard", metrics: SharkAttackWeb.Telemetry
+      live_dashboard("/dashboard", metrics: SharkAttackWeb.Telemetry)
     end
   end
 
@@ -82,9 +91,9 @@ defmodule SharkAttackWeb.Router do
   # node running the Phoenix server.
   if Mix.env() == :dev do
     scope "/dev" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 end

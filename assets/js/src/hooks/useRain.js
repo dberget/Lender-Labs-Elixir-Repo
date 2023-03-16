@@ -112,7 +112,7 @@ export const RainProvider = (props) => {
       },
     });
 
-    notify(`Rain Loan Taken, ${bestOffer / LAMPORTS_PER_SOL} SOL}`);
+    notify(`Rain Loan Taken, ${bestOffer / LAMPORTS_PER_SOL} SOL`);
   };
 
   const getPool = (poolAddress) => {

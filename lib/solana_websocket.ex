@@ -53,7 +53,6 @@ defmodule SharkAttack.SolanaWS do
     message = Jason.decode!(msg)
 
     IO.puts("Received Message - Type: #{inspect(type)} -- Message:")
-    IO.inspect(message)
 
     msg_data = get_in(message, ["params", "result", "value", "data"])
 
