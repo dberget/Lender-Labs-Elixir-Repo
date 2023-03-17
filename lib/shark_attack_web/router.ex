@@ -1,4 +1,5 @@
 defmodule SharkAttackWeb.Router do
+  alias Hex.API
   use SharkAttackWeb, :router
 
   pipeline :browser do
@@ -45,6 +46,10 @@ defmodule SharkAttackWeb.Router do
     get("/get_borrower_loans", ApiController, :get_borrower_loans)
     get("/remove_loan", ApiController, :remove_loan)
     get("/analyze_collection_data", ApiController, :analyze_collection_data)
+    get("get_user_favorites", ApiController, :get_user_favorites)
+
+    get("/save_favorite", ApiController, :save_favorite)
+    get("/remove_favorite", ApiController, :remove_favorite)
 
     post("/get_sharky_indexes", ApiController, :get_sharky_indexes)
     post("/save_nft_image", ApiController, :save_nft_image)

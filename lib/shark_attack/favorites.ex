@@ -3,7 +3,11 @@ defmodule SharkAttack.Accounts.Favorites do
   import Ecto.Changeset
 
   schema "favorites" do
-    belongs_to(:user, SharkAttack.Accounts.User, foreign_key: :user_id, references: :address)
+    belongs_to(:user, SharkAttack.Accounts.User,
+      foreign_key: :user_address,
+      references: :address,
+      type: :string
+    )
 
     belongs_to(:collection, SharkAttack.Collections.Collection)
 
@@ -11,9 +15,9 @@ defmodule SharkAttack.Accounts.Favorites do
   end
 
   @doc false
-  def changeset(accounts, attrs) do
-    accounts
-    |> cast(attrs, [:user_id, :collection_id])
-    |> validate_required([:user_id, :collection_id])
+  def changeset(params, attrs) do
+    params
+    |> cast(attrs, [:user_address, :collection_id])
+    |> validate_required([:user_address, :collection_id])
   end
 end

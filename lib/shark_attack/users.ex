@@ -55,6 +55,29 @@ defmodule SharkAttack.Users do
     user
   end
 
+  def get_user_favorites(address) do
+    query = from c in SharkAttack.Accounts.Favorites, where: c.user_address == ^address
+
+    Repo.all(query) |> Repo.preload(:collection) |> Enum.map(& &1.collection)
+  end
+
+  def save_favorite(address, favorite) do
+    %SharkAttack.Accounts.Favorites{}
+    |> SharkAttack.Accounts.Favorites.changeset(%{
+      user_address: address,
+      collection_id: favorite
+    })
+    |> Repo.insert()
+  end
+
+  def delete_favorite(collection, address) do
+    favorite =
+      Repo.get_by(SharkAttack.Accounts.Favorites, collection_id: collection, user_address: address)
+
+    favorite
+    |> Repo.delete()
+  end
+
   def update_user(%User{} = user, attrs) do
     user
     |> User.changeset(attrs)
