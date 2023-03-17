@@ -48,7 +48,7 @@ export function Borrow() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center mb-48">
+    <div className="grid lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center mb-48">
       {fraktNfts && (
         <DisplayCollections
           collections={data?.collections}

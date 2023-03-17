@@ -6,6 +6,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { splitTimeShort } from "../utils/time";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import useSwr from "swr";
 
 import sharky from "@sharkyfi/client";
 import { Metaplex } from "@metaplex-foundation/js";
@@ -16,6 +17,7 @@ import { useCitrus } from "../hooks/useCitrus";
 import { useRain } from "../hooks/useRain";
 import { SolIcon } from "../components/SolIcon";
 import { repayAll, repayLoan as repaySharkyLoan } from "../utils/sharky";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 import toast from "react-hot-toast";
 
 import Button from "../components/Button";
@@ -228,7 +230,8 @@ export function Loans() {
         </Button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
+        {/* <StatsCard /> */}
         {allLoans.length > 0 && (
           <LoanCards
             sharkyClient={sharkyClient}
@@ -290,6 +293,21 @@ const LoanCards = ({
   return filteredLoans;
 };
 
+const StatsCard = () => {
+  const { publicKey } = useWallet();
+
+  const { loans } = useSwr(
+    publicKey ? `https://lenderlabs.xyz/api/borrower?pk=${publicKey}` : null,
+    (...args) => fetch(...args, {}).then((res) => res.json())
+  );
+
+  return (
+    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#A2FF2F]">
+      Stats
+    </div>
+  );
+};
+
 const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
   const { repayLoan } = useFrakt();
 
@@ -314,11 +332,15 @@ const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
           <div className="font-bold">
             {(loan.loanValue / LAMPORTS_PER_SOL).toFixed(2)} <SolIcon />{" "}
           </div>
-
-          <div>
+          <div id={"end-date" + loan.pubkey}>
             {splitTimeShort(
               Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
             )}
+            <ReactTooltip
+              anchorSelect={"#end-date" + loan.pubkey}
+              place="bottom"
+              content={`${new Date(loan.end * 1000).toLocaleString()}`}
+            />
           </div>
         </div>
 
@@ -382,13 +404,19 @@ const SharkyCard = ({
       <div className="flex w-full ml-2">
         <div>
           <div className="font-bold">
-            {loan.amountSol.toFixed(2)} <SolIcon />{" "}
+            {(loan.amountSol + loan.earnings + loan.earnings * 0.16).toFixed(2)}{" "}
+            <SolIcon />
           </div>
 
-          <div>
+          <div id={"end-date" + loan.pubkey}>
             {splitTimeShort(
               Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
             )}
+            <ReactTooltip
+              anchorSelect={"#end-date" + loan.pubkey}
+              place="top"
+              content={`${new Date(loan.end * 1000).toLocaleString()}`}
+            />
           </div>
         </div>
 

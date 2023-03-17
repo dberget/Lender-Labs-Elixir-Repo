@@ -269,6 +269,7 @@ defmodule SharkAttackWeb.ApiController do
       name: c.name,
       offers: length(offers),
       loans: length(loans),
+      topOffers: Enum.take(offers, 2),
       lastTaken: Enum.take(loans, 1),
       logo: c.logo,
       highestOffer: highestOffer,

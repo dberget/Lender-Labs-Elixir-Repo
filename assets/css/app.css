@@ -3,6 +3,7 @@
 @import "tailwindcss/utilities";
 
 @import "./wallet-adapter-styles.css";
+@import "./react-tooltip.css";
 /* This file is for your main application CSS */
 
 html {

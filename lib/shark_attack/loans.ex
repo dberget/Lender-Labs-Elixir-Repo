@@ -63,6 +63,16 @@ defmodule SharkAttack.Loans do
     Repo.all(query)
   end
 
+  def get_loans_history!(address, "borrower") do
+    query =
+      from l in Loan,
+        where: l.borrower == ^address,
+        select: l,
+        order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
+
+    Repo.all(query)
+  end
+
   def get_loans_history!(address, limit) do
     query =
       from l in Loan,
