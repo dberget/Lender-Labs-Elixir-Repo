@@ -298,7 +298,6 @@ defmodule SharkAttackWeb.ApiController do
         citrus_loans = SharkAttack.SharkyApi.get_collection_loans(c.foxy_address, "citrus")
 
         sharky = SharkAttack.Analytics.build_overview(c.id, collection_loans, "sharky")
-
         citrus = SharkAttack.Analytics.build_overview(c.id, citrus_loans, "citrus")
 
         rollup = %{

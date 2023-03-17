@@ -1,9 +1,10 @@
 defmodule SharkAttackWeb.EventController do
   use SharkAttackWeb, :controller
-  alias SharkAttack.Repo
-  alias SharkAttack.Accounts.{User, UserSetting}
+  alias SharkAttack.Accounts.{User, UserSettings}
 
   require Logger
+
+  @dao_webook_addresses ["4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK"]
 
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
@@ -19,32 +20,35 @@ defmodule SharkAttackWeb.EventController do
   defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
 
-    with %User{} = user <-
-           SharkAttack.Users.get_user_from_address!(
-             to,
-             :user_settings
-           ),
-         %User{discordId: discordId, user_settings: %UserSetting{} = settings} <- user,
-         false <- is_nil(discordId),
-         %UserSetting{loan_repaid: true} <- settings do
-      %{"mint" => mint} = hd(event["tokenTransfers"])
+    case check_is_user_and_subscribed?(
+           to,
+           :loan_repaid
+         ) do
+      false ->
+        nil
 
-      res =
-        SharkAttack.Helpers.do_post_request(
-          "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
-          %{mints: [mint]}
+      {:dao, address} ->
+        %{"mint" => mint} = hd(event["tokenTransfers"])
+
+        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+
+        address
+        |> SharkAttack.DiscordConsumer.send_to_webhook(
+          "#{name} Repaid",
+          "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
         )
 
-      name = res |> hd |> Map.get("name")
+      {:user, discordId} ->
+        %{"mint" => mint} = hd(event["tokenTransfers"])
 
-      discordId
-      |> SharkAttack.DiscordConsumer.create_dm_channel()
-      |> SharkAttack.DiscordConsumer.send_raw_message(
-        "#{name} Repaid",
-        "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
-      )
-    else
-      _ -> nil
+        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+
+        discordId
+        |> SharkAttack.DiscordConsumer.create_dm_channel()
+        |> SharkAttack.DiscordConsumer.send_raw_message(
+          "#{name} Repaid",
+          "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
+        )
     end
   end
 
@@ -53,36 +57,64 @@ defmodule SharkAttackWeb.EventController do
 
     %{"nativeBalanceChange" => amount} = hd(event["accountData"])
 
-    with %User{} = user <-
-           SharkAttack.Users.get_user_from_address!(
-             from,
-             :user_settings
-           ),
-         %User{discordId: discordId, user_settings: %UserSetting{} = settings} <- user,
-         false <- is_nil(discordId),
-         %UserSetting{loan_taken: true} <- settings do
-      %{"mint" => mint} = hd(event["tokenTransfers"])
+    case check_is_user_and_subscribed?(
+           from,
+           :loan_taken
+         ) do
+      false ->
+        nil
 
-      res =
-        SharkAttack.Helpers.do_post_request(
-          "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
-          %{mints: [mint]}
+      {:dao, address} ->
+        %{"mint" => mint} = hd(event["tokenTransfers"])
+
+        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+
+        address
+        |> SharkAttack.DiscordConsumer.send_to_webhook(
+          "#{name} Repaid",
+          "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
         )
 
-      name = res |> hd |> Map.get("name")
+      {:user, discordId} ->
+        %{"mint" => mint} = hd(event["tokenTransfers"])
 
-      discordId
-      |> SharkAttack.DiscordConsumer.create_dm_channel()
-      |> SharkAttack.DiscordConsumer.send_raw_message(
-        "Offer accepted for #{name}!",
-        "#{Float.round(amount / 1_000_000_000, 2)} SOL offer accepted!"
-      )
-    else
-      _ -> nil
+        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+
+        discordId
+        |> SharkAttack.DiscordConsumer.create_dm_channel()
+        |> SharkAttack.DiscordConsumer.send_raw_message(
+          "Offer accepted for #{name}!",
+          "#{Float.round(amount / 1_000_000_000, 2)} SOL offer accepted!"
+        )
     end
   end
 
   defp send_message(_platform, _, _event) do
     :ok
+  end
+
+  defp is_subscribed_dao?(address) do
+    case address in @dao_webook_addresses do
+      true ->
+        {:dao, address}
+
+      _ ->
+        false
+    end
+  end
+
+  defp check_is_user_and_subscribed?(address, setting) do
+    with %User{} = user <-
+           SharkAttack.Users.get_user_from_address!(
+             address,
+             :user_settings
+           ),
+         %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
+         false <- is_nil(discordId),
+         {:ok, true} <- Map.fetch(settings, setting) do
+      {:user, discordId}
+    else
+      _ -> is_subscribed_dao?(address)
+    end
   end
 end

@@ -43,6 +43,16 @@ defmodule SharkAttack.Nfts do
     Repo.all(query)
   end
 
+  def get_nft_name_from_api(mint) do
+    res =
+      SharkAttack.Helpers.do_post_request(
+        "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
+        %{mints: [mint]}
+      )
+
+    res |> hd |> Map.get("name")
+  end
+
   def get_nft_names(mints) do
     res =
       SharkAttack.Helpers.do_post_request(

@@ -12,7 +12,7 @@ defmodule SharkAttack.Accounts.User do
       references: :address
     )
 
-    has_one(:user_settings, SharkAttack.Accounts.UserSetting,
+    has_one(:user_settings, SharkAttack.Accounts.UserSettings,
       foreign_key: :user_address,
       references: :address
     )

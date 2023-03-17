@@ -1,4 +1,4 @@
-defmodule SharkAttack.Accounts.UserSetting do
+defmodule SharkAttack.Accounts.UserSettings do
   use Ecto.Schema
   import Ecto.Changeset
 

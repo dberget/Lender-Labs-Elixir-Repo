@@ -85,8 +85,8 @@ defmodule SharkAttack.Users do
   end
 
   def create_default_user_setting(user_address) do
-    %SharkAttack.Accounts.UserSetting{}
-    |> SharkAttack.Accounts.UserSetting.changeset(%{user_address: user_address})
+    %SharkAttack.Accounts.UserSettings{}
+    |> SharkAttack.Accounts.UserSettings.changeset(%{user_address: user_address})
     |> Repo.insert(on_conflict: :nothing)
   end
 
