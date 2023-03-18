@@ -72,19 +72,24 @@ defmodule SharkAttack.Collections do
     Repo.get_by(Collection, name: name)
   end
 
-  def get_collection_mint_lists(mintLists) do
-    # mintLists = SharkAttack.SharkyApi.get_mint_lists()
+  def get_collection_mint_lists(sharky_address) do
+    mintList = SharkAttack.SharkyApi.get_mint_lists(sharky_address)
 
-    mintLists
-    |> Enum.map(fn mintList ->
-      case get_collection_by_name(mintList["collectionName"]) do
-        nil ->
-          nil
+    case get_collection_by_name(mintList["collectionName"]) do
+      nil ->
+        nil
 
-        collection ->
+      collection ->
+        Logger.info("Checking #{collection.name}")
+
+        collection = collection |> Repo.preload(:nfts)
+
+        if length(collection.nfts) == 0 do
+          Logger.info("Inserting #{collection.name}")
+
           insert_nfts(collection.id, mintList["mints"])
-      end
-    end)
+        end
+    end
   end
 
   def update_collection(%Collection{} = collection, attrs) do
@@ -119,6 +124,7 @@ defmodule SharkAttack.Collections do
       }
 
       Logger.info("Adding #{c["name"]}")
+
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
@@ -142,11 +148,11 @@ defmodule SharkAttack.Collections do
   def create_collection(attrs \\ %{}) do
     %Collection{}
     |> Collection.changeset(attrs)
-    |> Repo.insert(on_conflict: {:replace, [:apy, :duration]})
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   def update_logos() do
-    all_collections = list_collections(%{sharky: "1"})
+    all_collections = list_collections()
 
     all_collections
     |> SharkAttack.Hyperspace.get_floor_prices()

@@ -14,11 +14,10 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_sharky_indexes(mints) do
-    res =
-      SharkAttack.Helpers.do_post_request(
-        "https://sharky-backend.herokuapp.com/nft-list/check-mints?network=mainnet&deployEnvironment=production",
-        %{"mints" => mints}
-      )
+    SharkAttack.Helpers.do_post_request(
+      "https://sharky-backend.herokuapp.com/nft-list/check-mints?network=mainnet&deployEnvironment=production",
+      %{"mints" => mints}
+    )
   end
 
   def get_all_loans() do
@@ -52,8 +51,8 @@ defmodule SharkAttack.SharkyApi do
     Map.get(res, "floorPrices", %{})
   end
 
-  def get_mint_lists() do
-    SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/mintList")
+  def get_mint_lists(pubkey) do
+    SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/mintList/#{pubkey}")
   end
 
   def get_orderbook_offers(pubKey) do
