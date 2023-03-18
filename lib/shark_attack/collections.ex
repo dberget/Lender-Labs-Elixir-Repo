@@ -30,6 +30,16 @@ defmodule SharkAttack.Collections do
     Repo.all(query)
   end
 
+  def get_collection_from_mint(mint) do
+    query =
+      from c in Collection,
+        join: n in Nft,
+        on: c.id == n.collection_id,
+        where: n.mint == ^mint
+
+    Repo.one(query)
+  end
+
   def get_collection(id) when is_integer(id) do
     Repo.get(Collection, id)
   end
@@ -77,6 +87,7 @@ defmodule SharkAttack.Collections do
 
     case get_collection_by_name(mintList["collectionName"]) do
       nil ->
+        Logger.info("Unable to find collection for #{mintList["collectionName"]}")
         nil
 
       collection ->

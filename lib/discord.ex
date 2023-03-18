@@ -68,6 +68,19 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  def send_to_webhook("foreclosure", embed) do
+    Api.execute_webhook(
+      "1078718321370865808",
+      "tPsSVIJ7VEKGz635sRrBzdXOHUgZVksvKHfcr4q4iZEzZAmbbkvMGxjZy45SzB1a0NC9",
+      %{
+        embeds: [embed],
+        username: "Lender Labs Foreclosure Bot",
+        avatar_url:
+          "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.jpg"
+      }
+    )
+  end
+
   def send_to_webook("me", title, message) do
     embed =
       %Nostrum.Struct.Embed{}
