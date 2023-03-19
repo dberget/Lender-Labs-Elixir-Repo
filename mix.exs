@@ -57,6 +57,7 @@ defmodule SharkAttack.MixProject do
       {:sentry, "~> 8.0"},
       {:hackney, "~> 1.8"},
       {:cors_plug, "~> 3.0"},
+      {:timex, "~> 3.7.9"},
       {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
       {:gun, "== 2.0.1",
        [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},

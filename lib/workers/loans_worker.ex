@@ -24,12 +24,12 @@ defmodule SharkAttack.LoansWorker do
     :ets.match_object(:collection_loans, {:_, :_, lender, :"$1"})
   end
 
-  def get_loan(loan) do
-    :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten()
-  end
-
   def get_lender_loans(lender, collection) do
     :ets.match_object(:collection_loans, {collection, :_, lender, :"$1"})
+  end
+
+  def get_loan(loan) do
+    :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten()
   end
 
   def get_collection_loans(collection) do
@@ -69,7 +69,7 @@ defmodule SharkAttack.LoansWorker do
       |> hd()
 
     unless is_nil(loanAddress) do
-      GenServer.cast(__MODULE__, {:delete, loanAddress})
+      GenServer.call(__MODULE__, {:delete, loanAddress})
     end
   end
 
@@ -164,8 +164,7 @@ defmodule SharkAttack.LoansWorker do
       :bag,
       :public,
       :named_table,
-      read_concurrency: true,
-      write_concurrency: true
+      {:read_concurrency, true}
     ])
   end
 end

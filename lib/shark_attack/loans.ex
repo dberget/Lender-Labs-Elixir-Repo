@@ -58,6 +58,7 @@ defmodule SharkAttack.Loans do
       from l in Loan,
         where: l.lender == ^address,
         select: l,
+        where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
 
     Repo.all(query)
@@ -68,6 +69,7 @@ defmodule SharkAttack.Loans do
       from l in Loan,
         where: l.borrower == ^address,
         select: l,
+        where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
 
     Repo.all(query)
@@ -78,6 +80,7 @@ defmodule SharkAttack.Loans do
       from l in Loan,
         where: l.lender == ^address,
         select: l,
+        where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
         order_by: [desc: coalesce(l.dateForeclosed, l.dateRepaid)],
         limit: ^limit
 
@@ -112,6 +115,15 @@ defmodule SharkAttack.Loans do
     loan
     |> Loan.changeset(attrs)
     |> Repo.update()
+  end
+
+  def create_or_update_loan(attrs \\ %{}) do
+    case Repo.get(Loan, attrs["loan"]) do
+      nil -> %Loan{loan: attrs["loan"]}
+      post -> post
+    end
+    |> Loan.changeset(attrs)
+    |> Repo.insert_or_update()
   end
 
   @doc """

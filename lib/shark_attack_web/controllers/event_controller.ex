@@ -10,47 +10,73 @@ defmodule SharkAttackWeb.EventController do
     event = Map.get(params, "_json") |> hd
 
     send_message(event["source"], event["type"], event)
-
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn
     |> json(%{message: "ok"})
   end
 
-  # defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
-  #   %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
+  defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
+    %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
 
-  #   case check_is_user_and_subscribed?(
-  #          to,
-  #          :loan_repaid
-  #        ) do
-  #     false ->
-  #       nil
+    loanAddress =
+      Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
 
-  #     {:dao, address} ->
-  #       %{"mint" => mint} = hd(event["tokenTransfers"])
+    loan = loanAddress |> SharkAttack.LoansWorker.get_loan() |> List.first(%{})
 
-  #       name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+    case check_is_user_and_subscribed?(
+           to,
+           :loan_repaid
+         ) do
+      false ->
+        nil
 
-  #       address
-  #       |> SharkAttack.DiscordConsumer.send_to_webhook(
-  #         "#{name} Repaid",
-  #         "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
-  #       )
+      {:dao, address} ->
+        %{"mint" => mint} = hd(event["tokenTransfers"])
 
-  #     {:user, discordId} ->
-  #       %{"mint" => mint} = hd(event["tokenTransfers"])
+        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
 
-  #       name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+        address
+        |> SharkAttack.DiscordConsumer.send_to_webhook(
+          "#{name} Repaid",
+          "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
+        )
 
-  #       discordId
-  #       |> SharkAttack.DiscordConsumer.create_dm_channel()
-  #       |> SharkAttack.DiscordConsumer.send_raw_message(
-  #         "#{name} Repaid",
-  #         "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
-  #       )
-  #   end
-  # end
+      {:user, discordId} ->
+        %{"mint" => mint} = hd(event["tokenTransfers"])
+
+        c = SharkAttack.Collections.get_collection_from_mint(mint)
+
+        duration = Map.get(loan, "end", 0) - Map.get(loan, "start", 0)
+
+        embed = %Nostrum.Struct.Embed{
+          thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+            url: c.logo
+          },
+          title: "**#{c.name}** Loan Repaid",
+          url: "https://solscan.io/tx/#{event["signature"]}",
+          color: 5_815_448,
+          fields: [
+            %Nostrum.Struct.Embed.Field{
+              name: "Loan Value",
+              value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
+              inline: true
+            },
+            %Nostrum.Struct.Embed.Field{
+              name: "Duration",
+              value:
+                Timex.Duration.from_erl({0, round(duration), 0})
+                |> Timex.format_duration(:humanized),
+              inline: true
+            }
+          ]
+        }
+
+        discordId
+        |> SharkAttack.DiscordConsumer.create_dm_channel()
+        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+    end
+  end
 
   defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> hd
@@ -78,29 +104,47 @@ defmodule SharkAttackWeb.EventController do
       {:user, discordId} ->
         %{"mint" => mint} = hd(event["tokenTransfers"])
 
-        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+        c = SharkAttack.Collections.get_collection_from_mint(mint)
+        fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+
+        embed = %Nostrum.Struct.Embed{
+          author: %Nostrum.Struct.Embed.Author{
+            name: "Lender Labs",
+            url: "https://lenderlabs.xyz"
+          },
+          thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+            url: c.logo
+          },
+          title: "**#{c.name}** Offer Accepted",
+          url: "https://solscan.io/tx/#{event["signature"]}",
+          color: 5_815_448,
+          fields: [
+            %Nostrum.Struct.Embed.Field{
+              name: "Loan Value",
+              value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
+              inline: true
+            },
+            %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
+          ]
+        }
 
         discordId
         |> SharkAttack.DiscordConsumer.create_dm_channel()
-        |> SharkAttack.DiscordConsumer.send_raw_message(
-          "Offer accepted for #{name}!",
-          "#{Float.round(amount / 1_000_000_000, 2)} SOL offer accepted!"
-        )
+        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
     end
   end
 
-  defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
+  defp send_message("SHARKY_FI", "FORECLOSE_LOAN", event) do
     loan_address =
       event
       |> Map.get("instructions")
       |> Enum.at(1)
       |> Map.get("accounts")
-      |> hd()
+      |> List.first()
 
     %{"mint" => mint} = hd(event["tokenTransfers"])
 
     # nft = SharkAttack.Nfts.get_nft_by_mint(mint)
-    name = SharkAttack.Nfts.get_nft_name_from_api(mint)
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
@@ -118,7 +162,6 @@ defmodule SharkAttackWeb.EventController do
         url: c.logo
       },
       title: "**#{c.name}** Foreclosure",
-      description: "#{name} has been foreclosed!",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
@@ -127,7 +170,7 @@ defmodule SharkAttackWeb.EventController do
           value: "#{loan["amountSol"]} ◎",
           inline: true
         },
-        %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
+        %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp} ◎", inline: true}
       ]
     }
 

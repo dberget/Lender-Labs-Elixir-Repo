@@ -29,7 +29,7 @@ defmodule SharkAttack.Stats do
     data
     |> Enum.map(&format_historical_loan/1)
     |> Enum.reverse()
-    |> Enum.map(&SharkAttack.Loans.create_loan(&1))
+    |> Enum.map(&SharkAttack.Loans.create_or_update_loan(&1))
   end
 
   def save_recent_lender_history(pk) do
@@ -40,7 +40,7 @@ defmodule SharkAttack.Stats do
       data ->
         data
         |> Enum.map(&format_historical_loan/1)
-        |> Enum.map(&SharkAttack.Loans.create_loan(&1))
+        |> Enum.map(&SharkAttack.Loans.create_or_update_loan(&1))
     end
   end
 
