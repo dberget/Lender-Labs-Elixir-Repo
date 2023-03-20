@@ -36,6 +36,24 @@ defmodule SharkAttackWeb.ApiController do
     |> json(data)
   end
 
+  def get_borrower_history(conn, params) do
+    SharkAttack.Stats.update_history_safe(params["borrower"])
+    loans = SharkAttack.Loans.get_loans_history!(params["borrower"], "borrower")
+
+    forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
+
+    data = %{
+      loans: loans,
+      foreclosed: forelosedLoans,
+      totalSolLoaned: Enum.map(loans, fn l -> l.amountSol end) |> Enum.sum(),
+      totalInterest: Enum.map(loans, & &1.earnings) |> Enum.sum(),
+      foreclosedCount: Enum.count(forelosedLoans)
+    }
+
+    conn
+    |> json(data)
+  end
+
   def get_all_loans(conn, _params) do
     loans = SharkAttack.LoansWorker.get_all_loans()
 
@@ -92,8 +110,14 @@ defmodule SharkAttackWeb.ApiController do
     loans =
       SharkAttack.LoansWorker.get_all_loans()
       |> Enum.filter(&(&1["borrower"] == params["borrower"]))
+      |> Enum.sort_by(& &1["end"], :asc)
 
-    conn |> json(loans)
+    summary = %{
+      totalSolLoaned: Enum.map(loans, fn l -> l["amountSol"] end) |> Enum.sum(),
+      totalInterest: Enum.map(loans, fn l -> l["earnings"] end) |> Enum.sum()
+    }
+
+    conn |> json(%{loans: loans, summary: summary})
   end
 
   def get_collection(conn, params) do
@@ -359,6 +383,7 @@ defmodule SharkAttackWeb.ApiController do
 
   def remove_loan(conn, params) do
     SharkAttack.LoansWorker.remove_loan(params["loanAddress"])
+    SharkAttack.Offers.rescind_offer(params["loanAddress"])
 
     conn
     |> json(%{message: "ok"})
@@ -379,6 +404,13 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(%{data: collections})
+  end
+
+  def update_offer(conn, params) do
+    SharkAttack.Offers.update_or_create_offer(params)
+
+    conn
+    |> json(%{message: "ok"})
   end
 
   def update_loan_earnings(conn, params) do

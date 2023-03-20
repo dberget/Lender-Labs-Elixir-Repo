@@ -5,6 +5,8 @@ defmodule SharkAttack.Loans do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Changeset
+  alias SharkAttack.LoansWorker
   alias SharkAttack.Loans.PlanSettings
   alias SharkAttack.Repo
 
@@ -55,34 +57,37 @@ defmodule SharkAttack.Loans do
 
   def get_loans_history!(address) do
     query =
-      from l in Loan,
+      from(l in Loan,
         where: l.lender == ^address,
         select: l,
         where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
+      )
 
     Repo.all(query)
   end
 
   def get_loans_history!(address, "borrower") do
     query =
-      from l in Loan,
+      from(l in Loan,
         where: l.borrower == ^address,
         select: l,
         where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
+      )
 
     Repo.all(query)
   end
 
   def get_loans_history!(address, limit) do
     query =
-      from l in Loan,
+      from(l in Loan,
         where: l.lender == ^address,
         select: l,
         where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
         order_by: [desc: coalesce(l.dateForeclosed, l.dateRepaid)],
         limit: ^limit
+      )
 
     Repo.all(query)
   end
@@ -105,6 +110,15 @@ defmodule SharkAttack.Loans do
     |> Repo.insert()
   end
 
+  def get_active_loans() do
+    query =
+      from l in Loan,
+        where: is_nil(l.dateRepaid),
+        where: is_nil(l.dateForeclosed)
+
+    Repo.all(query)
+  end
+
   def create_loan(attrs \\ %{}) do
     %Loan{}
     |> Loan.changeset(attrs)
@@ -117,13 +131,48 @@ defmodule SharkAttack.Loans do
     |> Repo.update()
   end
 
-  def create_or_update_loan(attrs \\ %{}) do
-    case Repo.get(Loan, attrs["loan"]) do
-      nil -> %Loan{loan: attrs["loan"]}
-      post -> post
+  def create_if_not_exists_loan(attrs \\ %{}) do
+    case Repo.get_by(Loan, loan: attrs["loan"]) do
+      nil ->
+        %Loan{loan: attrs["loan"]}
+        |> Loan.changeset(attrs)
+        |> Repo.insert(on_conflict: :nothing)
+
+      _ ->
+        :ok
     end
-    |> Loan.changeset(attrs)
-    |> Repo.insert_or_update()
+  end
+
+  def create_or_update_loan(attrs \\ %{}) do
+    case Repo.get_by(Loan, loan: attrs["loan"]) do
+      nil ->
+        %Loan{loan: attrs["loan"]}
+        |> Loan.changeset(attrs)
+        |> Repo.insert()
+
+      post ->
+        post
+        |> Loan.changeset(attrs)
+        |> Ecto.Changeset.delete_change(:earnings)
+        |> Repo.update()
+    end
+  end
+
+  def get_loan(loan) do
+    case LoansWorker.get_loan(loan) do
+      {:ok, []} ->
+        Repo.get_by(Loan, loan: loan)
+
+      {:ok, loan} ->
+        loan = List.first(loan)
+
+        for {key, val} <- loan, into: %{} do
+          {String.to_atom(key), val}
+        end
+
+      _ ->
+        nil
+    end
   end
 
   @doc """

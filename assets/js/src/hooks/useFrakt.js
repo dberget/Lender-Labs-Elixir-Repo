@@ -60,6 +60,7 @@ export const FraktProvider = (props) => {
       const loan = data[index];
 
       loan.end = loan.classicParams.timeBased.expiredAt;
+      loan.amountSol = loan.repayValue / LAMPORTS_PER_SOL;
       loan.platform = "FRAKT";
     }
 

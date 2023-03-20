@@ -35,6 +35,7 @@ export function Loans() {
   const metaplex = new Metaplex(connection);
   const [filter, setFilter] = React.useState(null);
   const [selectedForRepay, setSelectedForRepay] = React.useState([]);
+  const [repayAmount, setRepayAmount] = React.useState(0);
 
   const { loans: fraktLoans, repayLoan: repayFraktLoan } = useFrakt();
   const { citrus, loans: citrusLoans, repayLoan } = useCitrus();
@@ -42,9 +43,22 @@ export function Loans() {
 
   const sharkyClient = initSharkyClient(connection, wallet);
 
-  const { loans: sharkyLoans, isLoading } = useBorrower();
+  const { loanData, isLoading } = useBorrower();
 
-  if (!sharkyLoans) return <div></div>;
+  React.useEffect(() => {
+    console.log(selectedForRepay);
+
+    const repayAmount = selectedForRepay.reduce(
+      (acc, curr) => acc + (curr.loan.amountSol + (curr?.loan?.earnings || 0)),
+      0
+    );
+
+    setRepayAmount(repayAmount);
+  }, [selectedForRepay]);
+
+  if (!loanData) return <div></div>;
+
+  const { loans: sharkyLoans, summary } = loanData;
 
   const handleFilterLoans = async (newFilter) => {
     if (filter === newFilter) {
@@ -172,62 +186,91 @@ export function Loans() {
 
   return (
     <div className="w-full">
-      <div className="flex justify-evenly mx-auto w-full md:w-1/4">
-        <div
-          style={{
-            backgroundColor: filter == "Sharky" ? "#28292B" : "transparent",
-          }}
-          className="p-4"
-        >
-          <img
-            onClick={() => handleFilterLoans("Sharky")}
-            className={"w-auto h-12 cursor-pointer"}
-            src={"/images/sharky.png"}
+      <div>
+        <div className="flex justify-around items-center w-full md:w-1/2 mx-auto">
+          <StatCard
+            title={"Loaned"}
+            value={
+              summary && (
+                <>
+                  {summary?.totalSolLoaned.toFixed(2)} <SolIcon />
+                </>
+              )
+            }
           />
-        </div>
-        <div
-          style={{
-            backgroundColor: filter == "FRAKT" ? "#28292B" : "transparent",
-          }}
-          className="p-4"
-        >
-          <img
-            onClick={() => handleFilterLoans("FRAKT")}
-            className={"h-12 cursor-pointer"}
-            src={"/images/frakt.png"}
-          />
-        </div>
-        <div
-          style={{
-            backgroundColor: filter == "Rain" ? "#28292B" : "transparent",
-          }}
-          className="p-4"
-        >
-          <img
-            onClick={() => handleFilterLoans("Rain")}
-            className={"w-auto h-12 cursor-pointer"}
-            src={"/images/rainfi.png"}
-          />
-        </div>
-        <div
-          style={{
-            backgroundColor: filter == "Citrus" ? "#28292B" : "transparent",
-          }}
-          className="p-4"
-        >
-          <img
-            onClick={() => handleFilterLoans("Citrus")}
-            className={"w-auto h-12 cursor-pointer"}
-            src={"/images/citrus-logo.png"}
+
+          <StatCard
+            title={"Interest Owed"}
+            value={
+              summary && (
+                <>
+                  {summary?.totalInterest.toFixed(2)} <SolIcon />
+                </>
+              )
+            }
           />
         </div>
       </div>
-      <div className="flex justify-around mx-auto w-full md:w-1/4">
-        <Button onClick={() => handleRepayAll()}>Repay All</Button>
 
-        <Button onClick={() => handleRepaySelected()}>
-          Repay Selected ({selectedForRepay.length})
+      <div className="mt-3 flex justify-evenly items-center mx-auto w-full md:w-2/3">
+        <Button
+          disabled={selectedForRepay.length == 0}
+          className="py-3"
+          onClick={() => handleRepaySelected()}
+        >
+          Repay Selected {repayAmount.toFixed(2)} <SolIcon />
         </Button>
+
+        <div className="flex">
+          <div
+            style={{
+              backgroundColor: filter == "Sharky" ? "#28292B" : "transparent",
+            }}
+            className="p-4"
+          >
+            <img
+              onClick={() => handleFilterLoans("Sharky")}
+              className={"w-auto h-12 cursor-pointer"}
+              src={"/images/sharky.png"}
+            />
+          </div>
+          <div
+            style={{
+              backgroundColor: filter == "FRAKT" ? "#28292B" : "transparent",
+            }}
+            className="p-4"
+          >
+            <img
+              onClick={() => handleFilterLoans("FRAKT")}
+              className={"h-12 cursor-pointer"}
+              src={"/images/frakt.png"}
+            />
+          </div>
+          <div
+            style={{
+              backgroundColor: filter == "Rain" ? "#28292B" : "transparent",
+            }}
+            className="p-4"
+          >
+            <img
+              onClick={() => handleFilterLoans("Rain")}
+              className={"w-auto h-12 cursor-pointer"}
+              src={"/images/rainfi.png"}
+            />
+          </div>
+          <div
+            style={{
+              backgroundColor: filter == "Citrus" ? "#28292B" : "transparent",
+            }}
+            className="p-4"
+          >
+            <img
+              onClick={() => handleFilterLoans("Citrus")}
+              className={"w-auto h-12 cursor-pointer"}
+              src={"/images/citrus-logo.png"}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
@@ -246,6 +289,17 @@ export function Loans() {
     </div>
   );
 }
+
+const StatCard = ({ title, value }) => {
+  return (
+    <div className="bg-[#28292B] rounded w-full md:w-1/4">
+      <div className="p-4">
+        <div className="text-sm font-light">{title}</div>
+        <div className="text-2xl"> {value}</div>
+      </div>
+    </div>
+  );
+};
 
 const LoanCards = ({
   loans,
@@ -339,7 +393,11 @@ const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
             <ReactTooltip
               anchorSelect={"#end-date" + loan.pubkey}
               place="bottom"
-              content={`${new Date(loan.end * 1000).toLocaleString()}`}
+              render={() => (
+                <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+                  {new Date(loan.end * 1000).toLocaleString()}
+                </span>
+              )}
             />
           </div>
         </div>
@@ -414,8 +472,12 @@ const SharkyCard = ({
             )}
             <ReactTooltip
               anchorSelect={"#end-date" + loan.pubkey}
-              place="top"
-              content={`${new Date(loan.end * 1000).toLocaleString()}`}
+              place="bottom"
+              render={() => (
+                <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+                  {new Date(loan.end * 1000).toLocaleString()}
+                </span>
+              )}
             />
           </div>
         </div>

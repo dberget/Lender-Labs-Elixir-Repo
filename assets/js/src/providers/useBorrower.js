@@ -10,28 +10,26 @@ import useSwr from "swr";
 const url = `https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444`;
 
 export const useBorrower = () => {
-  //   const router = useRouter();
-  //   let pkOverride = router.query.pk;
+  const urlParams = new URLSearchParams(window.location.search);
+  const pkOverride = urlParams.get("pk");
+
   const { publicKey } = useWallet();
 
-  const wallet = useAnchorWallet();
-  const { connection } = useConnection();
-
-  //   let pubKey = pkOverride ?? publicKey;
+  let pubKey = pkOverride ?? publicKey;
 
   const { data } = useSwr(
-    publicKey ? `/api/get_borrower_collections?borrower=${publicKey}` : null,
+    pubKey ? `/api/get_borrower_collections?borrower=${pubKey}` : null,
     (...args) => fetch(...args, {}).then((res) => res.json())
   );
 
   const {
-    data: loans,
+    data: loanData,
     isLoading,
     isValidating,
   } = useSwr(
-    publicKey ? `/api/get_borrower_loans?borrower=${publicKey}` : null,
+    pubKey ? `/api/get_borrower_loans?borrower=${pubKey}` : null,
     (...args) => fetch(...args, {}).then((res) => res.json())
   );
 
-  return { data, isLoading, loans };
+  return { data, isLoading, loanData, pubKey };
 };

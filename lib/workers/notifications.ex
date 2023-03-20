@@ -15,6 +15,8 @@ defmodule SharkAttack.NotificationWorker do
   def init(state) do
     :timer.send_interval(:timer.minutes(5), :fetch)
 
+    :timer.send_interval(:timer.minutes(7), :update)
+
     {:ok, state}
   end
 
@@ -25,9 +27,21 @@ defmodule SharkAttack.NotificationWorker do
     {:noreply, state}
   end
 
+  def handle_info(:update, state) do
+    update_loan_data()
+
+    {:noreply, state}
+  end
+
   defp notify_users do
     Logger.info("Checking for foreclosures...")
 
     SharkAttack.Notifications.foreclosures()
+  end
+
+  defp update_loan_data do
+    Logger.info("Updating Loan Data...")
+
+    SharkAttack.Stats.update_loans()
   end
 end

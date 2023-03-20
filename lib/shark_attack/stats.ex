@@ -1,8 +1,8 @@
 defmodule SharkAttack.Stats do
-  def get_loans() do
+  def update_loans() do
     loans = SharkAttack.SharkyApi.get_all_loans()
 
-    Enum.map(loans, &SharkAttack.Loans.create_loan(&1))
+    Enum.map(loans, &SharkAttack.Loans.create_if_not_exists_loan(&1))
   end
 
   def save_loan(loan) do

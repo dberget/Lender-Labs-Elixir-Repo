@@ -1,5 +1,7 @@
 defmodule SharkAttackWeb.EventController do
   use SharkAttackWeb, :controller
+  alias SharkAttack.Collections
+  alias SharkAttack.Collections.Nft
   alias SharkAttack.Accounts.{User, UserSettings}
 
   require Logger
@@ -19,10 +21,10 @@ defmodule SharkAttackWeb.EventController do
   defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
 
-    loanAddress =
+    loan_address =
       Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
 
-    loan = loanAddress |> SharkAttack.LoansWorker.get_loan() |> List.first(%{})
+    loan = SharkAttack.Loans.get_loan(loan_address)
 
     case check_is_user_and_subscribed?(
            to,
@@ -47,9 +49,13 @@ defmodule SharkAttackWeb.EventController do
 
         c = SharkAttack.Collections.get_collection_from_mint(mint)
 
-        duration = Map.get(loan, "end", 0) - Map.get(loan, "start", 0)
+        duration = Map.get(loan, :end, 0) - Map.get(loan, :start, 0)
 
         embed = %Nostrum.Struct.Embed{
+          author: %Nostrum.Struct.Embed.Author{
+            name: "Lender Labs",
+            url: "https://lenderlabs.xyz"
+          },
           thumbnail: %Nostrum.Struct.Embed.Thumbnail{
             url: c.logo
           },
@@ -144,33 +150,35 @@ defmodule SharkAttackWeb.EventController do
 
     %{"mint" => mint} = hd(event["tokenTransfers"])
 
-    # nft = SharkAttack.Nfts.get_nft_by_mint(mint)
+    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
-    loan =
-      SharkAttack.LoansWorker.get_loan(loan_address)
-      |> List.first(%{"amountSol" => "?"})
+    loan = SharkAttack.Loans.get_loan(loan_address)
+
+    amount = Map.get(loan, :amountSol, 0.0) + Map.get(loan, :earnings, 0.0)
+
+    name = parse_name(nft, c)
 
     embed = %Nostrum.Struct.Embed{
-      author: %Nostrum.Struct.Embed.Author{
-        name: "Lender Labs",
-        url: "https://lenderlabs.xyz"
-      },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
         url: c.logo
       },
-      title: "**#{c.name}** Foreclosure",
+      title: "**#{name}** Foreclosure",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{loan["amountSol"]} ◎",
+          value: "#{Float.round(amount, 2)} ◎",
           inline: true
         },
-        %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp} ◎", inline: true}
+        %Nostrum.Struct.Embed.Field{
+          name: "Floor Price",
+          value: "#{Float.round(fp, 2)} ◎",
+          inline: true
+        }
       ]
     }
 
@@ -182,6 +190,14 @@ defmodule SharkAttackWeb.EventController do
 
   defp send_message(_platform, _, _event) do
     :ok
+  end
+
+  defp parse_name(%Nft{name: nil}, %Collections.Collection{name: name}) do
+    name
+  end
+
+  defp parse_name(%Nft{name: name}, _) do
+    name
   end
 
   defp is_subscribed_dao?(address) do

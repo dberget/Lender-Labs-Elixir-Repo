@@ -44,15 +44,18 @@ defmodule SharkAttackWeb.Router do
     get("/flush_loans", ApiController, :flush_loans)
     get("/get_borrower_collections", ApiController, :get_borrower_collections)
     get("/get_borrower_loans", ApiController, :get_borrower_loans)
+    get("/get_borrower_history", ApiController, :get_borrower_history)
     get("/remove_loan", ApiController, :remove_loan)
     get("/analyze_collection_data", ApiController, :analyze_collection_data)
-    get("get_user_favorites", ApiController, :get_user_favorites)
+    get("/get_user_favorites", ApiController, :get_user_favorites)
 
     get("/save_favorite", ApiController, :save_favorite)
     get("/remove_favorite", ApiController, :remove_favorite)
 
     post("/get_sharky_indexes", ApiController, :get_sharky_indexes)
     post("/save_nft_image", ApiController, :save_nft_image)
+
+    post("/update_offer", ApiController, :update_offer)
   end
 
   scope "/event", SharkAttackWeb do

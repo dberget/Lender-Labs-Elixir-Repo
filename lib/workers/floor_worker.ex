@@ -31,8 +31,7 @@ defmodule SharkAttack.FloorWorker do
       :named_table,
       :public,
       :set,
-      read_concurrency: true,
-      write_concurrency: true
+      read_concurrency: true
     ])
 
     all_collections =

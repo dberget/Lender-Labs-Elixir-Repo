@@ -52,6 +52,12 @@ export const Header = () => {
           >
             Loans
           </Link>
+          {/* <Link
+            to="/overview"
+            className="text-sm font-semibold leading-6 text-white"
+          >
+            Overview
+          </Link> */}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <WalletMultiButton />

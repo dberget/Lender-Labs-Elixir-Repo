@@ -4,6 +4,7 @@ import { Header } from "./components/Header";
 import { Borrow } from "./pages/Borrow";
 import { Toaster } from "react-hot-toast";
 import { Loans } from "./pages/Loans";
+import { Overview } from "./pages/Overview";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Borrow />} />
         <Route path="/loans" element={<Loans />} />
+        <Route path="/overview" element={<Overview />} />
       </Routes>
       <Toaster />
     </BrowserRouter>

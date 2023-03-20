@@ -29,7 +29,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def get_loan(loan) do
-    :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten()
+    {:ok, :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten()}
   end
 
   def get_collection_loans(collection) do
@@ -69,7 +69,7 @@ defmodule SharkAttack.LoansWorker do
       |> hd()
 
     unless is_nil(loanAddress) do
-      GenServer.call(__MODULE__, {:delete, loanAddress})
+      GenServer.cast(__MODULE__, {:delete, loanAddress})
     end
   end
 
