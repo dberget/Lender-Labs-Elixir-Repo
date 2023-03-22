@@ -6,7 +6,6 @@ import {
 } from "@solana/wallet-adapter-react";
 import { splitTimeShort } from "../utils/time";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import useSwr from "swr";
 
 import sharky from "@sharkyfi/client";
 import { Metaplex } from "@metaplex-foundation/js";
@@ -21,6 +20,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import toast from "react-hot-toast";
 
 import Button from "../components/Button";
+import { useCollection } from "../hooks/useCollection";
 
 const initSharkyClient = (connection, wallet) => {
   let provider = sharky.createProvider(connection, wallet);
@@ -37,6 +37,10 @@ export function Loans() {
   const [selectedForRepay, setSelectedForRepay] = React.useState([]);
   const [repayAmount, setRepayAmount] = React.useState(0);
 
+  const [sortBy, setSortBy] = React.useState("amountSol");
+
+  const [sortDirection, setSortDirection] = React.useState("DESC");
+
   const { loans: fraktLoans, repayLoan: repayFraktLoan } = useFrakt();
   const { citrus, loans: citrusLoans, repayLoan } = useCitrus();
   const { rainLoans, repayAll: repayAllRain } = useRain();
@@ -46,8 +50,6 @@ export function Loans() {
   const { loanData, isLoading } = useBorrower();
 
   React.useEffect(() => {
-    console.log(selectedForRepay);
-
     const repayAmount = selectedForRepay.reduce(
       (acc, curr) => acc + (curr.loan.amountSol + (curr?.loan?.earnings || 0)),
       0
@@ -222,6 +224,21 @@ export function Loans() {
         </Button>
 
         <div className="flex">
+          {/* <select
+            className="text-black"
+            onChange={(e) => setSortBy(e.currentTarget.value)}
+          >
+            <option value="amountSol">Amount</option>
+            <option value="start">Start</option>
+          </select>
+
+          <select
+            className="text-black"
+            onChange={(e) => setSortDirection(e.currentTarget.value)}
+          >
+            <option value="ASC">ASC</option>
+            <option value="DESC">DESC</option>
+          </select> */}
           <div
             style={{
               backgroundColor: filter == "Sharky" ? "#28292B" : "transparent",
@@ -274,9 +291,11 @@ export function Loans() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
-        {/* <StatsCard /> */}
         {allLoans.length > 0 && (
           <LoanCards
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortDirection={sortDirection}
             sharkyClient={sharkyClient}
             setSelectedForRepay={handleSetSelectedForRepay}
             filter={filter}
@@ -306,6 +325,8 @@ const LoanCards = ({
   metaplex,
   sharkyClient,
   filter,
+  sortBy,
+  sortDirection,
   setSelectedForRepay,
   selectedForRepay,
 }) => {
@@ -335,6 +356,22 @@ const LoanCards = ({
     filteredLoans = filteredLoans.filter((loan) => loan.platform === filter);
   }
 
+  // if (sortBy) {
+  //   filteredLoans = filteredLoans.sort((a, b) => {
+  //     if (sortDirection === "ASC") {
+  //       if (a[sortBy] > b[sortBy]) return 1;
+  //       if (a[sortBy] < b[sortBy]) return -1;
+  //     }
+
+  //     if (sortDirection === "DESC") {
+  //       if (a[sortBy] > b[sortBy]) return -1;
+  //       if (a[sortBy] < b[sortBy]) return 1;
+  //     }
+
+  //     return 0;
+  //   });
+  // }
+
   filteredLoans = filteredLoans.map((loan, index) =>
     CardMap[loan.platform]({
       loan,
@@ -345,21 +382,6 @@ const LoanCards = ({
   );
 
   return filteredLoans;
-};
-
-const StatsCard = () => {
-  const { publicKey } = useWallet();
-
-  const { loans } = useSwr(
-    publicKey ? `https://lenderlabs.xyz/api/borrower?pk=${publicKey}` : null,
-    (...args) => fetch(...args, {}).then((res) => res.json())
-  );
-
-  return (
-    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#A2FF2F]">
-      Stats
-    </div>
-  );
 };
 
 const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
@@ -434,6 +456,8 @@ const SharkyCard = ({
   const [nft, setNft] = React.useState(null);
   const [isSelected, setIsSelected] = React.useState(false);
 
+  const { collection } = useCollection(loan.orderBook);
+
   React.useEffect(() => {
     const selected = selectedForRepay.find((l) => l.key == loan.pubkey);
 
@@ -452,19 +476,44 @@ const SharkyCard = ({
     getNft();
   }, []);
 
+  const loanOwed = loan.amountSol + loan.earnings + loan.earnings * 0.16;
+
   return (
     <div
       onClick={() => setSelectedForRepay(loan)}
-      className="cursor-pointer bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#FF1757]"
+      className="cursor-pointer bg-[#28292B] p-4 my-2 w-full rounded border-b-4 border-[#FF1757]"
     >
-      <img src={nft?.json?.image} className="w-20 h-20 rounded" />
+      <div className="w-full">
+        <div className="flex items-center w-full mb-1">
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } mr-1 w-7 h-7 text-[#58BC98]`}
+          />
+          <span className="font-bold">{collection?.name}</span>
 
-      <div className="flex w-full ml-2">
-        <div>
+          <span
+            className={
+              "ml-auto " + (loanOwed > collection?.fp ? "text-red-500" : "")
+            }
+          >
+            {collection?.fp?.toFixed(2)} <SolIcon />
+          </span>
+        </div>
+      </div>
+
+      <div className="flex w-full">
+        <img
+          key={nft?.json?.image}
+          src={nft?.json?.image}
+          className="w-20 h-20 rounded"
+        />
+        <div className="ml-2">
           <div className="font-bold">
-            {(loan.amountSol + loan.earnings + loan.earnings * 0.16).toFixed(2)}{" "}
-            <SolIcon />
+            {loanOwed.toFixed(2)} <SolIcon />
           </div>
+
+          <div className="font-bold"></div>
 
           <div id={"end-date" + loan.pubkey}>
             {splitTimeShort(
@@ -482,23 +531,16 @@ const SharkyCard = ({
           </div>
         </div>
 
-        <div className="ml-auto flex-col flex">
-          <div
-            className={`${
-              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
-            } ml-auto w-7 h-7 text-[#58BC98]`}
-          />
-          <Button
-            className="mt-auto"
-            onClick={(ev) => {
-              repaySharkyLoan(loan, sharkyClient, connection);
+        <Button
+          className="ml-auto mt-auto"
+          onClick={(ev) => {
+            repaySharkyLoan(loan, sharkyClient, connection);
 
-              ev.stopPropagation();
-            }}
-          >
-            Repay
-          </Button>
-        </div>
+            ev.stopPropagation();
+          }}
+        >
+          Repay
+        </Button>
       </div>
     </div>
   );
@@ -536,7 +578,11 @@ const CitrusCard = ({
       onClick={() => setSelectedForRepay(loan)}
       className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#F97315] cursor-pointer"
     >
-      <img src={nft?.json?.image} className="w-20 h-20 rounded" />
+      <img
+        key={nft?.json?.image}
+        src={nft?.json?.image}
+        className="w-20 h-20 rounded"
+      />
 
       <div className="flex w-full ml-2">
         <div>
@@ -606,7 +652,11 @@ const RainCard = ({
       onClick={() => setSelectedForRepay(loan)}
       className="bg-[#28292B] cursor-pointer p-4 my-2 w-full rounded flex border-b-4 border-[#2FB5FE]"
     >
-      <img src={nft?.json?.image} className="w-20 h-20 rounded" />
+      <img
+        key={loan.pubkey}
+        src={nft?.json?.image}
+        className="w-20 h-20 rounded"
+      />
 
       <div className="flex w-full ml-2">
         <div>

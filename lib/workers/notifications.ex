@@ -7,15 +7,27 @@ defmodule SharkAttack.NotificationWorker do
 
   require Logger
 
+  @loan_interval (if Mix.env() == :dev do
+                    30
+                  else
+                    7
+                  end)
+
+  @foreclose_interval (if Mix.env() == :dev do
+                         30
+                       else
+                         5
+                       end)
+
   def start_link(opts) do
     GenServer.start_link(__MODULE__, [], opts)
   end
 
   @impl true
   def init(state) do
-    :timer.send_interval(:timer.minutes(5), :fetch)
+    :timer.send_interval(:timer.minutes(@foreclose_interval), :fetch)
 
-    :timer.send_interval(:timer.minutes(7), :update)
+    :timer.send_interval(:timer.minutes(@loan_interval), :update)
 
     {:ok, state}
   end

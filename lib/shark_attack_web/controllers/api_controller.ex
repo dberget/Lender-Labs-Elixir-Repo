@@ -110,6 +110,7 @@ defmodule SharkAttackWeb.ApiController do
     loans =
       SharkAttack.LoansWorker.get_all_loans()
       |> Enum.filter(&(&1["borrower"] == params["borrower"]))
+      |> Enum.map(&Map.drop(&1, ["secondsUntilForeclosable"]))
       |> Enum.sort_by(& &1["end"], :asc)
 
     summary = %{

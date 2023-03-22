@@ -1,6 +1,8 @@
 const esbuild = require("esbuild");
 
 const stdLibBrowser = require("node-stdlib-browser");
+const fs = require("fs");
+const path = require("path");
 const plugin = require("node-stdlib-browser/helpers/esbuild/plugin");
 
 const outdirectory = "../priv/static/assets";
@@ -9,6 +11,21 @@ const args = process.argv.slice(2);
 
 const watch = args.includes("--watch");
 const deploy = args.includes("--deploy");
+
+fs.readdir(outdirectory, (err, files) => {
+  if (err) throw err;
+  for (const file of files) {
+    if (
+      file.endsWith(".js") ||
+      file.endsWith(".css") ||
+      file.endsWith(".js.map")
+    ) {
+      fs.unlink(path.join(outdirectory, file), (err) => {
+        if (err) throw err;
+      });
+    }
+  }
+});
 
 async function dev() {
   console.log("Building development bundle ⏳");
@@ -67,12 +84,6 @@ async function prod() {
 
   //     result.watch();
   //   });
-}
-
-//defaults to build
-let config = "-build";
-if (process.argv.length > 2) {
-  config = process.argv[2];
 }
 
 // Builds the bundle for dvelopment and runs a local web server

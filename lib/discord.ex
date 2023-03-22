@@ -53,14 +53,8 @@ defmodule SharkAttack.DiscordConsumer do
   # anthonypacheco
   def send_to_webhook(
         "4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK",
-        title,
-        message
+        embed
       ) do
-    embed =
-      %Nostrum.Struct.Embed{}
-      |> put_title(title)
-      |> put_description(message)
-
     Api.execute_webhook(
       "1079918781146611832",
       "F75SBFvGVtxeLL7ftOOWKOfdHFUc3WJ-uTLmMwKyM1ujHwTfD_8NIF8yW7yuqh8d9ANk",

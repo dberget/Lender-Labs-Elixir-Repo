@@ -19,64 +19,23 @@ defmodule SharkAttackWeb.EventController do
   end
 
   defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
-    %{"toUserAccount" => to, "amount" => amount} = hd(event["nativeTransfers"])
-
-    loan_address =
-      Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
-
-    loan = SharkAttack.Loans.get_loan(loan_address)
+    %{"toUserAccount" => to} = hd(event["nativeTransfers"])
 
     case check_is_user_and_subscribed?(
-           to,
+           "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
            :loan_repaid
          ) do
       false ->
         nil
 
       {:dao, address} ->
-        %{"mint" => mint} = hd(event["tokenTransfers"])
-
-        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+        embed = build_repaid_loan_embed(event)
 
         address
-        |> SharkAttack.DiscordConsumer.send_to_webhook(
-          "#{name} Repaid",
-          "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
-        )
+        |> SharkAttack.DiscordConsumer.send_to_webhook(embed)
 
       {:user, discordId} ->
-        %{"mint" => mint} = hd(event["tokenTransfers"])
-
-        c = SharkAttack.Collections.get_collection_from_mint(mint)
-
-        duration = Map.get(loan, :end, 0) - Map.get(loan, :start, 0)
-
-        embed = %Nostrum.Struct.Embed{
-          author: %Nostrum.Struct.Embed.Author{
-            name: "Lender Labs",
-            url: "https://lenderlabs.xyz"
-          },
-          thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-            url: c.logo
-          },
-          title: "**#{c.name}** Loan Repaid",
-          url: "https://solscan.io/tx/#{event["signature"]}",
-          color: 5_815_448,
-          fields: [
-            %Nostrum.Struct.Embed.Field{
-              name: "Loan Value",
-              value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
-              inline: true
-            },
-            %Nostrum.Struct.Embed.Field{
-              name: "Duration",
-              value:
-                Timex.Duration.from_erl({0, round(duration), 0})
-                |> Timex.format_duration(:humanized),
-              inline: true
-            }
-          ]
-        }
+        embed = build_repaid_loan_embed(event)
 
         discordId
         |> SharkAttack.DiscordConsumer.create_dm_channel()
@@ -87,52 +46,21 @@ defmodule SharkAttackWeb.EventController do
   defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> hd
 
-    %{"nativeBalanceChange" => amount} = hd(event["accountData"])
-
     case check_is_user_and_subscribed?(
-           from,
+           "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
            :loan_taken
          ) do
       false ->
         nil
 
       {:dao, address} ->
-        %{"mint" => mint} = hd(event["tokenTransfers"])
-
-        name = SharkAttack.Nfts.get_nft_name_from_api(mint)
+        embed = build_take_loan_embed(event)
 
         address
-        |> SharkAttack.DiscordConsumer.send_to_webhook(
-          "#{name} Repaid",
-          "Your #{Float.round(amount / 1_000_000_000, 2)} SOL loan has been repaid!"
-        )
+        |> SharkAttack.DiscordConsumer.send_to_webhook(embed)
 
       {:user, discordId} ->
-        %{"mint" => mint} = hd(event["tokenTransfers"])
-
-        c = SharkAttack.Collections.get_collection_from_mint(mint)
-        fp = SharkAttack.FloorWorker.get_floor_price(c.id)
-
-        embed = %Nostrum.Struct.Embed{
-          author: %Nostrum.Struct.Embed.Author{
-            name: "Lender Labs",
-            url: "https://lenderlabs.xyz"
-          },
-          thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-            url: c.logo
-          },
-          title: "**#{c.name}** Offer Accepted",
-          url: "https://solscan.io/tx/#{event["signature"]}",
-          color: 5_815_448,
-          fields: [
-            %Nostrum.Struct.Embed.Field{
-              name: "Loan Value",
-              value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
-              inline: true
-            },
-            %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
-          ]
-        }
+        embed = build_take_loan_embed(event)
 
         discordId
         |> SharkAttack.DiscordConsumer.create_dm_channel()
@@ -190,6 +118,78 @@ defmodule SharkAttackWeb.EventController do
 
   defp send_message(_platform, _, _event) do
     :ok
+  end
+
+  defp build_take_loan_embed(event) do
+    %{"nativeBalanceChange" => amount} = hd(event["accountData"])
+
+    %{"mint" => mint} = hd(event["tokenTransfers"])
+
+    c = SharkAttack.Collections.get_collection_from_mint(mint)
+    fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+
+    %Nostrum.Struct.Embed{
+      author: %Nostrum.Struct.Embed.Author{
+        name: "Lender Labs",
+        url: "https://lenderlabs.xyz"
+      },
+      thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+        url: c.logo
+      },
+      title: "**#{c.name}** Offer Accepted",
+      url: "https://solscan.io/tx/#{event["signature"]}",
+      color: 5_815_448,
+      fields: [
+        %Nostrum.Struct.Embed.Field{
+          name: "Loan Value",
+          value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
+          inline: true
+        },
+        %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
+      ]
+    }
+  end
+
+  defp build_repaid_loan_embed(event) do
+    %{"amount" => amount} = hd(event["nativeTransfers"])
+
+    %{"mint" => mint} = hd(event["tokenTransfers"])
+
+    c = SharkAttack.Collections.get_collection_from_mint(mint)
+
+    loan_address =
+      Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
+
+    loan = SharkAttack.Loans.get_loan(loan_address)
+
+    duration = :os.system_time(:second) - Map.get(loan, :start, 0)
+
+    %Nostrum.Struct.Embed{
+      author: %Nostrum.Struct.Embed.Author{
+        name: "Lender Labs",
+        url: "https://lenderlabs.xyz"
+      },
+      thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+        url: c.logo
+      },
+      title: "**#{c.name}** Loan Repaid",
+      url: "https://solscan.io/tx/#{event["signature"]}",
+      color: 5_815_448,
+      fields: [
+        %Nostrum.Struct.Embed.Field{
+          name: "Loan Value",
+          value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
+          inline: true
+        },
+        %Nostrum.Struct.Embed.Field{
+          name: "Duration",
+          value:
+            Timex.Duration.from_erl({0, round(duration), 0})
+            |> Timex.format_duration(:humanized),
+          inline: true
+        }
+      ]
+    }
   end
 
   defp parse_name(%Nft{name: nil}, %Collections.Collection{name: name}) do

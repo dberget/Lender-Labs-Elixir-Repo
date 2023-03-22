@@ -105,7 +105,7 @@ export const repayLoan = async (loan, sharkyClient, connection) => {
     success: ({ sig }) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
   });
 
-  notify(`Sharky loan repaid! ${loan.amountSol}`);
+  notify(`Sharky loan repaid! ${loan.pubkey}`);
 };
 
 export const getSharkyInterest = (apy, duration, amountSol) => {
@@ -160,6 +160,8 @@ export const repayAll = async (
   );
 
   const signedTxs = await signAllTransactions(transactions);
+
+  notify(`Sharky loan repay all! ${publicKey}`);
 
   signedTxs.map(async (tx) => {
     let res = connection.sendRawTransaction(tx.serialize(), {
