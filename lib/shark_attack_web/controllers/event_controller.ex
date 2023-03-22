@@ -22,7 +22,7 @@ defmodule SharkAttackWeb.EventController do
     %{"toUserAccount" => to} = hd(event["nativeTransfers"])
 
     case check_is_user_and_subscribed?(
-           "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+           to,
            :loan_repaid
          ) do
       false ->
@@ -47,7 +47,7 @@ defmodule SharkAttackWeb.EventController do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> hd
 
     case check_is_user_and_subscribed?(
-           "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+           from,
            :loan_taken
          ) do
       false ->
