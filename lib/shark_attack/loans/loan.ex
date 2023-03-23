@@ -19,7 +19,8 @@ defmodule SharkAttack.Loans.Loan do
              :offerTxId,
              :takeTxId,
              :repayTxId,
-             :forecloseTxId
+             :forecloseTxId,
+             :collection_name
            ]}
   schema "loans" do
     field(:loan, :string)
@@ -38,10 +39,14 @@ defmodule SharkAttack.Loans.Loan do
     field(:dateRepaid, :naive_datetime)
     field(:dateForeclosed, :naive_datetime)
     field(:offerTxId, :string)
-    field(:rescindTxId, :string)
     field(:takeTxId, :string)
     field(:repayTxId, :string)
     field(:forecloseTxId, :string)
+
+    field(:status, :string)
+    field(:platform, :string)
+
+    field(:collection_name, :string, virtual: true)
 
     timestamps()
   end
@@ -66,8 +71,9 @@ defmodule SharkAttack.Loans.Loan do
       :dateRepaid,
       :dateForeclosed,
       :offerTxId,
-      :rescindTxId,
       :takeTxId,
+      :status,
+      :platform,
       :repayTxId,
       :forecloseTxId
     ])

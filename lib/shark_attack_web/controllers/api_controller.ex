@@ -20,12 +20,25 @@ defmodule SharkAttackWeb.ApiController do
   def get_history(conn, params) do
     SharkAttack.Stats.update_history_safe(params["pk"])
 
+    collections = SharkAttack.Collections.list_collections()
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])
 
     forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
 
     data = %{
-      loans: loans,
+      loans:
+        loans
+        |> Enum.map(fn l ->
+          %{
+            l
+            | collection_name:
+                Map.get(
+                  Enum.find(collections, fn c -> c.sharky_address == l.orderBook end),
+                  :name,
+                  l.orderBook
+                )
+          }
+        end),
       foreclosed: forelosedLoans,
       totalSolLoaned: Enum.map(loans, fn l -> l.amountSol end) |> Enum.sum(),
       totalInterest: Enum.map(loans, & &1.earnings) |> Enum.sum(),
@@ -66,6 +79,41 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(loans)
+  end
+
+  def get_lender_loans(conn, %{"cache" => "1"} = params) do
+    loans = SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
+
+    citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
+
+    takenLoans =
+      [
+        Enum.filter(loans, fn l -> l["state"] == "taken" end)
+        | Enum.filter(citrusLoans, fn l -> l["state"] == "active" end)
+      ]
+      |> List.flatten()
+
+    offers =
+      [
+        Enum.filter(loans, fn l -> l["state"] == "offered" end)
+        | Enum.filter(citrusLoans, fn l -> l["state"] == "waitingForBorrower" end)
+      ]
+      |> List.flatten()
+      |> Enum.sort_by(& &1["offerTime"], :asc)
+
+    loanSummary = %{
+      totalSolLoaned: Enum.map(takenLoans, fn l -> l["amountSol"] end) |> Enum.sum(),
+      totalEarnings: Enum.map(takenLoans, fn l -> l["earnings"] end) |> Enum.sum(),
+      activeLoans: takenLoans
+    }
+
+    offerSummary = %{
+      totalSolOffered: Enum.map(offers, fn l -> l["amountSol"] end) |> Enum.sum(),
+      activeOffers: offers
+    }
+
+    conn
+    |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
   end
 
   def get_lender_loans(conn, params) do
@@ -197,13 +245,6 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{message: "ok"})
   end
 
-  def delete_favorite(conn, params) do
-    SharkAttack.Users.save_favorite(params["address"], params["collection"])
-
-    conn
-    |> json(%{message: "ok"})
-  end
-
   def remove_favorite(conn, params) do
     SharkAttack.Users.delete_favorite(params["collection"], params["address"])
 
@@ -294,6 +335,7 @@ defmodule SharkAttackWeb.ApiController do
       apy: c.apy,
       name: c.name,
       offers: length(offers),
+      offersList: offers,
       loans: length(loans),
       lastTaken: Enum.take(loans, 1),
       logo: c.logo,

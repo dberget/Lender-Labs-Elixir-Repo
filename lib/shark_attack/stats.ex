@@ -27,9 +27,9 @@ defmodule SharkAttack.Stats do
     data = SharkAttack.SharkyApi.get_history(pk)
 
     data
-    |> Enum.map(&format_historical_loan/1)
+    |> Enum.map(&format_historical_sharky_loan/1)
     |> Enum.reverse()
-    |> Enum.map(&SharkAttack.Loans.create_or_update_loan(&1))
+    |> Enum.map(&SharkAttack.Loans.create_if_not_exists_loan(&1))
   end
 
   def save_recent_lender_history(pk) do
@@ -39,17 +39,19 @@ defmodule SharkAttack.Stats do
 
       data ->
         data
-        |> Enum.map(&format_historical_loan/1)
-        |> Enum.map(&SharkAttack.Loans.create_or_update_loan(&1))
+        |> Enum.map(&format_historical_sharky_loan/1)
+        |> Enum.map(&SharkAttack.Loans.create_if_not_exists_loan(&1))
     end
   end
 
-  def format_historical_loan(loan) do
+  def format_historical_sharky_loan(loan) do
     loan
     |> Map.put("loan", loan["pubKey"])
     |> Map.put("orderBook", loan["orderBookPubKey"])
     |> Map.put("nftCollateralMint", loan["collateralMint"])
     |> Map.put("length", loan["durationSeconds"])
+    |> Map.put("status", "COMPLETE")
+    |> Map.put("platform", "SHARKY")
     |> Map.put("amountSol", loan["principalLamports"] / 1_000_000_000)
     |> Map.put("earnings", get_earnings(loan))
   end

@@ -27,7 +27,7 @@ defmodule SharkAttack.NotificationWorker do
   def init(state) do
     :timer.send_interval(:timer.minutes(@foreclose_interval), :fetch)
 
-    :timer.send_interval(:timer.minutes(@loan_interval), :update)
+    # :timer.send_interval(:timer.minutes(@loan_interval), :update)
 
     {:ok, state}
   end
@@ -54,6 +54,6 @@ defmodule SharkAttack.NotificationWorker do
   defp update_loan_data do
     Logger.info("Updating Loan Data...")
 
-    SharkAttack.Stats.update_loans()
+    # SharkAttack.Stats.update_loans()
   end
 end

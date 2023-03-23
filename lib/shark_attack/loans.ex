@@ -153,7 +153,7 @@ defmodule SharkAttack.Loans do
       post ->
         post
         |> Loan.changeset(attrs)
-        |> Ecto.Changeset.delete_change(:earnings)
+        |> Changeset.delete_change(:earnings)
         |> Repo.update()
     end
   end
