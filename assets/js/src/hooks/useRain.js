@@ -9,13 +9,7 @@ import {
   PublicKey,
   VersionedTransaction,
   TransactionMessage,
-  SystemProgram,
 } from "@solana/web3.js";
-import {
-  NATIVE_MINT,
-  createSyncNativeInstruction,
-  getAssociatedTokenAddress,
-} from "@solana/spl-token";
 
 import { toast } from "react-hot-toast";
 import { Rain, Pool } from "@rainfi/sdk";

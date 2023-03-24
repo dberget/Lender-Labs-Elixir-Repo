@@ -44,7 +44,7 @@ defmodule SharkAttackWeb.EventController do
   end
 
   defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
-    from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> hd
+    from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> List.first()
 
     case check_is_user_and_subscribed?(
            from,
@@ -83,7 +83,9 @@ defmodule SharkAttackWeb.EventController do
     c = SharkAttack.Collections.get_collection_from_mint(mint)
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
+
     loan = SharkAttack.Loans.get_loan(loan_address)
+
 
     amount = Map.get(loan, :amountSol, 0.0) + Map.get(loan, :earnings, 0.0)
 

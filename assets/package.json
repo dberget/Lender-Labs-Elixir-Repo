@@ -1,5 +1,8 @@
 {
     "scripts": {
         "build": "node ./build.js --deploy"
+    },
+    "dependencies": {
+        "@sharkyfi/client": "^5.0.0"
     }
 }

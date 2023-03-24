@@ -328,6 +328,12 @@ defmodule SharkAttackWeb.ApiController do
           end
       end
 
+    grouped_offers =
+      offers
+      |> Enum.group_by(&(round(&1 * 100) / 100))
+      |> Map.keys()
+      |> Enum.sort(:desc)
+
     %{
       id: c.id,
       sharky_address: c.sharky_address,
@@ -335,7 +341,7 @@ defmodule SharkAttackWeb.ApiController do
       apy: c.apy,
       name: c.name,
       offers: length(offers),
-      offersList: offers,
+      offersList: grouped_offers,
       loans: length(loans),
       lastTaken: Enum.take(loans, 1),
       logo: c.logo,
@@ -426,6 +432,7 @@ defmodule SharkAttackWeb.ApiController do
 
   def remove_loan(conn, params) do
     SharkAttack.LoansWorker.remove_loan(params["loanAddress"])
+
     SharkAttack.Offers.rescind_offer(params["loanAddress"])
 
     conn

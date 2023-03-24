@@ -89,7 +89,7 @@ defmodule SharkAttack.DiscordConsumer do
   end
 
   def send_raw_message(dm_id, embed) do
-    Api.create_message(dm_id, embeds: [embed])
+    Api.create_message!(dm_id, embeds: [embed])
   end
 
   def send_message(dm_id, event) do
