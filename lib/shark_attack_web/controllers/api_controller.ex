@@ -33,7 +33,7 @@ defmodule SharkAttackWeb.ApiController do
             l
             | collection_name:
                 Map.get(
-                  Enum.find(collections, fn c -> c.sharky_address == l.orderBook end),
+                  Enum.find(collections, %{}, fn c -> c.sharky_address == l.orderBook end),
                   :name,
                   l.orderBook
                 )

@@ -3,7 +3,9 @@
 @import "tailwindcss/utilities";
 
 @import "./wallet-adapter-styles.css";
-@import "./react-tooltip.css";
+
+@import "react-tooltip/dist/react-tooltip.css";
+
 /* This file is for your main application CSS */
 
 html {
@@ -69,4 +71,3 @@ html {
       background-color: #f9f9f9;
     }
   }
-

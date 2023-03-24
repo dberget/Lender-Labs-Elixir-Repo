@@ -16,6 +16,7 @@ import { useCitrus } from "../hooks/useCitrus";
 import { useRain } from "../hooks/useRain";
 import { SolIcon } from "../components/SolIcon";
 import { notify } from "../utils/discord";
+
 import {
   renewLoan,
   repayAll,
@@ -237,51 +238,52 @@ export function Loans() {
 
   return (
     <div className="w-full">
-      <div>
-        <div className="flex justify-around items-center w-full md:w-1/2 mx-auto">
-          <StatCard
-            title={"Loaned"}
-            value={
-              summary && (
-                <>
-                  {summary?.totalSolLoaned.toFixed(2)} <SolIcon />
-                </>
-              )
-            }
-          />
+      <div className="flex justify-around items-center w-full md:w-1/2 mx-auto">
+        <StatCard
+          title={"Loaned"}
+          value={
+            summary && (
+              <>
+                {summary?.totalSolLoaned.toFixed(2)} <SolIcon />
+              </>
+            )
+          }
+        />
 
-          <StatCard
-            title={"Interest Owed"}
-            value={
-              summary && (
-                <>
-                  {summary?.totalInterest.toFixed(2)} <SolIcon />
-                </>
-              )
-            }
-          />
-        </div>
+        <StatCard
+          title={"Interest Owed"}
+          value={
+            summary && (
+              <>
+                {summary?.totalInterest.toFixed(2)} <SolIcon />
+              </>
+            )
+          }
+        />
       </div>
 
-      <div className="mt-3 flex justify-evenly items-center mx-auto w-full md:w-2/3">
-        <Button
-          disabled={selectedForRepay.length == 0}
-          className="py-3"
-          onClick={() => handleRenewSelected()}
-        >
-          Renew Selected{" "}
-          {selectedForRenew
-            .reduce((acc, loan) => loan?.renewDiff + acc, 0)
-            .toFixed(2)}{" "}
-          <SolIcon />
-        </Button>
-        <Button
-          disabled={selectedForRepay.length == 0}
-          className="py-3"
-          onClick={() => handleRepaySelected()}
-        >
-          Repay Selected {repayAmount.toFixed(2)} <SolIcon />
-        </Button>
+      <div className="mt-3 flex flex-col md:flex-row justify-evenly items-center mx-auto w-full xl:w-2/3">
+        <div className="mb-1 md:mb-0">
+          <Button
+            disabled={selectedForRepay.length == 0}
+            className="mx-1 py-3 lg:mb-0 lg:mr-2"
+            onClick={() => handleRenewSelected()}
+          >
+            Renew Selected{" "}
+            {selectedForRenew
+              .reduce((acc, loan) => loan?.renewDiff + acc, 0)
+              .toFixed(2)}{" "}
+            <SolIcon />
+          </Button>
+
+          <Button
+            disabled={selectedForRepay.length == 0}
+            className="mx-1 py-3"
+            onClick={() => handleRepaySelected()}
+          >
+            Repay Selected {repayAmount.toFixed(2)} <SolIcon />
+          </Button>
+        </div>
 
         <div className="flex">
           {/* <select
@@ -350,7 +352,7 @@ export function Loans() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
         {allLoans.length > 0 && (
           <LoanCards
             sortBy={sortBy}
@@ -371,7 +373,7 @@ export function Loans() {
 
 const StatCard = ({ title, value }) => {
   return (
-    <div className="bg-[#28292B] rounded w-full md:w-1/4">
+    <div className="bg-[#28292B] mx-2 rounded w-full md:w-1/4 text-center md:text-left">
       <div className="p-4">
         <div className="text-sm font-light">{title}</div>
         <div className="text-2xl"> {value}</div>
@@ -473,6 +475,7 @@ const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
               Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
             )}
             <ReactTooltip
+              variant={"light"}
               anchorSelect={"#end-date" + loan.pubkey}
               place="bottom"
               render={() => (
@@ -563,6 +566,8 @@ const SharkyCard = ({
           <span className="font-bold">{collection?.name}</span>
 
           <span
+            data-tooltip-variant="light"
+            id={`fp-${loan.pubkey}`}
             className={
               "ml-auto " + (loanOwed > collection?.fp ? "text-red-500" : "")
             }
@@ -570,6 +575,16 @@ const SharkyCard = ({
             {collection?.fp?.toFixed(2)} <SolIcon />
           </span>
         </div>
+        <ReactTooltip
+          variant={"light"}
+          anchorSelect={"#fp-" + loan.pubkey}
+          place="bottom"
+          render={() => (
+            <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+              Floor price
+            </span>
+          )}
+        />
       </div>
 
       <div className="flex w-full">
@@ -585,19 +600,10 @@ const SharkyCard = ({
 
           <div className="font-bold"></div>
 
-          <div id={"end-date" + loan.pubkey}>
+          <div data-tooltip-variant="light" id={"end-date" + loan.pubkey}>
             {splitTimeShort(
               Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
             )}
-            <ReactTooltip
-              anchorSelect={"#end-date" + loan.pubkey}
-              place="bottom"
-              render={() => (
-                <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
-                  {new Date(loan.end * 1000).toLocaleString()}
-                </span>
-              )}
-            />
           </div>
         </div>
 
@@ -638,6 +644,15 @@ const SharkyCard = ({
           </Button>
         </div>
       </div>
+      <ReactTooltip
+        anchorSelect={"#end-date" + loan.pubkey}
+        place="bottom"
+        render={() => (
+          <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+            {new Date(loan.end * 1000).toLocaleString()}
+          </span>
+        )}
+      />
     </div>
   );
 };
