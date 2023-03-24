@@ -5,7 +5,7 @@ import {
   useWallet,
 } from "@solana/wallet-adapter-react";
 import { splitTimeShort } from "../utils/time";
-import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { PublicKey, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
 
 import sharky from "@sharkyfi/client";
 import { Metaplex } from "@metaplex-foundation/js";
@@ -15,7 +15,12 @@ import { useFrakt } from "../hooks/useFrakt";
 import { useCitrus } from "../hooks/useCitrus";
 import { useRain } from "../hooks/useRain";
 import { SolIcon } from "../components/SolIcon";
-import { repayAll, repayLoan as repaySharkyLoan } from "../utils/sharky";
+import { notify } from "../utils/discord";
+import {
+  renewLoan,
+  repayAll,
+  repayLoan as repaySharkyLoan,
+} from "../utils/sharky";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import toast from "react-hot-toast";
 
@@ -37,6 +42,7 @@ export function Loans() {
   const [selectedForRepay, setSelectedForRepay] = React.useState([]);
   const [repayAmount, setRepayAmount] = React.useState(0);
 
+  const [selectedForRenew, setSelectedForRenew] = React.useState([]);
   const [sortBy, setSortBy] = React.useState("amountSol");
 
   const [sortDirection, setSortDirection] = React.useState("DESC");
@@ -77,47 +83,59 @@ export function Loans() {
     ...sharkyLoans,
   ].sort((a, b) => a.end - b.end);
 
-  const handleRepayAll = async () => {
-    if (sharkyLoans.length > 0 && (filter === "Sharky" || filter === null)) {
-      toast("Building Sharky.fi transactions...");
+  const handleRenewSelected = async () => {
+    notify(`Renewing Selected loans ${wallet?.publicKey?.toBase58()}`);
 
-      await repayAll(
-        sharkyClient,
-        sharkyLoans,
-        signAllTransactions,
-        wallet.publicKey,
-        connection
-      );
-    }
+    const selectedSharkyLoans = selectedForRenew.filter(
+      (l) => l.loan.platform === "Sharky"
+    );
+    toast("Building bulk Sharky.fi transactions...");
 
-    if (rainLoans.length > 0 && (filter === "Rain" || filter === null)) {
-      toast("Building Rain.fi transactions...");
+    const blockhash = await connection.getLatestBlockhash();
+    const txs = [];
+    if (selectedSharkyLoans.length > 0) {
+      for (let i = 0; i < selectedSharkyLoans.length; i++) {
+        let ix = await renewLoan(
+          selectedSharkyLoans[i].loan,
+          sharkyClient,
+          selectedSharkyLoans[i].offer
+        );
 
-      await repayAllRain(rainLoans);
-    }
+        ix.programId = new PublicKey(
+          "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"
+        );
 
-    if (fraktLoans.length > 0 && (filter === "FRAKT" || filter === null)) {
-      toast("Building Frakt transactions...");
+        let transaction = new Transaction().add(ix[0]);
 
-      for (let i = 0; i < fraktLoans.length; i++) {
-        const loan = fraktLoans[i];
+        transaction.recentBlockhash = blockhash.blockhash;
+        transaction.feePayer = wallet.publicKey;
 
-        await repayFraktLoan(loan);
+        txs.push(transaction);
       }
     }
 
-    if (citrusLoans.length > 0 && (filter === "Citrus" || filter === null)) {
-      toast("Building Citrus transactions...");
+    const signedTxs = await signAllTransactions(txs);
 
-      for (let i = 0; i < citrusLoans.length; i++) {
-        const loan = citrusLoans[i];
+    signedTxs.map(async (tx) => {
+      let res = connection.sendRawTransaction(tx.serialize(), {
+        commitment: "confirmed",
+      });
 
-        await repayLoan(loan);
-      }
-    }
+      await toast.promise(res, {
+        loading: "Renewing...",
+        success: (data) => (
+          <a target="_blank" href={`https://solscan.io/tx/${data}`}>
+            https://solscan.io/tx/...
+          </a>
+        ),
+        error: (err) => console.log(err.message),
+      });
+    });
   };
 
   const handleRepaySelected = async () => {
+    notify(`Repaying Selected loans ${wallet?.publicKey?.toBase58()}`);
+
     const selectedSharkyLoans = selectedForRepay.filter(
       (l) => l.loan.platform === "Sharky"
     );
@@ -174,6 +192,37 @@ export function Loans() {
     }
   };
 
+  const handleSelection = (loan, offers) => {
+    handleSetSelectedForRepay(loan);
+    handleSetSelectedForRenew(loan, offers);
+  };
+
+  const handleSetSelectedForRenew = (loan, offers) => {
+    const pk = loan.pubkey ?? loan.loanAccount ?? loan.accountAddress;
+
+    const found = selectedForRenew.find((l) => l.key == pk);
+
+    const selectedFromSameCollection = selectedForRenew.filter(
+      (s) => s.loan.orderBook === loan.orderBook
+    ).length;
+
+    if (found) {
+      setSelectedForRenew(selectedForRenew.filter((l) => l.key !== pk));
+    } else {
+      const loanOwed = loan.amountSol + loan.earnings + loan.earnings * 0.16;
+
+      setSelectedForRenew([
+        ...selectedForRenew,
+        {
+          key: pk,
+          loan,
+          offer: offers[selectedFromSameCollection],
+          renewDiff: offers[selectedFromSameCollection].amountSol - loanOwed,
+        },
+      ]);
+    }
+  };
+
   const handleSetSelectedForRepay = (loan) => {
     const pk = loan.pubkey ?? loan.loanAccount ?? loan.accountAddress;
 
@@ -215,6 +264,17 @@ export function Loans() {
       </div>
 
       <div className="mt-3 flex justify-evenly items-center mx-auto w-full md:w-2/3">
+        <Button
+          disabled={selectedForRepay.length == 0}
+          className="py-3"
+          onClick={() => handleRenewSelected()}
+        >
+          Renew Selected{" "}
+          {selectedForRenew
+            .reduce((acc, loan) => loan?.renewDiff + acc, 0)
+            .toFixed(2)}{" "}
+          <SolIcon />
+        </Button>
         <Button
           disabled={selectedForRepay.length == 0}
           className="py-3"
@@ -297,7 +357,7 @@ export function Loans() {
             setSortBy={setSortBy}
             sortDirection={sortDirection}
             sharkyClient={sharkyClient}
-            setSelectedForRepay={handleSetSelectedForRepay}
+            setSelected={handleSelection}
             filter={filter}
             metaplex={metaplex}
             loans={allLoans}
@@ -327,7 +387,7 @@ const LoanCards = ({
   filter,
   sortBy,
   sortDirection,
-  setSelectedForRepay,
+  setSelected,
   selectedForRepay,
 }) => {
   const CardMap = {
@@ -376,7 +436,7 @@ const LoanCards = ({
     CardMap[loan.platform]({
       loan,
       index,
-      setSelectedForRepay,
+      setSelected,
       selectedForRepay,
     })
   );
@@ -449,10 +509,11 @@ const SharkyCard = ({
   loan,
   metaplex,
   selectedForRepay,
-  setSelectedForRepay,
+  setSelected,
   sharkyClient,
 }) => {
   const { connection } = useConnection();
+  const { sendTransaction, publicKey } = useWallet();
   const [nft, setNft] = React.useState(null);
   const [isSelected, setIsSelected] = React.useState(false);
 
@@ -478,10 +539,19 @@ const SharkyCard = ({
 
   const loanOwed = loan.amountSol + loan.earnings + loan.earnings * 0.16;
 
+  const renewDiff =
+    collection?.offers?.length > 0
+      ? (collection?.offers[0]?.amountSol - loanOwed).toFixed(2)
+      : 0;
+
+  const handleSetSelected = () => {
+    setSelected(loan, collection?.offers);
+  };
+
   return (
     <div
-      onClick={() => setSelectedForRepay(loan)}
-      className="cursor-pointer bg-[#28292B] p-4 my-2 w-full rounded border-b-4 border-[#FF1757]"
+      onClick={() => handleSetSelected()}
+      className="cursor-pointer bg-[#28292B] p-3 my-2 w-full rounded border-b-4 border-[#FF1757]"
     >
       <div className="w-full">
         <div className="flex items-center w-full mb-1">
@@ -531,16 +601,42 @@ const SharkyCard = ({
           </div>
         </div>
 
-        <Button
-          className="ml-auto mt-auto"
-          onClick={(ev) => {
-            repaySharkyLoan(loan, sharkyClient, connection);
+        <div className="flex flex-col items-end ml-auto">
+          <Button
+            className="ml-auto mt-auto p-2"
+            onClick={(ev) => {
+              repaySharkyLoan(loan, sharkyClient, connection);
 
-            ev.stopPropagation();
-          }}
-        >
-          Repay
-        </Button>
+              ev.stopPropagation();
+            }}
+          >
+            Repay
+          </Button>
+
+          <Button
+            className="p-2 mt-1"
+            onClick={(ev) => {
+              renewLoan(
+                loan,
+                sharkyClient,
+                collection.offers[0],
+                publicKey,
+                sendTransaction,
+                connection
+              );
+
+              ev.stopPropagation();
+            }}
+          >
+            Renew{" "}
+            <span
+              className={renewDiff > 0 ? "text-green-500" : "text-amber-400"}
+            >
+              {Math.abs(renewDiff)}
+            </span>{" "}
+            <SolIcon />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -102,7 +102,11 @@ export const repayLoan = async (loan, sharkyClient, connection) => {
 
   await toast.promise(sig, {
     loading: "Repaying loan...",
-    success: ({ sig }) => <a href={`https://solscan.io/tx/${sig}`}>Solscan</a>,
+    success: ({ sig }) => (
+      <a target="_blank" href={`https://solscan.io/tx/${sig}`}>
+        Solscan
+      </a>
+    ),
   });
 
   notify(`Sharky loan repaid! ${loan.pubkey}`);
@@ -113,6 +117,47 @@ export const getSharkyInterest = (apy, duration, amountSol) => {
 
   // Amount plus fee
   return amount + amount * 0.16;
+};
+
+export const renewLoan = async (
+  loan,
+  sharkyClient,
+  offer,
+  publicKey = null,
+  sendTransaction = null,
+  connection = null
+) => {
+  // createExtendInstruction: ({ program, valueMint, orderBookPubKey, feeAuthorityPubKey, newLoan, }: {
+
+  const parsedLoan = await parseLoan({ loan, sharkyClient });
+  const parsedOffer = await parseLoan({ loan: offer, sharkyClient });
+
+  let { instructions } = await parsedLoan.createExtendInstruction({
+    program: sharkyClient.program,
+    valueMint: new PublicKey(parsedLoan.data.valueTokenMint),
+    orderBookPubKey: new PublicKey(parsedLoan.data.orderBook),
+    newLoan: parsedOffer,
+    feeAuthorityPubKey: new PublicKey(
+      "feegKBq3GAfqs9G6muPjdn8xEEZhALLTr2xsigDyxnV"
+    ),
+  });
+
+  if (sendTransaction == null) {
+    return instructions;
+  }
+
+  const blockhash = await connection.getRecentBlockhash();
+
+  instructions.programId = new PublicKey(
+    "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"
+  );
+
+  let transaction = new Transaction().add(instructions[0]);
+
+  transaction.recentBlockhash = blockhash.blockhash;
+  transaction.feePayer = publicKey;
+
+  sendTransaction(transaction, connection);
 };
 
 export const repayAll = async (
@@ -177,5 +222,23 @@ export const repayAll = async (
       ),
       error: (err) => console.log(err.message),
     });
+  });
+};
+
+const parseLoan = async ({ loan, sharkyClient }) => {
+  let accountInfo = {
+    data: new Buffer.from(loan.rawData.data),
+    executable: false,
+    lamports: 3243360,
+    owner: new PublicKey("SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"),
+    rentEpoch: 0,
+  };
+
+  return sharkyClient.parseLoan({
+    program: sharkyClient.program,
+    keyedAccountInfo: {
+      accountId: new PublicKey(loan.pubkey),
+      accountInfo: accountInfo,
+    },
   });
 };
