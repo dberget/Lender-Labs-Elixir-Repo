@@ -43,6 +43,12 @@ defmodule SharkAttack.Nfts do
     Repo.all(query)
   end
 
+  def get_collections_missing_nft_names() do
+    query = from n in Nft, where: is_nil(n.name)
+
+    Repo.all(query) |> Enum.map(& &1.collection_id) |> Enum.uniq()
+  end
+
   def get_nft_name_from_api(mint) do
     res =
       SharkAttack.Helpers.do_post_request(

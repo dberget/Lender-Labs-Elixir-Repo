@@ -75,7 +75,7 @@ defmodule SharkAttack.LoansWorker do
       |> Map.get("instructions")
       |> Enum.at(1)
       |> Map.get("accounts")
-      |> Enum.at(5)
+      |> Enum.at(4)
 
     case SharkyApi.get_loan(loanAddress) do
       {:error, _message} ->
@@ -110,7 +110,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def update_loan(_loan, status) do
-    IO.inspect(status)
+    Logger.info(status)
   end
 
   def remove_loan(loanAddress) do

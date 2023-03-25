@@ -5,6 +5,8 @@ defmodule SharkAttack.Loans do
 
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Ecto.Changeset
   alias SharkAttack.LoansWorker
   alias SharkAttack.Loans.PlanSettings
@@ -168,14 +170,13 @@ defmodule SharkAttack.Loans do
       loan.status == "COMPLETE" ->
         :ok
 
-      loan.status == "ACTIVE"  ->
+      loan.status == "ACTIVE" ->
         loan
         |> Loan.changeset(attrs)
         |> Repo.update()
 
-        true ->
-          IO.inspect(loan)
-
+      true ->
+        Logger.info(loan)
     end
   end
 
@@ -207,7 +208,7 @@ defmodule SharkAttack.Loans do
         end
 
       _ ->
-        nil
+        %{}
     end
   end
 

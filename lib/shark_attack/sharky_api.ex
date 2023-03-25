@@ -44,7 +44,6 @@ defmodule SharkAttack.SharkyApi do
     Map.get(res, "loanData", [])
   end
 
-  @spec get_floor_prices :: any
   def get_floor_prices() do
     res = SharkAttack.Helpers.do_get_request("https://sharky.fi/api/floor-prices")
 
@@ -66,7 +65,15 @@ defmodule SharkAttack.SharkyApi do
   def get_lender_loans(address) do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/#{address}")
 
-    Map.get(res, "data", [])
+    case res do
+      {:error, body} ->
+        Logger.error(body)
+
+        {:error, body}
+
+      body ->
+        Map.get(body, "data", [])
+    end
   end
 
   def get_collection_loans(nil, "citrus"), do: []
@@ -74,7 +81,15 @@ defmodule SharkAttack.SharkyApi do
   def get_collection_loans(address, "citrus") do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/citrus/#{address}")
 
-    Map.get(res, "loanData", [])
+    case res do
+      {:error, body} ->
+        Logger.error(body)
+
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
   end
 
   def get_lender_loans(address, "citrus") do

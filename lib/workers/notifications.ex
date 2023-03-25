@@ -10,13 +10,13 @@ defmodule SharkAttack.NotificationWorker do
   @loan_interval (if Mix.env() == :dev do
                     30
                   else
-                    7
+                    10
                   end)
 
   @foreclose_interval (if Mix.env() == :dev do
                          30
                        else
-                         5
+                         6
                        end)
 
   def start_link(opts) do
@@ -54,6 +54,6 @@ defmodule SharkAttack.NotificationWorker do
   defp update_loan_data do
     Logger.info("Updating Loan Data...")
 
-    # SharkAttack.Stats.update_loans()
+    SharkAttack.Stats.update_loans()
   end
 end
