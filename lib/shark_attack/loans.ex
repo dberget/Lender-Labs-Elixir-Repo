@@ -60,7 +60,7 @@ defmodule SharkAttack.Loans do
       from(l in Loan,
         where: l.lender == ^address,
         select: l,
-        where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
+        where: l.status == "COMPLETE",
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
       )
 
@@ -119,6 +119,19 @@ defmodule SharkAttack.Loans do
     Repo.all(query)
   end
 
+  def create_active_loan(attrs) do
+    loan =
+      attrs
+      |> Map.drop(["earnings"])
+      |> Map.put("platform", "SHARKY")
+      |> Map.put("status", "ACTIVE")
+      |> Map.put("fees", attrs["total_owed"] - attrs["amountSol"])
+
+    %Loan{}
+    |> Loan.changeset(loan)
+    |> Repo.insert(on_conflict: :nothing)
+  end
+
   def create_loan(attrs \\ %{}) do
     %Loan{}
     |> Loan.changeset(attrs)
@@ -140,6 +153,29 @@ defmodule SharkAttack.Loans do
 
       _ ->
         :ok
+    end
+  end
+
+  def update_or_insert_completed_loan(attrs \\ %{}) do
+    loan = Repo.get_by(Loan, loan: attrs["loan"])
+
+    cond do
+      is_nil(loan) ->
+        %Loan{loan: attrs["loan"]}
+        |> Loan.changeset(attrs)
+        |> Repo.insert()
+
+      loan.status == "COMPLETE" ->
+        :ok
+
+      loan.status == "ACTIVE"  ->
+        loan
+        |> Loan.changeset(attrs)
+        |> Repo.update()
+
+        true ->
+          IO.inspect(loan)
+
     end
   end
 

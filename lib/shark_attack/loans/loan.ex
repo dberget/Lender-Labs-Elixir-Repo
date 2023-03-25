@@ -20,7 +20,9 @@ defmodule SharkAttack.Loans.Loan do
              :takeTxId,
              :repayTxId,
              :forecloseTxId,
-             :collection_name
+             :collection_name,
+             :total_owed,
+             :fees
            ]}
   schema "loans" do
     field(:loan, :string)
@@ -28,6 +30,8 @@ defmodule SharkAttack.Loans.Loan do
     field(:borrower, :string)
     field(:lender, :string)
     field(:earnings, :float)
+    field(:fees, :float)
+    field(:total_owed, :float)
     field(:end, :integer)
     field(:isForeclosable, :boolean)
     field(:length, :integer)
@@ -66,6 +70,8 @@ defmodule SharkAttack.Loans.Loan do
       :nftCollateralMint,
       :orderBook,
       :start,
+      :total_owed,
+      :fees,
       :dateOffered,
       :dateTaken,
       :dateRepaid,

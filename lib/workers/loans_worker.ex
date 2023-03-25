@@ -55,9 +55,7 @@ defmodule SharkAttack.LoansWorker do
   def update_loan(loan, "RESCIND_LOAN") do
     loanAddress = Map.get(loan, "instructions") |> hd() |> Map.get("accounts") |> hd
 
-    unless is_nil(loanAddress) do
-      GenServer.cast(__MODULE__, {:delete, loanAddress})
-    end
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
   def update_loan(loan, "FORECLOSE_LOAN") do
@@ -68,9 +66,7 @@ defmodule SharkAttack.LoansWorker do
       |> Map.get("accounts")
       |> hd()
 
-    unless is_nil(loanAddress) do
-      GenServer.cast(__MODULE__, {:delete, loanAddress})
-    end
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
   def update_loan(loan, "TAKE_LOAN") do
@@ -83,7 +79,7 @@ defmodule SharkAttack.LoansWorker do
 
     case SharkyApi.get_loan(loanAddress) do
       {:error, _message} ->
-        nil
+        Logger.error("Loan not found: #{loanAddress}")
 
       loanData ->
         :ets.insert(
@@ -118,7 +114,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def remove_loan(loanAddress) do
-    :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
   def flush() do
@@ -148,6 +144,11 @@ defmodule SharkAttack.LoansWorker do
   end
 
   @impl true
+  def handle_cast({:delete, nil}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_cast({:delete, key}, state) do
     :ets.match_delete(:collection_loans, {:_, key, :_, :_})
 
@@ -164,7 +165,8 @@ defmodule SharkAttack.LoansWorker do
       :bag,
       :public,
       :named_table,
-      {:read_concurrency, true}
+      {:read_concurrency, true},
+      {:write_concurrency, true}
     ])
   end
 end

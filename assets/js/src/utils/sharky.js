@@ -127,8 +127,6 @@ export const renewLoan = async (
   sendTransaction = null,
   connection = null
 ) => {
-  // createExtendInstruction: ({ program, valueMint, orderBookPubKey, feeAuthorityPubKey, newLoan, }: {
-
   const parsedLoan = await parseLoan({ loan, sharkyClient });
   const parsedOffer = await parseLoan({ loan: offer, sharkyClient });
 

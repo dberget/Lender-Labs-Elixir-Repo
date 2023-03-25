@@ -12,6 +12,7 @@ defmodule SharkAttackWeb.EventController do
     event = Map.get(params, "_json") |> hd
 
     send_message(event["source"], event["type"], event)
+
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn
@@ -83,12 +84,9 @@ defmodule SharkAttackWeb.EventController do
     c = SharkAttack.Collections.get_collection_from_mint(mint)
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
-
     loan = SharkAttack.Loans.get_loan(loan_address)
 
-
-    amount = Map.get(loan, :amountSol, 0.0) + Map.get(loan, :earnings, 0.0)
-
+    amount = Map.get(loan, :total_owed, 0.0)
     name = parse_name(nft, c)
 
     embed = %Nostrum.Struct.Embed{
@@ -154,7 +152,6 @@ defmodule SharkAttackWeb.EventController do
 
   defp build_repaid_loan_embed(event) do
     %{"amount" => amount} = hd(event["nativeTransfers"])
-
     %{"mint" => mint} = hd(event["tokenTransfers"])
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)

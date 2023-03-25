@@ -2,7 +2,7 @@ defmodule SharkAttack.Stats do
   def update_loans() do
     loans = SharkAttack.SharkyApi.get_all_loans()
 
-    Enum.map(loans, &SharkAttack.Loans.create_if_not_exists_loan(&1))
+    Enum.map(loans, &SharkAttack.Loans.create_active_loan(&1))
   end
 
   def save_loan(loan) do
@@ -29,7 +29,7 @@ defmodule SharkAttack.Stats do
     data
     |> Enum.map(&format_historical_sharky_loan/1)
     |> Enum.reverse()
-    |> Enum.map(&SharkAttack.Loans.create_if_not_exists_loan(&1))
+    |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
   end
 
   def save_recent_lender_history(pk) do
@@ -40,7 +40,7 @@ defmodule SharkAttack.Stats do
       data ->
         data
         |> Enum.map(&format_historical_sharky_loan/1)
-        |> Enum.map(&SharkAttack.Loans.create_if_not_exists_loan(&1))
+        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
     end
   end
 

@@ -27,7 +27,7 @@ defmodule SharkAttack.NotificationWorker do
   def init(state) do
     :timer.send_interval(:timer.minutes(@foreclose_interval), :fetch)
 
-    # :timer.send_interval(:timer.minutes(@loan_interval), :update)
+    :timer.send_interval(:timer.minutes(@loan_interval), :update)
 
     {:ok, state}
   end
