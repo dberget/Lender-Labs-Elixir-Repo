@@ -55,8 +55,8 @@ defmodule SharkAttack.Collections do
     Repo.one(query)
   end
 
-  def get_and_update_collection(%{name: name} = attrs) do
-    collection = get_collection_by_name(name)
+  def get_and_update_collection(%{sharky_address: sharky_address} = attrs) do
+    collection = get_collection(sharky_address)
 
     if is_nil(collection) do
       create_collection(attrs)
@@ -151,7 +151,6 @@ defmodule SharkAttack.Collections do
         apy: collection["apy"]
       }
 
-      Logger.info("Adding #{collection["name"]}")
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end

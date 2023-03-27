@@ -120,9 +120,10 @@ defmodule SharkAttack.LoansWorker do
 
     collection_loans =
       loanData
-      |> Enum.map(&{&1["orderBook"], &1["loan"], &1["lender"], &1})
+      |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
 
     :ets.delete_all_objects(:collection_loans)
+
     :ets.insert(:collection_loans, collection_loans)
   end
 
