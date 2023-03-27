@@ -198,7 +198,10 @@ defmodule SharkAttack.Loans do
   def get_loan(loan) do
     case LoansWorker.get_loan(loan) do
       {:ok, []} ->
-        Repo.get_by(Loan, loan: loan)
+        case Repo.get_by(Loan, loan: loan) do
+          nil -> %{}
+          loan -> loan
+        end
 
       {:ok, loan} ->
         loan = List.first(loan)

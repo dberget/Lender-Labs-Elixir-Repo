@@ -47,9 +47,7 @@ defmodule SharkAttack.LoansWorker do
   def update_loan(loan, "REPAY_LOAN") do
     loanAddress = Map.get(loan, "instructions") |> List.last() |> Map.get("accounts") |> hd
 
-    unless is_nil(loanAddress) do
-      GenServer.cast(__MODULE__, {:delete, loanAddress})
-    end
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
   def update_loan(loan, "RESCIND_LOAN") do

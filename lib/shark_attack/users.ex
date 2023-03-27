@@ -44,15 +44,25 @@ defmodule SharkAttack.Users do
 
   def list!(), do: Repo.all(User)
 
+  def get_users_with_discord_id!() do
+    Repo.all(from u in User, where: not is_nil(u.discordId))
+  end
+
   def create_user(attrs \\ %{}) do
-    user =
-      %User{}
-      |> User.changeset(attrs)
-      |> Repo.insert(on_conflict: :nothing)
+    case Repo.get(User, attrs[:address]) do
+      nil ->
+        user =
+          %User{}
+          |> User.changeset(attrs)
+          |> Repo.insert(on_conflict: :nothing)
 
-    create_default_user_setting(attrs[:address])
+        create_default_user_setting(attrs[:address])
 
-    user
+        user
+
+      _ ->
+        :ok
+    end
   end
 
   def get_user_favorites(address) do

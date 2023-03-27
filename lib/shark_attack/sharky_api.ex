@@ -76,10 +76,26 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
+  def get_collection_loans(nil, "frakt"), do: []
+
   def get_collection_loans(nil, "citrus"), do: []
 
   def get_collection_loans(address, "citrus") do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/citrus/#{address}")
+
+    case res do
+      {:error, body} ->
+        Logger.error(body)
+
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
+  end
+
+  def get_collection_loans(address, "frakt") do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/frakt/#{address}")
 
     case res do
       {:error, body} ->
