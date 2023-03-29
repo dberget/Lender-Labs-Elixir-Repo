@@ -17,6 +17,76 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{data: loans})
   end
 
+  def get_history(conn, %{"collection" => "1"} = params) do
+    SharkAttack.Stats.update_history_safe(params["pk"])
+
+    collections = SharkAttack.Collections.list_collections()
+
+    loans = SharkAttack.Loans.get_loans_history!(params["pk"])
+
+    grouped_loans =
+      loans
+      |> Enum.group_by(fn l -> l.orderBook end)
+      |> Enum.map(fn {k, v} ->
+        %{
+          name:
+            Map.get(
+              Enum.find(collections, %{}, fn c -> c.sharky_address == k end),
+              :name,
+              "Unknown"
+            ),
+          count: Enum.count(v),
+          profit: v |> Enum.map(& &1.earnings) |> Enum.sum(),
+          tvl: Enum.map(v, fn l -> l.amountSol end) |> Enum.sum(),
+          defaulted: Enum.filter(v, fn l -> !is_nil(l.forecloseTxId) end) |> Enum.count(),
+          average_loan: (Enum.map(v, fn l -> l.amountSol end) |> Enum.sum()) / Enum.count(v),
+          average_profit: (v |> Enum.map(& &1.earnings) |> Enum.sum()) / Enum.count(v),
+          average_offer_duration:
+            Timex.Duration.from_erl(
+              {0,
+               round(
+                 (v
+                  |> Enum.map(&Timex.diff(&1.dateTaken, &1.dateOffered, :seconds))
+                  |> Enum.sum()) /
+                   Enum.count(v)
+               ), 0}
+            )
+            |> Timex.format_duration(:humanized),
+          average_loan_duration:
+            Timex.Duration.from_erl(
+              {0,
+               round(
+                 (v
+                  |> Enum.filter(&(!is_nil(&1.dateRepaid)))
+                  |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
+                  |> Enum.sum()) /
+                   Enum.count(v)
+               ), 0}
+            )
+            |> Timex.format_duration(:humanized)
+        }
+      end)
+
+    # data = %{
+    #   loans:
+    #     loans
+    #     |> Enum.map(fn l ->
+    #       %{
+    #         l
+    #         | collection_name:
+    #             Map.get(
+    #               Enum.find(collections, %{}, fn c -> c.sharky_address == l.orderBook end),
+    #               :name,
+    #               l.orderBook
+    #             )
+    #       }
+    #     end)
+    # }
+
+    conn
+    |> json(grouped_loans)
+  end
+
   def get_history(conn, params) do
     SharkAttack.Stats.update_history_safe(params["pk"])
 

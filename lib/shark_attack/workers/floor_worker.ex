@@ -47,6 +47,14 @@ defmodule SharkAttack.FloorWorker do
     {:noreply, state}
   end
 
+  def get_floor_price(nil) do
+    nil
+  end
+
+  def get_floor_price(%SharkAttack.Collections.Collection{} = collection) do
+    get_floor_price(collection.id)
+  end
+
   def get_floor_price(id) do
     floor_price =
       case :ets.whereis(:floor_prices) do

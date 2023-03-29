@@ -85,7 +85,7 @@ defmodule SharkAttackWeb.EventController do
     nft = SharkAttack.Nfts.get_nft_by_mint(mint)
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
-    fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+    fp = SharkAttack.FloorWorker.get_floor_price(c)
 
     loan = SharkAttack.Loans.get_loan(loan_address)
 
@@ -128,8 +128,20 @@ defmodule SharkAttackWeb.EventController do
 
     %{"mint" => mint} = hd(event["tokenTransfers"])
 
-    c = SharkAttack.Collections.get_collection_from_mint(mint)
-    fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+    c =
+      case SharkAttack.Collections.get_collection_from_mint(mint) do
+        nil ->
+          %Collections.Collection{
+            id: nil,
+            name: "Unknown",
+            logo: nil
+          }
+
+        c ->
+          c
+      end
+
+    fp = SharkAttack.FloorWorker.get_floor_price(c)
 
     nft = SharkAttack.Nfts.get_nft_by_mint(mint)
 
@@ -179,7 +191,7 @@ defmodule SharkAttackWeb.EventController do
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
         url: get_thumbnail_url(c)
       },
-      title: "**#{parse_name(c, nft)}** Loan Repaid",
+      title: "**#{parse_name(nft, c)}** Loan Repaid",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
@@ -227,11 +239,11 @@ defmodule SharkAttackWeb.EventController do
     nil
   end
 
-  defp parse_name(%Nft{name: nil}, %Collections.Collection{name: name}) do
+  defp parse_name(%Nft{name: name}, _) do
     name
   end
 
-  defp parse_name(%Nft{name: name}, _) do
+  defp parse_name(_, %Collections.Collection{name: name}) do
     name
   end
 
