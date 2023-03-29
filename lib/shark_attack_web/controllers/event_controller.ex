@@ -94,7 +94,7 @@ defmodule SharkAttackWeb.EventController do
 
     embed = %Nostrum.Struct.Embed{
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: c.logo
+        url: get_thumbnail_url(c)
       },
       title: "**#{name}** Foreclosure",
       url: "https://solscan.io/tx/#{event["signature"]}",
@@ -131,15 +131,19 @@ defmodule SharkAttackWeb.EventController do
     c = SharkAttack.Collections.get_collection_from_mint(mint)
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
+    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
+
+    name = parse_name(nft, c)
+
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
         name: "Lender Labs",
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: c.logo
+        url: get_thumbnail_url(c)
       },
-      title: "**#{c.name}** Offer Accepted",
+      title: "**#{name}** Offer Accepted",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
@@ -158,6 +162,7 @@ defmodule SharkAttackWeb.EventController do
     %{"mint" => mint} = hd(event["tokenTransfers"])
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
+    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
 
     loan_address =
       Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
@@ -172,9 +177,9 @@ defmodule SharkAttackWeb.EventController do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: c.logo
+        url: get_thumbnail_url(c)
       },
-      title: "**#{c.name}** Loan Repaid",
+      title: "**#{parse_name(c, nft)}** Loan Repaid",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
@@ -194,6 +199,10 @@ defmodule SharkAttackWeb.EventController do
     }
   end
 
+  def get_thumbnail_url(nil), do: nil
+  def get_thumbnail_url(%Collections.Collection{logo: nil}), do: nil
+  def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
+
   def parse_amount(%SharkAttack.Loans.Loan{
         total_owed: nil,
         amountSol: amount,
@@ -212,6 +221,10 @@ defmodule SharkAttackWeb.EventController do
 
   def parse_amount(_) do
     0.0
+  end
+
+  defp parse_name(nil, nil) do
+    nil
   end
 
   defp parse_name(%Nft{name: nil}, %Collections.Collection{name: name}) do
