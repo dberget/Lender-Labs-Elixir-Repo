@@ -40,6 +40,7 @@ defmodule SharkAttackWeb.ApiController do
           tvl: Enum.map(v, fn l -> l.amountSol end) |> Enum.sum(),
           defaulted: Enum.filter(v, fn l -> !is_nil(l.forecloseTxId) end) |> Enum.count(),
           average_loan: (Enum.map(v, fn l -> l.amountSol end) |> Enum.sum()) / Enum.count(v),
+          unique_borrowers: Enum.map(v, fn l -> l.borrower end) |> Enum.uniq() |> Enum.count(),
           average_profit: (v |> Enum.map(& &1.earnings) |> Enum.sum()) / Enum.count(v),
           average_offer_duration:
             Timex.Duration.from_erl(
