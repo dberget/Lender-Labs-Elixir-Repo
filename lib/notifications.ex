@@ -6,9 +6,11 @@ defmodule SharkAttack.Notifications do
 
     Enum.map(users, fn user ->
       unless user.discordId == nil do
-        loans = SharkAttack.LoansWorker.get_lender_loans(user.address) |> Enum.map(&elem(&1, 3))
-
-        Enum.map(loans, fn loan ->
+        user.address
+        |> SharkAttack.LoansWorker.get_lender_loans()
+        |> Enum.map(&elem(&1, 3))
+        |> Enum.filter(fn loan -> loan["state"] == "taken" end)
+        |> Enum.map(fn loan ->
           minutesFromDefault =
             DateTime.diff(DateTime.from_unix!(loan["end"]), DateTime.utc_now(), :minute)
 

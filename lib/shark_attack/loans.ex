@@ -114,9 +114,10 @@ defmodule SharkAttack.Loans do
 
   def get_active_loans() do
     query =
-      from l in Loan,
-        where: is_nil(l.dateRepaid),
-        where: is_nil(l.dateForeclosed)
+      from(l in Loan,
+        where: l.status == "ACTIVE",
+        select: l
+      )
 
     Repo.all(query)
   end

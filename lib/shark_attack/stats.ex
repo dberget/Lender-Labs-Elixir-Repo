@@ -1,7 +1,26 @@
 defmodule SharkAttack.Stats do
   def update_loans() do
     loans = SharkAttack.SharkyApi.get_all_loans()
+
     Enum.map(loans, &SharkAttack.Loans.create_active_loan(&1))
+  end
+
+  def update_active_loans() do
+    loans = SharkAttack.Loans.get_active_loans()
+
+    loans
+    |> Enum.take(5)
+    |> Enum.map(fn l ->
+      res = SharkAttack.LoansWorker.get_loan(l.loan)
+
+      case res do
+        {:ok, []} ->
+          SharkAttack.Loans.update_loan(l, %{status: "COMPLETE"})
+
+        {:ok, _} ->
+          :active
+      end
+    end)
   end
 
   def save_loan(loan) do

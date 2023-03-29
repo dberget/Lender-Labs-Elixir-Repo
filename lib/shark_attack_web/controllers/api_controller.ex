@@ -404,6 +404,22 @@ defmodule SharkAttackWeb.ApiController do
     |> json(collections)
   end
 
+  def whales(conn, params) do
+    loans = SharkAttack.LoansWorker.get_all_loans()
+
+    borrowerGroup =
+      loans
+      |> Enum.group_by(fn l -> l["borrower"] end)
+
+    lenderGroup =
+      loans
+      |> Enum.group_by(fn l -> l["lender"] end)
+      |> IO.inspect()
+
+    conn
+    |> json(loans)
+  end
+
   def get_borrower_collections(conn, params) do
     mints =
       params["borrower"]

@@ -49,6 +49,8 @@ defmodule SharkAttackWeb.Router do
     get("/analyze_collection_data", ApiController, :analyze_collection_data)
     get("/get_user_favorites", ApiController, :get_user_favorites)
 
+    get("/whales", ApiController, :whales)
+
     get("/save_favorite", ApiController, :save_favorite)
     get("/remove_favorite", ApiController, :remove_favorite)
 

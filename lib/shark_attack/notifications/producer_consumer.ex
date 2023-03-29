@@ -1,28 +1,55 @@
-defmodule SharkAttackWeb.EventController do
-  use SharkAttackWeb, :controller
+defmodule SharkAttack.Notifications.ProducerConsumer do
+  use GenStage
+
   alias SharkAttack.Collections
   alias SharkAttack.Collections.Nft
   alias SharkAttack.Accounts.{User, UserSettings}
 
-  require Logger
-
   @dao_webook_addresses ["4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK"]
 
-  def index(conn, params) do
-    event = Map.get(params, "_json") |> hd
-
-    send_message(event["source"], event["type"], event)
-    SharkAttack.LoansWorker.update_loan(event, event["type"])
-
-    conn
-    |> json(%{message: "ok"})
+  def start_link(_initial) do
+    GenStage.start_link(__MODULE__, :state_doesnt_matter, name: __MODULE__)
   end
 
-  # defp queue_message(event) do
-  #   SharkAttack.Notifications.Producer.add(event)
-  # end
+  def init(state) do
+    {:producer_consumer, state, subscribe_to: [SharkAttack.Notifications.Producer]}
+  end
 
-  defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
+  def handle_events(events, _from, state) do
+    messages =
+      Enum.map(events, &build_message(&1["source"], &1["type"], &1)) |> Enum.reject(&is_nil/1)
+
+    IO.inspect(messages)
+
+    {:noreply, messages, state}
+  end
+
+  defp check_is_user_and_subscribed?(address, setting) do
+    with %User{} = user <-
+           SharkAttack.Users.get_user_from_address!(
+             "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+             :user_settings
+           ),
+         %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
+         false <- is_nil(discordId),
+         {:ok, true} <- Map.fetch(settings, setting) do
+      {:user, discordId}
+    else
+      _ -> is_subscribed_dao?(address)
+    end
+  end
+
+  defp is_subscribed_dao?(address) do
+    case address in @dao_webook_addresses do
+      true ->
+        {:dao, address}
+
+      _ ->
+        false
+    end
+  end
+
+  defp build_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to} = hd(event["nativeTransfers"])
 
     case check_is_user_and_subscribed?(
@@ -33,21 +60,14 @@ defmodule SharkAttackWeb.EventController do
         nil
 
       {:dao, address} ->
-        embed = build_repaid_loan_embed(event)
-
-        address
-        |> SharkAttack.DiscordConsumer.send_to_webhook(embed)
+        {:dao, address, build_repaid_loan_embed(event)}
 
       {:user, discordId} ->
-        embed = build_repaid_loan_embed(event)
-
-        discordId
-        |> SharkAttack.DiscordConsumer.create_dm_channel()
-        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+        {:user, discordId, build_repaid_loan_embed(event)}
     end
   end
 
-  defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
+  defp build_message("SHARKY_FI", "TAKE_LOAN", event) do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> List.first()
 
     case check_is_user_and_subscribed?(
@@ -58,21 +78,14 @@ defmodule SharkAttackWeb.EventController do
         nil
 
       {:dao, address} ->
-        embed = build_take_loan_embed(event)
-
-        address
-        |> SharkAttack.DiscordConsumer.send_to_webhook(embed)
+        {:dao, address, build_take_loan_embed(event)}
 
       {:user, discordId} ->
-        embed = build_take_loan_embed(event)
-
-        discordId
-        |> SharkAttack.DiscordConsumer.create_dm_channel()
-        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+        {:user, discordId, build_take_loan_embed(event)}
     end
   end
 
-  defp send_message("SHARKY_FI", "FORECLOSE_LOAN", event) do
+  defp build_message("SHARKY_FI", "FORECLOSE_LOAN", event) do
     loan_address =
       event
       |> Map.get("instructions")
@@ -85,14 +98,16 @@ defmodule SharkAttackWeb.EventController do
     nft = SharkAttack.Nfts.get_nft_by_mint(mint)
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
+
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
     loan = SharkAttack.Loans.get_loan(loan_address)
 
     amount = parse_amount(loan)
+
     name = parse_name(nft, c)
 
-    embed = %Nostrum.Struct.Embed{
+    %Nostrum.Struct.Embed{
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
         url: c.logo
       },
@@ -113,14 +128,14 @@ defmodule SharkAttackWeb.EventController do
       ]
     }
 
-    SharkAttack.DiscordConsumer.send_to_webhook(
-      "foreclosure",
-      embed
-    )
+    # SharkAttack.DiscordConsumer.send_to_webhook(
+    #   "foreclosure",
+    #   embed
+    # )
   end
 
-  defp send_message(_platform, _, _event) do
-    :ok
+  defp build_message(_platform, _, _event) do
+    nil
   end
 
   defp build_take_loan_embed(event) do
@@ -172,7 +187,7 @@ defmodule SharkAttackWeb.EventController do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: c.logo
+        url: Map.get(c, :logo, "")
       },
       title: "**#{c.name}** Loan Repaid",
       url: "https://solscan.io/tx/#{event["signature"]}",
@@ -220,30 +235,5 @@ defmodule SharkAttackWeb.EventController do
 
   defp parse_name(%Nft{name: name}, _) do
     name
-  end
-
-  defp is_subscribed_dao?(address) do
-    case address in @dao_webook_addresses do
-      true ->
-        {:dao, address}
-
-      _ ->
-        false
-    end
-  end
-
-  defp check_is_user_and_subscribed?(address, setting) do
-    with %User{} = user <-
-           SharkAttack.Users.get_user_from_address!(
-             address,
-             :user_settings
-           ),
-         %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
-         false <- is_nil(discordId),
-         {:ok, true} <- Map.fetch(settings, setting) do
-      {:user, discordId}
-    else
-      _ -> is_subscribed_dao?(address)
-    end
   end
 end
