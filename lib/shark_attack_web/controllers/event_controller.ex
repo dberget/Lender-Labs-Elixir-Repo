@@ -102,12 +102,12 @@ defmodule SharkAttackWeb.EventController do
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Float.round(amount, 2)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(amount)} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
           name: "Floor Price",
-          value: "#{Number.Human.number_to_human(fp)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(fp)} ◎",
           inline: true
         }
       ]

@@ -20,7 +20,7 @@ defmodule SharkAttack.Notifications do
             minutesFromDefault < 10 and
               minutesFromDefault > -10
           ) do
-            SharkAttack.DiscordConsumer.create_dm_channel(171_430_746_261_553_152)
+            SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
             |> SharkAttack.DiscordConsumer.send_foreclosure_msg(loan)
           end
         end)
@@ -38,11 +38,9 @@ defmodule SharkAttack.Notifications do
 
       embed = format_weekly_summary(user, loans)
 
-      try {
-        user.discordId
-        |> SharkAttack.DiscordConsumer.create_dm_channel()
-        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
-      }
+      user.discordId
+      |> SharkAttack.DiscordConsumer.create_dm_channel()
+      |> SharkAttack.DiscordConsumer.send_raw_message(embed)
     end)
   end
 
@@ -53,7 +51,7 @@ defmodule SharkAttack.Notifications do
 
     loan_amounts = Enum.map(loans, fn l -> l.amountSol end)
 
-    largest_loan = loan_amounts |> Enum.max() |> Number.Human.number_to_human()
+    largest_loan = loan_amounts |> Enum.max() |> Number.Delimit.number_to_delimited()
     ltv = loan_amounts |> Enum.sum()
 
     shortest_loan_seconds =
@@ -90,7 +88,7 @@ defmodule SharkAttack.Notifications do
       |> Enum.take(2)
       |> Enum.join(", ")
 
-    embed = %Nostrum.Struct.Embed{
+    %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
         name: "Lender Labs",
         url: "https://lenderlabs.xyz"
@@ -110,22 +108,22 @@ defmodule SharkAttack.Notifications do
         },
         %Nostrum.Struct.Embed.Field{
           name: "Profit",
-          value: "#{Number.Human.number_to_human(profit)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(profit)} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
           name: "% Return",
-          value: "#{(profit / ltv * 100) |> Number.Human.number_to_human()} %",
+          value: "#{(profit / ltv * 100) |> Number.Delimit.number_to_delimited()} %",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
           name: "Total Lent",
-          value: "#{ltv |> Number.Human.number_to_human()} ◎",
+          value: "#{ltv |> Number.Delimit.number_to_delimited()} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
           name: "Ave. Loan",
-          value: "#{(ltv / Enum.count(loans)) |> Number.Human.number_to_human()} ◎",
+          value: "#{(ltv / Enum.count(loans)) |> Number.Delimit.number_to_delimited()} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
