@@ -69,6 +69,18 @@ defmodule SharkAttack.Loans do
     Repo.all(query)
   end
 
+  def get_loans_history(address, :week) do
+    query =
+      from(l in Loan,
+        where: l.lender == ^address,
+        select: l,
+        where: l.status == "COMPLETE",
+        where: coalesce(l.dateRepaid, l.dateForeclosed) > fragment("NOW() - INTERVAL 1 WEEK")
+      )
+
+    Repo.all(query)
+  end
+
   def get_loans_history!(address, "borrower") do
     query =
       from(l in Loan,

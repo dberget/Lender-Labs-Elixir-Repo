@@ -45,7 +45,7 @@ defmodule SharkAttack.Users do
   def list!(), do: Repo.all(User)
 
   def get_users_with_discord_id!() do
-    Repo.all(from u in User, where: not is_nil(u.discordId))
+    Repo.all(from u in User, where: not is_nil(u.discordId)) |> Repo.preload(:user_settings)
   end
 
   def create_user(attrs \\ %{}) do

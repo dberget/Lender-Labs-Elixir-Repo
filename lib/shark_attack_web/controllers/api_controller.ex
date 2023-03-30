@@ -47,6 +47,7 @@ defmodule SharkAttackWeb.ApiController do
               {0,
                round(
                  (v
+                  |> Enum.filter(&is_nil(&1.dateForeclosed))
                   |> Enum.map(&Timex.diff(&1.dateTaken, &1.dateOffered, :seconds))
                   |> Enum.sum()) /
                    Enum.count(v)
@@ -58,7 +59,7 @@ defmodule SharkAttackWeb.ApiController do
               {0,
                round(
                  (v
-                  |> Enum.filter(&(!is_nil(&1.dateRepaid)))
+                  |> Enum.filter(&is_nil(&1.dateForeclosed))
                   |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
                   |> Enum.sum()) /
                    Enum.count(v)
@@ -67,22 +68,6 @@ defmodule SharkAttackWeb.ApiController do
             |> Timex.format_duration(:humanized)
         }
       end)
-
-    # data = %{
-    #   loans:
-    #     loans
-    #     |> Enum.map(fn l ->
-    #       %{
-    #         l
-    #         | collection_name:
-    #             Map.get(
-    #               Enum.find(collections, %{}, fn c -> c.sharky_address == l.orderBook end),
-    #               :name,
-    #               l.orderBook
-    #             )
-    #       }
-    #     end)
-    # }
 
     conn
     |> json(grouped_loans)

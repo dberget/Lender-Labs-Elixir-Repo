@@ -25,4 +25,119 @@ defmodule SharkAttack.Notifications do
       end
     end)
   end
+
+  def send_weekly_summary() do
+    users = SharkAttack.Users.get_users_with_discord_id!()
+
+    users = Enum.filter(users, fn user -> Map.fetch!(user.user_settings, :summary_report) end)
+
+    Enum.map(users, fn user ->
+      loans = SharkAttack.Loans.get_loans_history(user.address, :week)
+
+      loan_amounts = Enum.map(loans, fn l -> l.amountSol end)
+
+      largest_loan = loan_amounts |> Enum.max() |> Number.Human.number_to_human()
+      ltv = loan_amounts |> Enum.sum()
+
+      shortest_loan_seconds =
+        loans
+        |> Enum.filter(&is_nil(&1.dateForeclosed))
+        |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
+        |> Enum.min()
+
+      shortest_loan =
+        Timex.Duration.from_erl({0, shortest_loan_seconds, 0})
+        |> Timex.format_duration(:humanized)
+        |> String.split(",")
+        |> Enum.take(2)
+        |> Enum.join(", ")
+
+      profit =
+        loans
+        |> Enum.filter(&(!is_nil(&1.earnings)))
+        |> Enum.map(fn l -> l.earnings end)
+        |> Enum.sum()
+
+      average_duration =
+        loans
+        |> Enum.filter(&(!is_nil(&1.dateRepaid)))
+        |> Enum.map(fn l -> Timex.diff(l.dateRepaid, l.dateTaken, :seconds) end)
+        |> Enum.sum()
+        |> Kernel./(Enum.count(loans))
+        |> round()
+
+      average_duration_formatted =
+        Timex.Duration.from_erl({0, average_duration, 0})
+        |> Timex.format_duration(:humanized)
+        |> String.split(",")
+        |> Enum.take(2)
+        |> Enum.join(", ")
+
+      embed = %Nostrum.Struct.Embed{
+        author: %Nostrum.Struct.Embed.Author{
+          name: "Lender Labs",
+          url: "https://lenderlabs.xyz"
+        },
+        thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+          url:
+            "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+        },
+        title: "#{String.slice(user.address, 0..4)} Weekly Summary",
+        url: "https://lenderlabs.xyz",
+        color: 5_815_448,
+        fields: [
+          %Nostrum.Struct.Embed.Field{
+            name: "Total Loans",
+            value: Enum.count(loans),
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Profit",
+            value: "#{Number.Human.number_to_human(profit)} ◎",
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "% Return",
+            value: "#{(profit / ltv * 100) |> Number.Human.number_to_human()} %",
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Total Lent",
+            value: "#{ltv |> Number.Human.number_to_human()} ◎",
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Ave. Loan",
+            value: "#{(ltv / Enum.count(loans)) |> Number.Human.number_to_human()} ◎",
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Largest Loan",
+            value: "#{largest_loan} ◎",
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Defaults",
+            value:
+              loans |> Enum.filter(&(!is_nil(&1.forecloseTxId))) |> Enum.count() |> to_string(),
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Average Duration",
+            value: average_duration_formatted,
+            inline: true
+          },
+          %Nostrum.Struct.Embed.Field{
+            name: "Shortest Loan",
+            value: shortest_loan,
+            inline: true
+          }
+        ]
+      }
+
+      user.discordId
+      |> SharkAttack.DiscordConsumer.create_dm_channel()
+      |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+    end)
+  end
 end

@@ -211,8 +211,14 @@ defmodule SharkAttackWeb.EventController do
     }
   end
 
-  def get_thumbnail_url(nil), do: nil
-  def get_thumbnail_url(%Collections.Collection{logo: nil}), do: nil
+  def get_thumbnail_url(nil),
+    do:
+      "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+
+  def get_thumbnail_url(%Collections.Collection{logo: nil}),
+    do:
+      "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+
   def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
 
   def parse_amount(%SharkAttack.Loans.Loan{

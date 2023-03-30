@@ -21,7 +21,8 @@ defmodule SharkAttack.Application do
       SharkAttack.Discord,
       SharkAttack.LoansWorker,
       SharkAttack.NotificationWorker,
-      SharkAttack.FloorWorker
+      SharkAttack.FloorWorker,
+      SharkAttack.Scheduler
       # {SharkAttack.Notifications.Producer, []},
       # {SharkAttack.Notifications.ProducerConsumer, []},
       # {SharkAttack.Notifications.Consumer, []}

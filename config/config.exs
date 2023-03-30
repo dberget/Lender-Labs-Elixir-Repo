@@ -28,6 +28,11 @@ config :cors_plug,
   headers: ["accept", "content-type", "origin", "authorization", "baggage"],
   methods: ["GET", "POST"]
 
+config :shark_attack, SharkAttack.Scheduler,
+  jobs: [
+    {"5 4 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}}
+  ]
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
