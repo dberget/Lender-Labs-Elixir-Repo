@@ -107,7 +107,7 @@ defmodule SharkAttackWeb.EventController do
         },
         %Nostrum.Struct.Embed.Field{
           name: "Floor Price",
-          value: "#{Float.round(fp, 2)} ◎",
+          value: "#{Number.Human.number_to_human(fp)} ◎",
           inline: true
         }
       ]

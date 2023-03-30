@@ -1,4 +1,6 @@
 defmodule SharkAttack.Notifications do
+  require Logger
+
   def foreclosures() do
     users = SharkAttack.Users.get_users_with_discord_id!()
 
@@ -18,7 +20,7 @@ defmodule SharkAttack.Notifications do
             minutesFromDefault < 10 and
               minutesFromDefault > -10
           ) do
-            SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
+            SharkAttack.DiscordConsumer.create_dm_channel(171_430_746_261_553_152)
             |> SharkAttack.DiscordConsumer.send_foreclosure_msg(loan)
           end
         end)
@@ -36,15 +38,19 @@ defmodule SharkAttack.Notifications do
 
       embed = format_weekly_summary(user, loans)
 
-      user.discordId
-      |> SharkAttack.DiscordConsumer.create_dm_channel()
-      |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+      try {
+        user.discordId
+        |> SharkAttack.DiscordConsumer.create_dm_channel()
+        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+      }
     end)
   end
 
   defp format_weekly_summary(_user, []), do: nil
 
   defp format_weekly_summary(user, loans) do
+    Logger.info("Sending weekly summary to #{user.discordId}")
+
     loan_amounts = Enum.map(loans, fn l -> l.amountSol end)
 
     largest_loan = loan_amounts |> Enum.max() |> Number.Human.number_to_human()
@@ -54,7 +60,7 @@ defmodule SharkAttack.Notifications do
       loans
       |> Enum.filter(&is_nil(&1.dateForeclosed))
       |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
-      |> Enum.min()
+      |> Enum.min(fn -> 0 end)
 
     shortest_loan =
       Timex.Duration.from_erl({0, shortest_loan_seconds, 0})
