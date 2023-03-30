@@ -19,6 +19,8 @@ defmodule SharkAttack.DiscordConsumer do
   import Nostrum.Struct.Embed
   alias Nostrum.Api
 
+  require Logger
+
   @commands [
     {"subscribe", "Subscribe to notifications.",
      [
@@ -86,6 +88,11 @@ defmodule SharkAttack.DiscordConsumer do
       "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
       %{embeds: [embed]}
     )
+  end
+
+  def send_raw_message(_dm_id, nil) do
+    Logger.info("No message to send")
+    nil
   end
 
   def send_raw_message(dm_id, embed) do
