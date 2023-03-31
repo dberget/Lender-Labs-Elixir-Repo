@@ -175,9 +175,6 @@ defmodule SharkAttackWeb.ApiController do
   def get_lender_loans(conn, params) do
     loans = SharkAttack.SharkyApi.get_lender_loans(params["lender"])
 
-    # SharkAttack.LoansWorker.get_lender_loans(params["lender"], params["collection"])
-    # |> Enum.map(&elem(&1, 3))
-
     citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
 
     takenLoans =
@@ -461,18 +458,68 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def whales(conn, params) do
-    loans = SharkAttack.LoansWorker.get_all_loans()
+    collections = SharkAttack.Collections.list_collections()
+
+    loans =
+      SharkAttack.LoansWorker.get_all_loans()
+      |> Enum.reject(fn l -> l["borrower"] == "" end)
+      |> Enum.map(fn l ->
+        %{
+          borrower: l["borrower"],
+          lender: l["lender"],
+          collection: l["orderBook"],
+          amount: l["amountSol"],
+          mint: l["nftCollateralMint"],
+          interest: l["earnings"],
+          platform: l["platform"],
+          start: l["start"],
+          end: l["end"]
+        }
+      end)
 
     borrowerGroup =
       loans
-      |> Enum.group_by(fn l -> l["borrower"] end)
+      |> Enum.group_by(fn l -> l.borrower end)
+      |> Enum.map(fn {k, v} ->
+        %{
+          borrower: k,
+          loanCount: length(v),
+          loans: v,
+          amount: Enum.map(v, & &1.amount) |> Enum.sum(),
+          interest: Enum.map(v, & &1.interest) |> Enum.sum(),
+          favorite: get_most_borrowed(v, collections)
+        }
+      end)
+      |> Enum.sort_by(fn v -> v.amount end, :desc)
+      |> Enum.take(20)
 
     lenderGroup =
       loans
-      |> Enum.group_by(fn l -> l["lender"] end)
+      |> Enum.group_by(fn l -> l.lender end)
+      |> Enum.map(fn {k, v} ->
+        %{
+          lender: k,
+          loanCount: length(v),
+          loans: v,
+          amount: Enum.map(v, & &1.amount) |> Enum.sum(),
+          profit: Enum.map(v, & &1.interest) |> Enum.sum(),
+          favorite: get_most_borrowed(v, collections)
+        }
+      end)
+      |> Enum.sort_by(fn v -> v.amount end, :desc)
+      |> Enum.take(20)
 
     conn
-    |> json(loans)
+    |> json(%{borrowerGroup: borrowerGroup, lenderGroup: lenderGroup})
+  end
+
+  defp get_most_borrowed(values, collections) do
+    favorite =
+      Enum.frequencies(Enum.map(values, & &1.collection))
+      |> Enum.max_by(fn {_, v} -> v end)
+      |> elem(0)
+
+    Enum.find(collections, %{}, fn c -> c.sharky_address == favorite end) |> Map.get(:name)
   end
 
   def get_borrower_collections(conn, params) do

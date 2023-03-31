@@ -14,7 +14,7 @@ defmodule SharkAttack.Nfts do
   end
 
   def get_nfts_by_mints(mints) do
-    query = from n in Nft, where: n.mint in ^mints
+    query = from(n in Nft, where: n.mint in ^mints)
 
     Repo.all(query)
   end
@@ -38,13 +38,13 @@ defmodule SharkAttack.Nfts do
   end
 
   def get_collection_nfts(collection_id) do
-    query = from n in Nft, where: n.collection_id == ^collection_id
+    query = from(n in Nft, where: n.collection_id == ^collection_id)
 
     Repo.all(query)
   end
 
   def get_collections_missing_nft_names() do
-    query = from n in Nft, where: is_nil(n.name)
+    query = from(n in Nft, where: is_nil(n.name))
 
     Repo.all(query) |> Enum.map(& &1.collection_id) |> Enum.uniq()
   end

@@ -10,7 +10,7 @@ defmodule SharkAttack.Collections do
   end
 
   def list_collections(%{sharky: "1"}) do
-    query = from c in Collection, where: not is_nil(c.sharky_address)
+    query = from(c in Collection, where: not is_nil(c.sharky_address))
 
     Repo.all(query)
   end
@@ -21,21 +21,23 @@ defmodule SharkAttack.Collections do
 
   def get_collections_from_mint_list(mint_list) do
     query =
-      from c in Collection,
+      from(c in Collection,
         join: n in Nft,
         on: c.id == n.collection_id,
         where: n.mint in ^mint_list,
         preload: [nfts: n]
+      )
 
     Repo.all(query)
   end
 
   def get_collection_from_mint(mint) do
     query =
-      from c in Collection,
+      from(c in Collection,
         join: n in Nft,
         on: c.id == n.collection_id,
         where: n.mint == ^mint
+      )
 
     Repo.one(query)
   end
@@ -46,17 +48,18 @@ defmodule SharkAttack.Collections do
 
   def get_collection(address) do
     query =
-      from c in Collection,
+      from(c in Collection,
         select: %{c | nfts: []},
         where: c.sharky_address == ^address,
         or_where: c.foxy_address == ^address,
         or_where: c.frakt_address == ^address
+      )
 
     Repo.one(query)
   end
 
-  def get_and_update_collection(%{sharky_address: sharky_address} = attrs) do
-    collection = get_collection(sharky_address)
+  def get_and_update_collection(%{name: name} = attrs) do
+    collection = get_collection_by_name(name)
 
     if is_nil(collection) do
       create_collection(attrs)
@@ -67,9 +70,10 @@ defmodule SharkAttack.Collections do
 
   def search_collection_by_name(name) do
     query =
-      from c in Collection,
+      from(c in Collection,
         select: map(c, [:name, :sharky_address]),
         where: like(c.name, ^"%#{name}%")
+      )
 
     Repo.all(query)
   end

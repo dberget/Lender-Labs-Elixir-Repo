@@ -51,15 +51,6 @@ defmodule SharkAttack.Stats do
     |> Enum.filter(fn loan -> loan["state"] in ["defaulted", "repaid"] end)
     |> Enum.map(&format_historical_citrus_loan/1)
     |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
-
-    # SharkAttack.Collections.list_collections()
-    # |> Enum.map(& &1.foxy_address)
-    # |> Enum.reject(&is_nil/1)
-    # |> Enum.map(&SharkAttack.SharkyApi.get_collection_loans(&1, "citrus"))
-    # |> List.flatten()
-    # |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
-    # |> Enum.map(&format_historical_citrus_loan/1)
-    # |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
   end
 
   def update_citrus_history_safe(pk) do
