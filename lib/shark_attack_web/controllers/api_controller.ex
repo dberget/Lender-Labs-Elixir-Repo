@@ -11,8 +11,6 @@ defmodule SharkAttackWeb.ApiController do
 
     loans = SharkAttack.Loans.get_loans_history!(params["pk"], Map.get(params, "limit", 5))
 
-    # forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
-
     conn
     |> json(%{data: loans})
   end
@@ -79,7 +77,7 @@ defmodule SharkAttackWeb.ApiController do
     collections = SharkAttack.Collections.list_collections()
     loans = SharkAttack.Loans.get_loans_history!(params["pk"])
 
-    forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
+    forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.dateForeclosed) end)
 
     data = %{
       loans:
@@ -89,7 +87,9 @@ defmodule SharkAttackWeb.ApiController do
             l
             | collection_name:
                 Map.get(
-                  Enum.find(collections, %{}, fn c -> c.sharky_address == l.orderBook end),
+                  Enum.find(collections, %{}, fn c ->
+                    c.sharky_address == l.orderBook || c.foxy_address == l.orderBook
+                  end),
                   :name,
                   l.orderBook
                 )
@@ -470,7 +470,6 @@ defmodule SharkAttackWeb.ApiController do
     lenderGroup =
       loans
       |> Enum.group_by(fn l -> l["lender"] end)
-      |> IO.inspect()
 
     conn
     |> json(loans)

@@ -29,6 +29,8 @@ defmodule SharkAttack.Stats do
 
   # This makes sure you get all loans if none exist so the order is what they expect.
   def update_history_safe(pk) do
+    update_citrus_history_safe(pk)
+
     case SharkAttack.Loans.get_loans_history!(pk, 1) do
       [] ->
         SharkAttack.Stats.save_lender_history(pk)
@@ -39,6 +41,33 @@ defmodule SharkAttack.Stats do
       _ ->
         SharkAttack.Stats.save_recent_lender_history(pk)
     end
+  end
+
+  def pull_all_citrus_loans() do
+    SharkAttack.Collections.list_collections()
+    |> Enum.map(& &1.foxy_address)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.flat_map(&SharkAttack.SharkyApi.get_collection_loans(&1, "citrus"))
+    |> Enum.filter(fn loan -> loan["state"] in ["defaulted", "repaid"] end)
+    |> Enum.map(&format_historical_citrus_loan/1)
+    |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+
+    # SharkAttack.Collections.list_collections()
+    # |> Enum.map(& &1.foxy_address)
+    # |> Enum.reject(&is_nil/1)
+    # |> Enum.map(&SharkAttack.SharkyApi.get_collection_loans(&1, "citrus"))
+    # |> List.flatten()
+    # |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
+    # |> Enum.map(&format_historical_citrus_loan/1)
+    # |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+  end
+
+  def update_citrus_history_safe(pk) do
+    citrusLoans =
+      SharkAttack.SharkyApi.get_lender_loans(pk, "citrus")
+      |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
+      |> Enum.map(&format_historical_citrus_loan/1)
+      |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
   end
 
   def save_lender_history(pk) do
@@ -60,6 +89,30 @@ defmodule SharkAttack.Stats do
         |> Enum.map(&format_historical_sharky_loan/1)
         |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
     end
+  end
+
+  def format_historical_citrus_loan(loan) do
+    foreclosed_date =
+      if loan["state"] == "defaulted" do
+        Timex.from_unix(loan["rawData"]["endTime"])
+      end
+
+    date_repaid =
+      if loan["state"] == "repaid" do
+        Timex.from_unix(loan["rawData"]["endTime"])
+      end
+
+    loan
+    |> Map.put("loan", loan["pubkey"])
+    |> Map.put("length", loan["length"])
+    |> Map.put("status", "COMPLETE")
+    |> Map.put("platform", "CITRUS")
+    |> Map.put("amountSol", loan["amountSol"])
+    |> Map.put("dateOffered", Timex.from_unix(loan["rawData"]["creationTime"]))
+    |> Map.put("dateTaken", Timex.from_unix(loan["rawData"]["startTime"]))
+    |> Map.put("dateRepaid", date_repaid)
+    |> Map.put("dateForeclosed", foreclosed_date)
+    |> Map.put("earnings", loan["earnings"])
   end
 
   def format_historical_sharky_loan(loan) do

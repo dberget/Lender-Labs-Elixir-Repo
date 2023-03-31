@@ -181,6 +181,28 @@ defmodule SharkAttack.Solana do
     |> Jason.encode!()
   end
 
+  def get_account_signatures(account, limit \\ 5) do
+    params = get_account_signatures_request(account, limit)
+
+    res = do_post_request(@rpc_url, params)
+
+    res["result"]
+  end
+
+  def get_account_signatures_request(account, limit) do
+    %{
+      "jsonrpc" => "2.0",
+      "id" => 1,
+      "method" => "getSignaturesForAddress",
+      "params" => [
+        account,
+        %{
+          "limit" => limit
+        }
+      ]
+    }
+  end
+
   def get_token_balance(address) do
     get_token_account_balance(address)
   end

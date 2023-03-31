@@ -20,6 +20,7 @@ defmodule SharkAttack.Loans.Loan do
              :takeTxId,
              :repayTxId,
              :forecloseTxId,
+             :platform,
              :collection_name,
              :total_owed,
              :fees
