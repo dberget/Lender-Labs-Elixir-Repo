@@ -17,7 +17,11 @@ defmodule SharkAttackWeb.OffersChannel do
   end
 
   def push(offer) do
-    SharkAttackWeb.Endpoint.broadcast!("room:offers", "new", %{data: offer})
+    res = SharkAttack.Offers.get_offer(offer["pubkey"])
+
+    SharkAttackWeb.Endpoint.broadcast!("room:offers", "new", %{
+      data: Map.put(offer, "is_lender_labs", !is_nil(res))
+    })
   end
 
   def delete(offer) do

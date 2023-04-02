@@ -10,21 +10,11 @@ defmodule SharkAttackWeb.LoansChannel do
       :ets.tab2list(:loans)
       |> Enum.map(&elem(&1, 1))
       |> Enum.sort_by(& &1["start"], :desc)
-      |> Enum.take(100)
+      |> Enum.take(10)
 
     push(socket, "subscribe", %{data: loans})
 
     {:noreply, socket}
-  end
-
-  def refresh() do
-    loans =
-      :ets.tab2list(:loans)
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.sort_by(& &1["start"], :desc)
-      |> Enum.take(25)
-
-    SharkAttackWeb.Endpoint.broadcast!("room:loans", "subscribe", %{data: loans})
   end
 
   def push(loan) do

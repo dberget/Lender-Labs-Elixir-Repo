@@ -183,6 +183,7 @@ defmodule SharkAttack.LoansWorker do
   @impl true
   def handle_cast({:delete, key}, state) do
     :ets.match_delete(:collection_loans, {:_, key, :_, :_})
+
     :ets.delete(:loans, key)
     :ets.delete(:offers, key)
 
