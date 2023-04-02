@@ -1,5 +1,4 @@
 defmodule SharkAttackWeb.Router do
-  alias Hex.API
   use SharkAttackWeb, :router
 
   pipeline :browser do
@@ -17,6 +16,7 @@ defmodule SharkAttackWeb.Router do
 
   scope "/user", SharkAttackWeb do
     pipe_through(:api)
+
     get("/", UserController, :index)
     get("/update_purchases", UserController, :update_purchases)
     get("/user_wallets", UserController, :user_wallets)

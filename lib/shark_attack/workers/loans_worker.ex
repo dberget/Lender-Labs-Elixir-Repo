@@ -21,7 +21,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def get_lender_loans(lender, nil) do
-    :ets.match_object(:collection_loans, {:_, :_, lender, :"$1"})
+    get_lender_loans(lender)
   end
 
   def get_lender_loans(lender, collection) do
@@ -79,11 +79,8 @@ defmodule SharkAttack.LoansWorker do
       {:error, _message} ->
         Logger.error("Loan not found: #{loanAddress}")
 
-      loanData ->
-        :ets.insert(
-          :collection_loans,
-          {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
-        )
+      loan ->
+        insert_loan(loan)
     end
   end
 
@@ -99,6 +96,10 @@ defmodule SharkAttack.LoansWorker do
           Logger.error("Loan not found: #{loanAddress}")
 
         loanData ->
+          :ets.insert(:offers, {loanAddress, Map.drop(loanData, ["rawData"])})
+
+          SharkAttackWeb.OffersChannel.push(loanData)
+
           :ets.insert(
             :collection_loans,
             {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
@@ -115,6 +116,24 @@ defmodule SharkAttack.LoansWorker do
     GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
+  def insert_loan(loan) do
+    loanAddress = Map.get(loan, "pubkey")
+
+    :ets.insert(:loans, {loanAddress, Map.drop(loan, ["rawData"])})
+    :ets.delete(:offers, loanAddress)
+
+    :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
+
+    SharkAttackWeb.LoansChannel.push(loan)
+
+    SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
+
+    :ets.insert(
+      :collection_loans,
+      {loan["orderBook"], loanAddress, loan["lender"], loan}
+    )
+  end
+
   def flush() do
     loanData = SharkyApi.get_all_loan_data()
 
@@ -122,22 +141,36 @@ defmodule SharkAttack.LoansWorker do
       loanData
       |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
 
-    :ets.delete_all_objects(:collection_loans)
+    loans =
+      loanData
+      |> Enum.reject(&(&1["state"] == "offered"))
+      |> Enum.map(&Map.drop(&1, ["rawData"]))
+      |> Enum.map(&{&1["pubkey"], &1})
 
+    offers =
+      loanData
+      |> Enum.filter(&(&1["state"] == "offered"))
+      |> Enum.map(&Map.drop(&1, ["rawData"]))
+      |> Enum.map(&{&1["pubkey"], &1})
+
+    :ets.delete_all_objects(:collection_loans)
     :ets.insert(:collection_loans, collection_loans)
+
+    :ets.delete_all_objects(:offers)
+    :ets.insert(:offers, offers)
+
+    :ets.delete_all_objects(:loans)
+    :ets.insert(:loans, loans)
+
+    # SharkAttackWeb.LoansChannel.push()
+    # SharkAttackWeb.OffersChannel.push()
   end
 
   @impl true
   def init([]) do
     generate_tables()
 
-    loanData = SharkyApi.get_all_loan_data()
-
-    collection_loans =
-      loanData
-      |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
-
-    :ets.insert(:collection_loans, collection_loans)
+    flush()
 
     {:ok, []}
   end
@@ -150,6 +183,11 @@ defmodule SharkAttack.LoansWorker do
   @impl true
   def handle_cast({:delete, key}, state) do
     :ets.match_delete(:collection_loans, {:_, key, :_, :_})
+    :ets.delete(:loans, key)
+    :ets.delete(:offers, key)
+
+    SharkAttackWeb.LoansChannel.delete(key)
+    SharkAttackWeb.OffersChannel.delete(key)
 
     {:noreply, state}
   end
@@ -162,6 +200,20 @@ defmodule SharkAttack.LoansWorker do
   defp generate_tables() do
     :ets.new(:collection_loans, [
       :bag,
+      :public,
+      :named_table,
+      {:read_concurrency, true},
+      {:write_concurrency, true}
+    ])
+
+    :ets.new(:loans, [
+      :public,
+      :named_table,
+      {:read_concurrency, true},
+      {:write_concurrency, true}
+    ])
+
+    :ets.new(:offers, [
       :public,
       :named_table,
       {:read_concurrency, true},

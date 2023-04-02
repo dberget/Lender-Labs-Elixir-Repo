@@ -54,4 +54,56 @@ defmodule SharkAttack.LoansTest do
       assert %Ecto.Changeset{} = Loans.change_loan_plan(loan_plan)
     end
   end
+
+  describe "loan_data" do
+    alias SharkAttack.Loans.LoanData
+
+    import SharkAttack.LoansFixtures
+
+    @invalid_attrs %{}
+
+    test "list_loan_data/0 returns all loan_data" do
+      loan_data = loan_data_fixture()
+      assert Loans.list_loan_data() == [loan_data]
+    end
+
+    test "get_loan_data!/1 returns the loan_data with given id" do
+      loan_data = loan_data_fixture()
+      assert Loans.get_loan_data!(loan_data.id) == loan_data
+    end
+
+    test "create_loan_data/1 with valid data creates a loan_data" do
+      valid_attrs = %{}
+
+      assert {:ok, %LoanData{} = loan_data} = Loans.create_loan_data(valid_attrs)
+    end
+
+    test "create_loan_data/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Loans.create_loan_data(@invalid_attrs)
+    end
+
+    test "update_loan_data/2 with valid data updates the loan_data" do
+      loan_data = loan_data_fixture()
+      update_attrs = %{}
+
+      assert {:ok, %LoanData{} = loan_data} = Loans.update_loan_data(loan_data, update_attrs)
+    end
+
+    test "update_loan_data/2 with invalid data returns error changeset" do
+      loan_data = loan_data_fixture()
+      assert {:error, %Ecto.Changeset{}} = Loans.update_loan_data(loan_data, @invalid_attrs)
+      assert loan_data == Loans.get_loan_data!(loan_data.id)
+    end
+
+    test "delete_loan_data/1 deletes the loan_data" do
+      loan_data = loan_data_fixture()
+      assert {:ok, %LoanData{}} = Loans.delete_loan_data(loan_data)
+      assert_raise Ecto.NoResultsError, fn -> Loans.get_loan_data!(loan_data.id) end
+    end
+
+    test "change_loan_data/1 returns a loan_data changeset" do
+      loan_data = loan_data_fixture()
+      assert %Ecto.Changeset{} = Loans.change_loan_data(loan_data)
+    end
+  end
 end

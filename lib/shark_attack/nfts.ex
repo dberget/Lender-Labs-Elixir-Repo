@@ -33,6 +33,7 @@ defmodule SharkAttack.Nfts do
         update_nft(nft, %{
           name: nft_name["name"]
         })
+        |> IO.inspect()
       end)
     end)
   end

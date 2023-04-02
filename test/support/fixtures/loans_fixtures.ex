@@ -17,4 +17,18 @@ defmodule SharkAttack.LoansFixtures do
 
     loan_plan
   end
+
+  @doc """
+  Generate a loan_data.
+  """
+  def loan_data_fixture(attrs \\ %{}) do
+    {:ok, loan_data} =
+      attrs
+      |> Enum.into(%{
+
+      })
+      |> SharkAttack.Loans.create_loan_data()
+
+    loan_data
+  end
 end

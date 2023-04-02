@@ -278,4 +278,100 @@ defmodule SharkAttack.Loans do
   def change_plan_settings(%PlanSettings{} = plan_settings, attrs \\ %{}) do
     PlanSettings.changeset(plan_settings, attrs)
   end
+
+  alias SharkAttack.Loans.LoanData
+
+  @doc """
+  Returns the list of loan_data.
+
+  ## Examples
+
+      iex> list_loan_data()
+      [%LoanData{}, ...]
+
+  """
+  def list_loan_data do
+    Repo.all(LoanData)
+  end
+
+  @doc """
+  Gets a single loan_data.
+
+  Raises `Ecto.NoResultsError` if the Loan data does not exist.
+
+  ## Examples
+
+      iex> get_loan_data!(123)
+      %LoanData{}
+
+      iex> get_loan_data!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_loan_data!(id), do: Repo.get!(LoanData, id)
+
+  @doc """
+  Creates a loan_data.
+
+  ## Examples
+
+      iex> create_loan_data(%{field: value})
+      {:ok, %LoanData{}}
+
+      iex> create_loan_data(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_loan_data(attrs \\ %{}) do
+    %LoanData{}
+    |> LoanData.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a loan_data.
+
+  ## Examples
+
+      iex> update_loan_data(loan_data, %{field: new_value})
+      {:ok, %LoanData{}}
+
+      iex> update_loan_data(loan_data, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_loan_data(%LoanData{} = loan_data, attrs) do
+    loan_data
+    |> LoanData.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a loan_data.
+
+  ## Examples
+
+      iex> delete_loan_data(loan_data)
+      {:ok, %LoanData{}}
+
+      iex> delete_loan_data(loan_data)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_loan_data(%LoanData{} = loan_data) do
+    Repo.delete(loan_data)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking loan_data changes.
+
+  ## Examples
+
+      iex> change_loan_data(loan_data)
+      %Ecto.Changeset{data: %LoanData{}}
+
+  """
+  def change_loan_data(%LoanData{} = loan_data, attrs \\ %{}) do
+    LoanData.changeset(loan_data, attrs)
+  end
 end
