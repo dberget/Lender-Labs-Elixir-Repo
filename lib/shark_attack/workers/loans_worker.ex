@@ -125,7 +125,6 @@ defmodule SharkAttack.LoansWorker do
     :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
 
     SharkAttackWeb.LoansChannel.push(loan)
-
     SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
 
     :ets.insert(
@@ -161,9 +160,6 @@ defmodule SharkAttack.LoansWorker do
 
     :ets.delete_all_objects(:loans)
     :ets.insert(:loans, loans)
-
-    # SharkAttackWeb.LoansChannel.push()
-    # SharkAttackWeb.OffersChannel.push()
   end
 
   @impl true

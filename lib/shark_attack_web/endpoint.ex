@@ -11,11 +11,13 @@ defmodule SharkAttackWeb.Endpoint do
     signing_salt: "SO1bRVC+"
   ]
 
-  socket("/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])
-
   socket("/socket", SharkAttackWeb.LoansSocket,
     websocket: true,
-    longpoll: false
+    longpoll: false,
+    check_origin: [
+      "https://lenderlabs.xyz*",
+      "//*.lenderlabs.xyz"
+    ]
   )
 
   # Serve at "/" the static files from "priv/static" directory.
