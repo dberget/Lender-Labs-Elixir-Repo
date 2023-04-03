@@ -15,8 +15,9 @@ defmodule SharkAttackWeb.Endpoint do
     websocket: true,
     longpoll: false,
     check_origin: [
+      "https://stage.lenderlabs.xyz*"
       "https://lenderlabs.xyz*",
-      "//*.lenderlabs.xyz"
+      "//*.lenderlabs.xyz*"
     ]
   )
 
