@@ -10,7 +10,13 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :shark_attack, SharkAttackWeb.Endpoint,
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: [
+    "https://lenderlabs.xyz",
+    "//lenderlabs.xyz",
+    "//stage.lenderlabs.xyz",
+    "//stage--chimerical-custard-213af0.netlify.app"
+  ]
 
 # Do not print debug messages in production
 config :logger, level: :info, backends: [:console, Sentry.LoggerBackend]

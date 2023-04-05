@@ -81,7 +81,7 @@ defmodule SharkAttack.FloorWorker do
   end
 
   def update_floor_prices() do
-    all_collections = SharkAttack.Collections.list_collections(%{sharky: "1"})
+    all_collections = SharkAttack.Collections.list_collections()
 
     all_collections
     |> SharkAttack.Hyperspace.get_floor_prices()

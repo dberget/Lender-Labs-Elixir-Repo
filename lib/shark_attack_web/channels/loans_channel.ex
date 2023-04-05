@@ -27,6 +27,10 @@ defmodule SharkAttackWeb.LoansChannel do
       )
       |> Enum.map(& &1["mint"])
 
+    # SharkAttack.Helpers.do_get_request(
+    #   "https://api.helius.xyz/v0/addresses/#{loan["borrower"]}/names?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
+    # )
+
     collections =
       mints
       |> SharkAttack.Collections.get_collections_from_mint_list()

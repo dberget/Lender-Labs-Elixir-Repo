@@ -134,11 +134,16 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def flush() do
+    Logger.info("Flushing Loans")
+
     loanData = SharkyApi.get_all_loan_data()
 
     collection_loans =
       loanData
       |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
+
+    :ets.delete_all_objects(:collection_loans)
+    :ets.insert(:collection_loans, collection_loans)
 
     loans =
       loanData
@@ -146,20 +151,17 @@ defmodule SharkAttack.LoansWorker do
       |> Enum.map(&Map.drop(&1, ["rawData"]))
       |> Enum.map(&{&1["pubkey"], &1})
 
+    :ets.delete_all_objects(:loans)
+    :ets.insert(:loans, loans)
+
     offers =
       loanData
       |> Enum.filter(&(&1["state"] == "offered"))
       |> Enum.map(&Map.drop(&1, ["rawData"]))
       |> Enum.map(&{&1["pubkey"], &1})
 
-    :ets.delete_all_objects(:collection_loans)
-    :ets.insert(:collection_loans, collection_loans)
-
     :ets.delete_all_objects(:offers)
     :ets.insert(:offers, offers)
-
-    :ets.delete_all_objects(:loans)
-    :ets.insert(:loans, loans)
   end
 
   @impl true

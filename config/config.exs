@@ -30,7 +30,8 @@ config :cors_plug,
 
 config :shark_attack, SharkAttack.Scheduler,
   jobs: [
-    {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}}
+    {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
+    {"*/8 * * * *", {SharkAttack.LoansWorker, :flush, []}}
   ]
 
 # Configures the mailer

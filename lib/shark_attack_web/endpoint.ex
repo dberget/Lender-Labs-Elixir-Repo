@@ -13,12 +13,7 @@ defmodule SharkAttackWeb.Endpoint do
 
   socket("/socket", SharkAttackWeb.LoansSocket,
     websocket: true,
-    longpoll: false,
-    check_origin: [
-      "https://stage.lenderlabs.xyz*"
-      "https://lenderlabs.xyz*",
-      "//*.lenderlabs.xyz*"
-    ]
+    longpoll: false
   )
 
   # Serve at "/" the static files from "priv/static" directory.

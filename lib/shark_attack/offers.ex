@@ -30,6 +30,10 @@ defmodule SharkAttack.Offers do
     end
   end
 
+  def get_active_offers do
+    Repo.all(Offer, taken: 0, rescinded: 0)
+  end
+
   def create_offer(attr) do
     %Offer{}
     |> SharkAttack.Loans.Offer.changeset(attr)
