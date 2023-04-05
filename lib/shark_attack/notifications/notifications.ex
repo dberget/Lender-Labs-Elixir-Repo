@@ -10,7 +10,7 @@ defmodule SharkAttack.NotificationWorker do
   @loan_interval (if Mix.env() == :dev do
                     30
                   else
-                    8
+                    15
                   end)
 
   @foreclose_interval (if Mix.env() == :dev do
@@ -26,7 +26,6 @@ defmodule SharkAttack.NotificationWorker do
   @impl true
   def init(state) do
     :timer.send_interval(:timer.minutes(@foreclose_interval), :fetch)
-
     :timer.send_interval(:timer.minutes(@loan_interval), :update)
 
     {:ok, state}
