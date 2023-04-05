@@ -11,19 +11,16 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
-    # IO.inspect(event, label: "event")
-
-    send_message(event["source"], event["type"], event)
-
+    queue_message(event)
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn
     |> json(%{message: "ok"})
   end
 
-  # defp queue_message(event) do
-  #   SharkAttack.Notifications.Producer.add(event)
-  # end
+  defp queue_message(event) do
+    SharkAttack.Notifications.Producer.add(event)
+  end
 
   defp send_message("SHARKY_FI", "REPAY_LOAN", event) do
     %{"toUserAccount" => to} = hd(event["nativeTransfers"])
@@ -52,6 +49,8 @@ defmodule SharkAttackWeb.EventController do
 
   defp send_message("SHARKY_FI", "TAKE_LOAN", event) do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> List.first()
+
+    IO.inspect(from, label: "from")
 
     case check_is_user_and_subscribed?(
            from,
@@ -122,8 +121,8 @@ defmodule SharkAttackWeb.EventController do
     )
   end
 
-  defp send_message(_platform, _, _event) do
-    :ok
+  defp send_message(_platform, type, _event) do
+    IO.puts("Unknown event type: #{type}")
   end
 
   defp build_take_loan_embed(event) do

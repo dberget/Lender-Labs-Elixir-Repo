@@ -19,15 +19,13 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
     messages =
       Enum.map(events, &build_message(&1["source"], &1["type"], &1)) |> Enum.reject(&is_nil/1)
 
-    IO.inspect(messages)
-
     {:noreply, messages, state}
   end
 
   defp check_is_user_and_subscribed?(address, setting) do
     with %User{} = user <-
            SharkAttack.Users.get_user_from_address!(
-             "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+             address,
              :user_settings
            ),
          %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
@@ -99,17 +97,16 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
 
-    fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+    fp = SharkAttack.FloorWorker.get_floor_price(c)
 
     loan = SharkAttack.Loans.get_loan(loan_address)
 
     amount = parse_amount(loan)
-
     name = parse_name(nft, c)
 
-    %Nostrum.Struct.Embed{
+    embed = %Nostrum.Struct.Embed{
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: c.logo
+        url: get_thumbnail_url(c)
       },
       title: "**#{name}** Foreclosure",
       url: "https://solscan.io/tx/#{event["signature"]}",
@@ -128,10 +125,7 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
       ]
     }
 
-    # SharkAttack.DiscordConsumer.send_to_webhook(
-    #   "foreclosure",
-    #   embed
-    # )
+    {:foreclosure, embed}
   end
 
   defp build_message(_platform, _, _event) do
@@ -143,8 +137,21 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
 
     %{"mint" => mint} = hd(event["tokenTransfers"])
 
-    c = SharkAttack.Collections.get_collection_from_mint(mint)
-    fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+    c =
+      case SharkAttack.Collections.get_collection_from_mint(mint) do
+        nil ->
+          %Collections.Collection{
+            id: nil,
+            name: "Unknown",
+            logo: nil
+          }
+
+        c ->
+          c
+      end
+
+    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
+    fp = SharkAttack.FloorWorker.get_floor_price(c)
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
@@ -152,9 +159,9 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: c.logo
+        url: get_thumbnail_url(c)
       },
-      title: "**#{c.name}** Offer Accepted",
+      title: "**#{parse_name(nft, c)}** Offer Accepted",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
@@ -174,6 +181,8 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
 
+    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
+
     loan_address =
       Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
 
@@ -187,9 +196,9 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: Map.get(c, :logo, "")
+        url: get_thumbnail_url(c)
       },
-      title: "**#{c.name}** Loan Repaid",
+      title: "**#{parse_name(nft, c)}** Loan Repaid",
       url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
@@ -229,6 +238,10 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
     0.0
   end
 
+  defp parse_name(nil, nil) do
+    nil
+  end
+
   defp parse_name(%Nft{name: nil}, %Collections.Collection{name: name}) do
     name
   end
@@ -236,4 +249,18 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
   defp parse_name(%Nft{name: name}, _) do
     name
   end
+
+  defp parse_name(_, %Collections.Collection{name: name}) do
+    name
+  end
+
+  def get_thumbnail_url(nil),
+    do:
+      "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+
+  def get_thumbnail_url(%Collections.Collection{logo: nil}),
+    do:
+      "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+
+  def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
 end

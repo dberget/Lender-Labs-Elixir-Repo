@@ -22,10 +22,10 @@ defmodule SharkAttack.Application do
       SharkAttack.LoansWorker,
       SharkAttack.NotificationWorker,
       SharkAttack.FloorWorker,
-      SharkAttack.Scheduler
-      # {SharkAttack.Notifications.Producer, []},
-      # {SharkAttack.Notifications.ProducerConsumer, []},
-      # {SharkAttack.Notifications.Consumer, []}
+      SharkAttack.Scheduler,
+      {SharkAttack.Notifications.Producer, []},
+      {SharkAttack.Notifications.ProducerConsumer, []},
+      {SharkAttack.Notifications.Consumer, []}
       # {SharkAttack.SolanaWS, name: SharkAttack.SolanaWS}
       # Start a worker by calling: SharkAttack.Worker.start_link(arg)
       # {SharkAttack.Worker, arg}

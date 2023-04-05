@@ -146,4 +146,10 @@ defmodule SharkAttack.Notifications do
       ]
     }
   end
+
+  def track_notification(params) do
+    %SharkAttack.Notifications.EventNotification{}
+    |> SharkAttack.Notifications.EventNotification.changeset(params)
+    |> SharkAttack.Repo.insert()
+  end
 end

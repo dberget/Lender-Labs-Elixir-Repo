@@ -10,12 +10,45 @@ defmodule SharkAttack.Notifications.Consumer do
   end
 
   def handle_events(events, _from, state) do
-    # Wait for a second.
-
-    # Inspect the events.
-    IO.inspect(events)
+    Enum.each(events, &send_message/1)
 
     # We are a consumer, so we would never emit items.
     {:noreply, [], state}
+  end
+
+  def send_message({:foreclosure, embed}) do
+    SharkAttack.DiscordConsumer.send_to_webhook(
+      :foreclosure,
+      embed
+    )
+  end
+
+  def send_message({:dao, address, embed}) do
+    address
+    |> SharkAttack.DiscordConsumer.send_to_webhook(embed)
+  end
+
+  def send_message({:user, discordId, embed}) do
+    res =
+      discordId
+      |> SharkAttack.DiscordConsumer.create_dm_channel()
+      |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+
+    case res do
+      {:ok, _} ->
+        SharkAttack.Notifications.track_notification(%{
+          sent: true,
+          discord_id: discordId,
+          signature: embed.url
+        })
+
+      error ->
+        SharkAttack.Notifications.track_notification(%{
+          error: error,
+          sent: false,
+          discord_id: discordId,
+          signature: embed.url
+        })
+    end
   end
 end

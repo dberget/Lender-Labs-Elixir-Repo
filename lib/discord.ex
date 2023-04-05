@@ -64,7 +64,7 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
-  def send_to_webhook("foreclosure", embed) do
+  def send_to_webhook(:foreclosure, embed) do
     Api.execute_webhook(
       "1078718321370865808",
       "tPsSVIJ7VEKGz635sRrBzdXOHUgZVksvKHfcr4q4iZEzZAmbbkvMGxjZy45SzB1a0NC9",
@@ -107,7 +107,7 @@ defmodule SharkAttack.DiscordConsumer do
         "Offer for #{event.orderbook} is #{event.current} and should be #{event.new}, update here: https://lenderlabs.xyz/offer/#{event.loan}"
       )
 
-    Api.create_message!(dm_id, embeds: [embed])
+    Api.create_message(dm_id, embeds: [embed])
   end
 
   def send_foreclosure_msg(dm_id, loan) do

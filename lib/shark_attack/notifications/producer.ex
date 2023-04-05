@@ -10,9 +10,6 @@ defmodule SharkAttack.Notifications.Producer do
   def handle_demand(demand, state) do
     {to_dispatch, remaining} = Enum.split(state, demand)
 
-    IO.inspect(demand)
-    IO.inspect(state)
-
     events = []
 
     {:noreply, events, remaining ++ to_dispatch}
