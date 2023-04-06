@@ -13,7 +13,8 @@ defmodule SharkAttack.Users do
     "63c87b971e7e23ce4322481d",
     "63c936661e7e23ce43237023",
     "63caba0dbc4646a3c14090f4",
-    "63d2bbeb52ad37f49859a3b2"
+    "63d2bbeb52ad37f49859a3b2",
+    "642f1d287a50dc6571bba6b4"
   ]
 
   def get!(address), do: Repo.get(User, address)

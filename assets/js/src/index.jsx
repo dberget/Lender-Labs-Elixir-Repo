@@ -16,6 +16,7 @@ function App() {
         <Route path="/overview" element={<Overview />} />
       </Routes>
       <Toaster />
+      {/* <Footer /> */}
     </BrowserRouter>
   );
 }

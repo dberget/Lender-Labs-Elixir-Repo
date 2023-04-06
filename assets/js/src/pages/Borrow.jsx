@@ -29,7 +29,7 @@ export function Borrow() {
 
   if (data?.collections?.length === 0) {
     return (
-      <div className="w-full text-center">
+      <div className="w-full text-center h-[60vh]">
         No currently loanable NFT's Found! If they are staked or already loaned
         they won't show up here.
         <div>
