@@ -99,12 +99,21 @@ defmodule SharkAttack.DiscordConsumer do
     Api.create_message(dm_id, embeds: [embed])
   end
 
-  def send_message(dm_id, event) do
+  def send_message(dm_id, %{collection: collection, position: 0}) do
     embed =
       %Nostrum.Struct.Embed{}
-      |> put_title("Offer Warning")
+      |> put_title("Offer Update")
+      |> put_description("Your have the best offer for #{collection}!")
+
+    Api.create_message(dm_id, embeds: [embed])
+  end
+
+  def send_message(dm_id, %{collection: collection, position: position}) do
+    embed =
+      %Nostrum.Struct.Embed{}
+      |> put_title("Offer Update")
       |> put_description(
-        "Offer for #{event.orderbook} is #{event.current} and should be #{event.new}, update here: https://lenderlabs.xyz/offer/#{event.loan}"
+        "Offer for #{collection} is #{Number.Human.number_to_ordinal(position)}, update: https://lenderlabs.xyz/"
       )
 
     Api.create_message(dm_id, embeds: [embed])

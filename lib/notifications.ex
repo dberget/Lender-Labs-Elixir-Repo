@@ -1,4 +1,5 @@
 defmodule SharkAttack.Notifications do
+  alias SharkAttack.Discord
   require Logger
 
   def foreclosures() do
@@ -145,6 +146,91 @@ defmodule SharkAttack.Notifications do
         }
       ]
     }
+  end
+
+  def hourly_position_alerts() do
+    all_collections = SharkAttack.Collections.list_collections()
+
+    users = SharkAttack.Users.get_users_with_discord_id!()
+
+    Enum.map(users, fn user ->
+      user_loans =
+        user.address
+        |> SharkAttack.LoansWorker.get_lender_loans()
+        |> Enum.map(&elem(&1, 3))
+        |> Enum.filter(fn loan -> loan["state"] == "offered" end)
+
+      grouped_loans = Enum.group_by(user_loans, fn l -> l["orderBook"] end)
+
+      Enum.map(grouped_loans, fn {orderBook, loans} ->
+        loan = Enum.sort_by(loans, fn l -> l["amountSol"] end, :desc) |> List.first()
+
+        ordered_loans =
+          SharkAttack.LoansWorker.get_collection_loans(orderBook)
+          |> Enum.filter(fn loan -> loan["state"] == "offered" end)
+          |> Enum.sort_by(fn l -> l["amountSol"] end, :desc)
+
+        pos = Enum.find_index(ordered_loans, fn l -> l["pubkey"] == loan["pubkey"] end)
+
+        user.discordId
+        |> SharkAttack.DiscordConsumer.create_dm_channel()
+        |> SharkAttack.DiscordConsumer.send_message(%{
+          collection:
+            Enum.find(all_collections, &(&1.sharky_address == orderBook)) |> Map.get(:name),
+          position: pos
+        })
+      end)
+    end)
+  end
+
+  def best_position_alert() do
+    all_collections = SharkAttack.Collections.list_collections()
+
+    users = SharkAttack.Users.get_users_with_discord_id!()
+
+    Enum.map(users, fn user ->
+      user_loans =
+        user.address
+        |> SharkAttack.LoansWorker.get_lender_loans()
+        |> Enum.map(&elem(&1, 3))
+        |> Enum.filter(fn loan -> loan["state"] == "offered" end)
+
+      grouped_loans = Enum.group_by(user_loans, fn l -> l["orderBook"] end)
+
+      Enum.map(grouped_loans, fn {orderBook, loans} ->
+        loan = Enum.sort_by(loans, fn l -> l["amountSol"] end, :desc) |> List.first()
+
+        ordered_loans =
+          SharkAttack.LoansWorker.get_collection_loans(orderBook)
+          |> Enum.filter(fn loan -> loan["state"] == "offered" end)
+          |> Enum.sort_by(fn l -> l["amountSol"] end, :desc)
+
+        pos = Enum.find_index(ordered_loans, fn l -> l["pubkey"] == loan["pubkey"] end)
+
+        cond do
+          pos > 0 ->
+            collection =
+              Enum.find(all_collections, &(&1.sharky_address == orderBook)) |> Map.get(:name)
+
+            embed = %Nostrum.Struct.Embed{
+              thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+                url:
+                  "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+              },
+              title: "Best Offer Lost",
+              description: "No longer the best offer for #{collection}.
+                 Update: https://lenderlabs.xyz/"
+            }
+
+            user.discordId
+            |> SharkAttack.DiscordConsumer.create_dm_channel()
+            |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+
+          true ->
+            nil
+        end
+      end)
+    end)
   end
 
   def track_notification(params) do
