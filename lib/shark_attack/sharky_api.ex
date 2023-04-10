@@ -23,7 +23,15 @@ defmodule SharkAttack.SharkyApi do
   def get_all_loans() do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/taken")
 
-    Map.get(res, "loanData", [])
+    case res do
+      {:error, body} ->
+        Logger.error(body)
+
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
   end
 
   def get_loan(pk) do
@@ -112,7 +120,15 @@ defmodule SharkAttack.SharkyApi do
   def get_lender_loans(address, "citrus") do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/citrus/#{address}")
 
-    Map.get(res, "loanData", [])
+    case res do
+      {:error, body} ->
+        Logger.error(body)
+
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
   end
 
   def get_user_open_offers_for_order_book(user_address, order_book_address) do
