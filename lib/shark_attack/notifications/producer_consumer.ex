@@ -65,6 +65,39 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
     end
   end
 
+  defp build_message("SHARKY_FI", "UNKNOWN", event) do
+    repaid_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(3)
+    new_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(4)
+
+    case check_is_user_and_subscribed?(
+           repaid_lender,
+           :loan_repaid
+         ) do
+      false ->
+        nil
+
+      {:dao, address} ->
+        {:dao, address, build_repaid_loan_embed(event)}
+
+      {:user, discordId} ->
+        {:user, discordId, build_repaid_loan_embed(event)}
+    end
+
+    case check_is_user_and_subscribed?(
+           new_lender,
+           :loan_taken
+         ) do
+      false ->
+        nil
+
+      {:dao, address} ->
+        {:dao, address, build_take_loan_embed(event)}
+
+      {:user, discordId} ->
+        {:user, discordId, build_take_loan_embed(event)}
+    end
+  end
+
   defp build_message("SHARKY_FI", "TAKE_LOAN", event) do
     from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> List.first()
 
@@ -97,7 +130,7 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
 
     c = SharkAttack.Collections.get_collection_from_mint(mint)
 
-    fp = SharkAttack.FloorWorker.get_floor_price(c)
+    fp = SharkAttack.FloorWorker.get_floor_price(c) |> Number.Delimit.number_to_delimited()
 
     loan = SharkAttack.Loans.get_loan(loan_address)
 
@@ -114,12 +147,12 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Float.round(amount, 2)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(amount)} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
           name: "Floor Price",
-          value: "#{Float.round(fp, 2)} ◎",
+          value: "#{fp} ◎",
           inline: true
         }
       ]
@@ -151,7 +184,7 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
       end
 
     nft = SharkAttack.Nfts.get_nft_by_mint(mint)
-    fp = SharkAttack.FloorWorker.get_floor_price(c)
+    fp = SharkAttack.FloorWorker.get_floor_price(c) |> Number.Delimit.number_to_delimited()
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
@@ -167,7 +200,7 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(amount / 1_000_000_000)} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
@@ -204,7 +237,7 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Float.round(amount / 1_000_000_000, 2)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(amount / 1_000_000_000, 2)} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{

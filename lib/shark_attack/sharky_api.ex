@@ -68,8 +68,9 @@ defmodule SharkAttack.SharkyApi do
     case res do
       {:error, body} ->
         Logger.error(body)
+        Logger.info("Falling back to use cache")
 
-        {:error, body}
+        SharkAttack.LoansWorker.get_lender_loans(address) |> Enum.map(&elem(&1, 3))
 
       body ->
         Map.get(body, "data", [])

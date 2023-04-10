@@ -10,18 +10,31 @@ export const initSharkyClient = (connection, wallet) => {
   return sharkyClient;
 };
 
-export const takeAllLoans = async (offers, mints, sharkyClient, indexes) => {
+export const takeAllLoans = async (
+  offers,
+  mints,
+  sharkyClient,
+  indexes,
+  pubkey
+) => {
   for (let i = 0; i < mints.length; i++) {
     await takeLoan(
       offers[i],
       mints[i],
       sharkyClient,
-      indexes[mints[i].address?.toString()]
+      indexes[mints[i].address?.toString()],
+      pubkey
     );
   }
 };
 
-export const takeLoan = async (offer, mint, sharkyClient, nftListIndex) => {
+export const takeLoan = async (
+  offer,
+  mint,
+  sharkyClient,
+  nftListIndex,
+  pubkey
+) => {
   const { connection } = sharkyClient.program.provider;
 
   const account = await connection.getAccountInfo(
@@ -71,7 +84,7 @@ export const takeLoan = async (offer, mint, sharkyClient, nftListIndex) => {
     },
   });
 
-  notify(`Sharky loan taken! ${offer.amountSol} - ${mint.address}`);
+  notify(`Sharky loan taken! ${offer.amountSol} - ${pubkey}`);
 };
 
 export const repayLoan = async (loan, sharkyClient, connection) => {

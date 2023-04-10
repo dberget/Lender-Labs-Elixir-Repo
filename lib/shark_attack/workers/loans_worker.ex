@@ -61,10 +61,36 @@ defmodule SharkAttack.LoansWorker do
       loan
       |> Map.get("instructions")
       |> Enum.at(1)
-      |> Map.get("accounts")
-      |> hd()
+      |> Map.get("accounts", [])
+      |> List.first()
 
     GenServer.cast(__MODULE__, {:delete, loanAddress})
+  end
+
+  def update_loan(loan, "UNKNOWN") do
+    closed_loan =
+      loan
+      |> Map.get("instructions")
+      |> Enum.at(1)
+      |> Map.get("accounts", [])
+      |> List.first()
+
+    case closed_loan do
+      nil ->
+        Logger.info("Unknown loan: #{loan}")
+
+      _ ->
+        GenServer.cast(__MODULE__, {:delete, closed_loan})
+
+        new_loan =
+          loan
+          |> Map.get("instructions")
+          |> Enum.at(1)
+          |> Map.get("accounts", [])
+          |> Enum.at(1)
+
+        add_new_loan(new_loan)
+    end
   end
 
   def update_loan(loan, "TAKE_LOAN") do
@@ -75,14 +101,7 @@ defmodule SharkAttack.LoansWorker do
       |> Map.get("accounts")
       |> Enum.at(4)
 
-    case SharkyApi.get_loan(loanAddress) do
-      {:error, _message} ->
-        update_loan(loan, "TAKE_LOAN")
-        Logger.error("Loan not found: #{loanAddress}")
-
-      loan ->
-        insert_loan(loan)
-    end
+    add_new_loan(loanAddress)
   end
 
   def update_loan(loan, "OFFER_LOAN") do
@@ -92,25 +111,55 @@ defmodule SharkAttack.LoansWorker do
     |> Enum.each(fn offer ->
       %{"toUserAccount" => loanAddress} = hd(offer)
 
-      case SharkyApi.get_loan(loanAddress) do
-        {:error, _message} ->
-          Logger.error("Loan not found: #{loanAddress}")
-
-        loanData ->
-          :ets.insert(:offers, {loanAddress, Map.drop(loanData, ["rawData"])})
-
-          SharkAttackWeb.OffersChannel.push(loanData)
-
-          :ets.insert(
-            :collection_loans,
-            {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
-          )
-      end
+      add_new_offer(loanAddress)
     end)
   end
 
   def update_loan(_loan, status) do
     Logger.info(status)
+  end
+
+  def add_new_loan(nil), do: nil
+
+  def add_new_loan(loanAddress, attempts \\ 0) do
+    case SharkyApi.get_loan(loanAddress) do
+      nil ->
+        if attempts < 5 do
+          Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
+
+          Process.send_after(self(), {:add_new_loan, loanAddress, attempts + 1}, 1000)
+        else
+          Logger.error("Loan not found: #{loanAddress}")
+        end
+
+      loan ->
+        insert_loan(loan)
+    end
+  end
+
+  def add_new_offer(nil), do: nil
+
+  def add_new_offer(loanAddress, attempts \\ 0) do
+    case SharkyApi.get_loan(loanAddress) do
+      nil ->
+        if attempts < 5 do
+          Logger.info("Offer not found: #{loanAddress} - retrying in 1 second")
+
+          Process.send_after(self(), {:add_new_offer, loanAddress, attempts + 1}, 1000)
+        else
+          Logger.error("Offer not found: #{loanAddress}")
+        end
+
+      loanData ->
+        :ets.insert(:offers, {loanAddress, Map.drop(loanData, ["rawData"])})
+
+        SharkAttackWeb.OffersChannel.push(loanData)
+
+        :ets.insert(
+          :collection_loans,
+          {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
+        )
+    end
   end
 
   def remove_loan(loanAddress) do

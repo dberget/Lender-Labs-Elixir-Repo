@@ -26,7 +26,7 @@ defmodule SharkAttack.Collections.Collection do
     field(:frakt_address, :string)
     field(:foxy_address, :string)
     field(:logo, :string)
-    field(:rain_fi_id, :integer)
+    field(:rain_fi_id, :string)
     field(:duration, :integer)
     field(:apy, :integer)
 

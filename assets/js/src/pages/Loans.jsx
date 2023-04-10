@@ -54,7 +54,7 @@ export function Loans() {
 
   const sharkyClient = initSharkyClient(connection, wallet);
 
-  const { loanData, isLoading } = useBorrower();
+  const { loanData, isLoading, data } = useBorrower();
 
   React.useEffect(() => {
     const repayAmount = selectedForRepay.reduce(
@@ -90,6 +90,7 @@ export function Loans() {
     const selectedSharkyLoans = selectedForRenew.filter(
       (l) => l.loan.platform === "Sharky"
     );
+
     toast("Building bulk Sharky.fi transactions...");
 
     const blockhash = await connection.getLatestBlockhash();
@@ -132,6 +133,21 @@ export function Loans() {
         error: (err) => console.log(err.message),
       });
     });
+
+    // const selectedCitrusLoans = selectedForRepay.filter(
+    //   (l) => l.loan.platform === "Citrus"
+    // );
+
+    // if (selectedCitrusLoans.length > 0) {
+    //   toast("Building Citrus transactions...");
+
+    //   for (let i = 0; i < selectedCitrusLoans.length; i++) {
+    //     const loan = selectedCitrusLoans[i].loan;
+    //     const offer = selectedCitrusLoans[i].offer;
+
+    //     await reborrow(loan, offer);
+    //   }
+    // }
   };
 
   const handleRepaySelected = async () => {
@@ -173,7 +189,6 @@ export function Loans() {
       for (let i = 0; i < selectedFraktLoans.length; i++) {
         const loan = selectedFraktLoans[i].loan;
 
-        toast("Building Citrus repay transaction...");
         await repayFraktLoan(loan);
       }
     }
@@ -357,6 +372,7 @@ export function Loans() {
           <LoanCards
             sortBy={sortBy}
             setSortBy={setSortBy}
+            collections={data?.collections}
             sortDirection={sortDirection}
             sharkyClient={sharkyClient}
             setSelected={handleSelection}
@@ -391,6 +407,7 @@ const LoanCards = ({
   sortDirection,
   setSelected,
   selectedForRepay,
+  collections,
 }) => {
   const CardMap = {
     Rain: (props) => (
@@ -400,7 +417,12 @@ const LoanCards = ({
       <CitrusCard key={props.index} {...props} metaplex={metaplex} />
     ),
     FRAKT: (props) => (
-      <FraktCard key={props.index} {...props} metaplex={metaplex} />
+      <FraktCard
+        collections={collections}
+        key={props.index}
+        {...props}
+        metaplex={metaplex}
+      />
     ),
     Sharky: (props) => (
       <SharkyCard
@@ -446,7 +468,7 @@ const LoanCards = ({
   return filteredLoans;
 };
 
-const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
+const FraktCard = ({ loan, setSelected, selectedForRepay }) => {
   const { repayLoan } = useFrakt();
 
   const [isSelected, setIsSelected] = React.useState(false);
@@ -457,53 +479,99 @@ const FraktCard = ({ loan, setSelectedForRepay, selectedForRepay }) => {
     setIsSelected(selected);
   }, [selectedForRepay]);
 
+  const handleSetSelected = () => {
+    loan.amountSol = loan.loanValue / LAMPORTS_PER_SOL;
+
+    setSelected(loan, []);
+  };
+
+  const loanOwed = loan.loanValue / LAMPORTS_PER_SOL;
+
   return (
     <div
-      onClick={() => setSelectedForRepay(loan)}
-      className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#A2FF2F]"
+      onClick={() => handleSetSelected()}
+      className="cursor-pointer bg-[#28292B] p-3 my-2 w-full rounded border-b-4 border-[#FF1757]"
     >
-      <img src={loan?.nft.imageUrl} className="w-20 h-20 rounded" />
-
-      <div className="flex w-full ml-2">
-        <div>
-          {/* <img className={"w-auto h-8 ml-auto"} src={"/images/frakt.png"} /> */}
-          <div className="font-bold">
-            {(loan.loanValue / LAMPORTS_PER_SOL).toFixed(2)} <SolIcon />{" "}
-          </div>
-          <div id={"end-date" + loan.pubkey}>
-            {splitTimeShort(
-              Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
-            )}
-            <ReactTooltip
-              variant={"light"}
-              anchorSelect={"#end-date" + loan.pubkey}
-              place="bottom"
-              render={() => (
-                <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
-                  {new Date(loan.end * 1000).toLocaleString()}
-                </span>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="ml-auto flex-col flex">
+      <div className="w-full">
+        <div className="flex items-center w-full mb-1">
           <div
             className={`${
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
-            } ml-auto w-7 h-7 text-[#58BC98]`}
+            } mr-1 w-7 h-7 text-[#58BC98]`}
           />
+          <span className="font-bold">{loan?.nft?.collectionName}</span>
+
+          <span
+            data-tooltip-variant="light"
+            id={`fp-${loan.pubkey}`}
+            // className={
+            //   "ml-auto " + (loanOwed > collection?.fp ? "text-red-500" : "")
+            // }
+          >
+            {/* {collection?.fp?.toFixed(2)} <SolIcon /> */}
+          </span>
+        </div>
+        <ReactTooltip
+          variant={"light"}
+          anchorSelect={"#fp-" + loan.pubkey}
+          place="bottom"
+          render={() => (
+            <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+              Floor price
+            </span>
+          )}
+        />
+      </div>
+
+      <div className="flex w-full">
+        <img
+          key={loan.pubkey}
+          src={loan?.nft?.imageUrl}
+          className="w-20 h-20 rounded"
+        />
+        <div className="ml-2">
+          <div className="font-bold">
+            {loanOwed.toFixed(2)} <SolIcon />
+          </div>
+
+          <div className="font-bold"></div>
+
+          <div data-tooltip-variant="light" id={"end-date" + loan.pubkey}>
+            {splitTimeShort(
+              Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end ml-auto">
           <Button
-            className="mt-auto"
+            id={`bonds-${loan.pubkey}`}
+            className="ml-auto mt-auto p-2"
             onClick={(ev) => {
-              ev.stopPropagation();
+              if (loan.loanType == "bond") {
+                toast.error("Bonds cannot be repaid yet.");
+
+                return;
+              }
+
               repayLoan(loan);
+
+              ev.stopPropagation();
             }}
           >
             Repay
           </Button>
         </div>
       </div>
+      <ReactTooltip
+        anchorSelect={"#end-date" + loan.pubkey}
+        place="bottom"
+        render={() => (
+          <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+            {new Date(loan.end * 1000).toLocaleString()}
+          </span>
+        )}
+      />
     </div>
   );
 };
@@ -518,9 +586,9 @@ const SharkyCard = ({
   const { connection } = useConnection();
   const { sendTransaction, publicKey } = useWallet();
   const [nft, setNft] = React.useState(null);
-  const [isSelected, setIsSelected] = React.useState(false);
-
   const { collection } = useCollection(loan.orderBook);
+
+  const [isSelected, setIsSelected] = React.useState(false);
 
   React.useEffect(() => {
     const selected = selectedForRepay.find((l) => l.key == loan.pubkey);
@@ -657,15 +725,11 @@ const SharkyCard = ({
   );
 };
 
-const CitrusCard = ({
-  loan,
-  metaplex,
-  setSelectedForRepay,
-  selectedForRepay,
-}) => {
+const CitrusCard = ({ loan, metaplex, setSelected, selectedForRepay }) => {
   const [nft, setNft] = React.useState(null);
   const { citrusSdk, repayLoan } = useCitrus();
   const [isSelected, setIsSelected] = React.useState(false);
+  const { collection } = useCollection(loan.collectionConfig);
 
   React.useEffect(() => {
     const selected = selectedForRepay.find((l) => l.key == loan.loanAccount);
@@ -684,36 +748,80 @@ const CitrusCard = ({
     getNft();
   }, []);
 
+  const handleSetSelected = async () => {
+    // setIsSelected(!isSelected);
+
+    // const offers = await citrusSdk.fetchCollectionLoans(
+    //   new PublicKey(collection.foxy_address),
+    //   "waitingForBorrower"
+    // );
+
+    loan.amountSol =
+      (loan.terms.principal + loan.terms.interest) / LAMPORTS_PER_SOL;
+
+    setSelected(loan, []);
+  };
+
+  const loanOwed =
+    (loan.terms.principal + loan.terms.interest) / LAMPORTS_PER_SOL;
+
   return (
     <div
-      onClick={() => setSelectedForRepay(loan)}
-      className="bg-[#28292B] p-4 my-2 w-full rounded flex border-b-4 border-[#F97315] cursor-pointer"
+      onClick={() => handleSetSelected()}
+      className="cursor-pointer bg-[#28292B] p-3 my-2 w-full rounded border-b-4 border-[#F97315] "
     >
-      <img
-        key={nft?.json?.image}
-        src={nft?.json?.image}
-        className="w-20 h-20 rounded"
-      />
+      <div className="w-full">
+        <div className="flex items-center w-full mb-1">
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } mr-1 w-7 h-7 text-[#58BC98]`}
+          />
+          <span className="font-bold">{collection?.name}</span>
 
-      <div className="flex w-full ml-2">
-        <div>
+          <span
+            data-tooltip-variant="light"
+            id={`fp-${loan.pubkey}`}
+            className={
+              "ml-auto " + (loanOwed > collection?.fp ? "text-red-500" : "")
+            }
+          >
+            {collection?.fp?.toFixed(2)} <SolIcon />
+          </span>
+        </div>
+        <ReactTooltip
+          variant={"light"}
+          anchorSelect={"#fp-" + loan.pubkey}
+          place="bottom"
+          render={() => (
+            <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+              Floor price
+            </span>
+          )}
+        />
+      </div>
+
+      <div className="flex w-full">
+        <img
+          key={nft?.json?.image}
+          src={nft?.json?.image}
+          className="w-20 h-20 rounded"
+        />
+        <div className="ml-2">
           <div className="font-bold">
-            {(loan.terms.principal / LAMPORTS_PER_SOL).toFixed(2)} <SolIcon />{" "}
+            {loanOwed.toFixed(2)} <SolIcon />
           </div>
 
-          <div>
+          <div className="font-bold"></div>
+
+          <div data-tooltip-variant="light" id={"end-date" + loan.pubkey}>
             {splitTimeShort(
               Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
             )}
           </div>
         </div>
 
-        <div className="ml-auto flex-col flex">
-          <div
-            className={`${
-              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
-            } ml-auto w-7 h-7 text-[#58BC98]`}
-          />
+        <div className="flex flex-col items-end ml-auto">
           <Button
             className="mt-auto"
             onClick={(ev) => {
@@ -725,18 +833,24 @@ const CitrusCard = ({
           </Button>
         </div>
       </div>
+      <ReactTooltip
+        anchorSelect={"#end-date" + loan.pubkey}
+        place="bottom"
+        render={() => (
+          <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+            {new Date(loan.end * 1000).toLocaleString()}
+          </span>
+        )}
+      />
     </div>
   );
 };
 
-const RainCard = ({
-  loan,
-  metaplex,
-  setSelectedForRepay,
-  selectedForRepay,
-}) => {
+const RainCard = ({ loan, metaplex, setSelected, selectedForRepay }) => {
   const [nft, setNft] = React.useState(null);
   const { rain, repayLoan } = useRain();
+
+  const { collection } = useCollection(loan.collection);
 
   const [isSelected, setIsSelected] = React.useState(false);
 
@@ -758,35 +872,78 @@ const RainCard = ({
     getNft();
   }, []);
 
+  const handleSetSelected = async () => {
+    // setIsSelected(!isSelected);
+
+    // const offers = await citrusSdk.fetchCollectionLoans(
+    //   new PublicKey(collection.foxy_address),
+    //   "waitingForBorrower"
+    // );
+
+    loan.amountSol = loan.amount / LAMPORTS_PER_SOL;
+
+    setSelected(loan, []);
+  };
+
+  const loanOwed = loan.amount / LAMPORTS_PER_SOL;
+
   return (
     <div
-      onClick={() => setSelectedForRepay(loan)}
-      className="bg-[#28292B] cursor-pointer p-4 my-2 w-full rounded flex border-b-4 border-[#2FB5FE]"
+      onClick={() => handleSetSelected()}
+      className="cursor-pointer bg-[#28292B] p-3 my-2 w-full rounded border-b-4 border-[#2FB5FE]"
     >
-      <img
-        key={loan.pubkey}
-        src={nft?.json?.image}
-        className="w-20 h-20 rounded"
-      />
+      <div className="w-full">
+        <div className="flex items-center w-full mb-1">
+          <div
+            className={`${
+              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
+            } mr-1 w-7 h-7 text-[#58BC98]`}
+          />
+          <span className="font-bold">{collection?.name}</span>
 
-      <div className="flex w-full ml-2">
-        <div>
+          <span
+            data-tooltip-variant="light"
+            id={`fp-${loan.pubkey}`}
+            className={
+              "ml-auto " + (loanOwed > collection?.fp ? "text-red-500" : "")
+            }
+          >
+            {collection?.fp?.toFixed(2)} <SolIcon />
+          </span>
+        </div>
+        <ReactTooltip
+          variant={"light"}
+          anchorSelect={"#fp-" + loan.pubkey}
+          place="bottom"
+          render={() => (
+            <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+              Floor price
+            </span>
+          )}
+        />
+      </div>
+
+      <div className="flex w-full">
+        <img
+          key={loan.pubkey}
+          src={nft?.json?.image}
+          className="w-20 h-20 rounded"
+        />
+        <div className="ml-2">
           <div className="font-bold">
-            {(loan.amount / LAMPORTS_PER_SOL).toFixed(2)} <SolIcon />{" "}
+            {loanOwed.toFixed(2)} <SolIcon />
           </div>
 
-          <div>
+          <div className="font-bold"></div>
+
+          <div data-tooltip-variant="light" id={"end-date" + loan.pubkey}>
             {splitTimeShort(
               Math.abs(new Date() - new Date(loan.end * 1000)) / 36e5
             )}
           </div>
         </div>
-        <div className="ml-auto flex-col flex">
-          <div
-            className={`${
-              isSelected ? "hero-check-circle-solid" : "hero-check-circle"
-            } ml-auto w-7 h-7 text-[#58BC98]`}
-          />
+
+        <div className="flex flex-col items-end ml-auto">
           <Button
             className="mt-auto"
             onClick={(ev) => {
@@ -798,6 +955,15 @@ const RainCard = ({
           </Button>
         </div>
       </div>
+      <ReactTooltip
+        anchorSelect={"#end-date" + loan.pubkey}
+        place="bottom"
+        render={() => (
+          <span style={{ fontSize: ".8rem", fontWeight: "400" }}>
+            {new Date(loan.end * 1000).toLocaleString()}
+          </span>
+        )}
+      />
     </div>
   );
 };

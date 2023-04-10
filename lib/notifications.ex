@@ -1,8 +1,8 @@
 defmodule SharkAttack.Notifications do
-  alias SharkAttack.Discord
   require Logger
 
   def foreclosures() do
+    Logger.info("Checking for foreclosures")
     users = SharkAttack.Users.get_users_with_discord_id!()
 
     Enum.map(users, fn user ->

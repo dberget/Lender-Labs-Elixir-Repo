@@ -174,7 +174,6 @@ defmodule SharkAttackWeb.ApiController do
 
   def get_lender_loans(conn, params) do
     loans = SharkAttack.SharkyApi.get_lender_loans(params["lender"])
-
     citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
 
     takenLoans =
@@ -457,7 +456,7 @@ defmodule SharkAttackWeb.ApiController do
     |> json(collections)
   end
 
-  def whales(conn, params) do
+  def whales(conn, _params) do
     collections = SharkAttack.Collections.list_collections()
 
     loans =

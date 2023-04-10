@@ -22,10 +22,18 @@ defmodule SharkAttackWeb.LoansChannel do
       loan["borrower"]
       |> SharkAttack.Solana.get_user_token_mints()
       |> Enum.reject(
-        &(&1["tokenAmount"]["amount"] == "0" || &1["state"] == "frozen" ||
+        &(&1["tokenAmount"]["amount"] == "0" || &1["tokenAmount"]["amount"] > "1" ||
             &1["mint"] == loan["nftCollateralMint"])
       )
       |> Enum.map(& &1["mint"])
+
+    # borrower_loans =
+    #   SharkAttack.LoansWorker.get_all_loans()
+    #   |> Enum.filter(
+    #     &(&1["borrower"] == loan["borrower"] and
+    #         DateTime.diff(DateTime.from_unix!(&1["end"]), DateTime.utc_now(), :hour) < 24)
+    #   )
+    #   |> Enum.sort_by(& &1["end"], :asc)
 
     # SharkAttack.Helpers.do_get_request(
     #   "https://api.helius.xyz/v0/addresses/#{loan["borrower"]}/names?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"

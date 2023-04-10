@@ -18,6 +18,7 @@ import useSwr from "swr";
 
 import { useModal } from "react-hooks-use-modal";
 import { useRain } from "../hooks/useRain";
+import { SolIcon } from "../components/SolIcon";
 
 export function Borrow() {
   const { connection } = useConnection();
@@ -114,17 +115,23 @@ const CollectionCard = ({
   );
 
   return (
-    <div className="bg-[#28292B] p-4 my-2 w-full rounded flex">
-      <div className="">
-        <img className="w-16" src={collection?.logo} />
-      </div>
-
-      <div className="w-full">
-        <div className="text-center w-full text-lg font-bold mb-3">
-          {collection?.name}
+    <div className="bg-[#28292B] p-4 my-2 w-full rounded">
+      <div className="w-full flex">
+        <div className="w-1/4">
+          <div className="flex flex-col justify-center w-full text-lg font-bold mb-3 w-full">
+            <div>
+              {collection?.name}{" "}
+              <div className="flex font-light text-base">
+                {collection?.fp.toFixed(2)} <SolIcon />
+              </div>
+            </div>
+            {/* {collection?.logo && (
+              <img className="w-16" src={collection?.logo} />
+            )} */}
+          </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-around mx-auto w-full">
+        <div className="flex flex-col items-start md:flex-row justify-center mx-auto w-full flex-wrap gap-5">
           {sharkyOffers?.length > 0 && (
             <OfferDetailsBox
               open={() => setOpen("SHARKY")}
@@ -294,7 +301,7 @@ const OfferDetailsBox = ({ open, amount, duration, interest, children }) => {
   return (
     <div
       onClick={() => open()}
-      className="p-2 bg-[#242424] rounded md:w-1/3 mx-1 my-1 md:my-0 md:mx-2 cursor-pointer"
+      className="p-2 bg-[#242424] rounded mx-auto md:mx-0 w-2/3 md:w-1/3 my-1 md:my-0 cursor-pointer"
     >
       <div className="flex">
         <div className="mx-1">{children}</div>

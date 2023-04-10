@@ -59,9 +59,14 @@ export const FraktProvider = (props) => {
     for (let index = 0; index < data.length; index++) {
       const loan = data[index];
 
-      loan.end = loan.classicParams.timeBased.expiredAt;
-      loan.amountSol = loan.repayValue / LAMPORTS_PER_SOL;
       loan.platform = "FRAKT";
+      loan.amountSol = loan.repayValue / LAMPORTS_PER_SOL;
+      if (loan.loanType == "bond") {
+        loan.end = loan.bondParams?.expiredAt;
+      } else {
+        loan.end = loan.classicParams?.timeBased?.expiredAt;
+        loan.amountSol = loan.repayValue / LAMPORTS_PER_SOL;
+      }
     }
 
     setLoans(data);

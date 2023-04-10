@@ -99,7 +99,8 @@ export const SharkyModal = ({
                   selectedOffer,
                   selectedNft.mint,
                   sharkyClient,
-                  sharkyIndexes[selectedNft?.mint?.address.toString()]
+                  sharkyIndexes[selectedNft?.mint?.address.toString()],
+                  wallet.publicKey
                 )
               }
             >
@@ -115,7 +116,8 @@ export const SharkyModal = ({
                       address: new PublicKey(nft?.mintAddress?.toString()),
                     })),
                     sharkyClient,
-                    sharkyIndexes
+                    sharkyIndexes,
+                    wallet.publicKey
                   )
                 }
               >
