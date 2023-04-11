@@ -237,7 +237,7 @@ defmodule SharkAttack.Notifications.ProducerConsumer do
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Number.Delimit.number_to_delimited(amount / 1_000_000_000, 2)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(amount / 1_000_000_000)} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{

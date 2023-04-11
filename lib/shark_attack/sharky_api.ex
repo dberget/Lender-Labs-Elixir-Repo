@@ -124,7 +124,7 @@ defmodule SharkAttack.SharkyApi do
       {:error, body} ->
         Logger.error(body)
 
-        {:error, body}
+        :error
 
       body ->
         Map.get(body, "loanData", [])
