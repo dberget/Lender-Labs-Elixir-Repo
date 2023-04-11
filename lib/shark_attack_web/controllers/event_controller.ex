@@ -5,6 +5,11 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
+    SharkAttack.DiscordConsumer.send_to_webhook(
+      "me",
+      "#{event["type"]} - #{event["signature"]}"
+    )
+
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     handle_message(event)
@@ -26,7 +31,7 @@ defmodule SharkAttackWeb.EventController do
 
       SharkAttack.DiscordConsumer.send_to_webhook(
         "me",
-        "Sending loan taken #{event["signature"]}"
+        "Sent #{event["signature"]}"
       )
     end
   end

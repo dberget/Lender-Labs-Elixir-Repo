@@ -94,7 +94,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       {:user, discordId} ->
         SharkAttack.DiscordConsumer.send_to_webhook(
           "me",
-          "Should be sending loan_repaid to #{discordId} - #{event["signature"]}"
+          "Should be sending loan_repaid for extend to #{discordId} - #{event["signature"]}"
         )
 
         {:user, discordId, build_repaid_loan_embed(event)}
@@ -114,7 +114,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       {:user, discordId} ->
         SharkAttack.DiscordConsumer.send_to_webhook(
           "me",
-          "Should be sending take_loan to #{discordId} - #{event["signature"]}"
+          "Should be sending loan_taken for extend to #{discordId} - #{event["signature"]}"
         )
 
         {:user, discordId, build_take_loan_embed(event)}
@@ -137,7 +137,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       {:user, discordId} ->
         SharkAttack.DiscordConsumer.send_to_webhook(
           "me",
-          "Should be sending loan_taken from extend to #{discordId} - #{event["signature"]}"
+          "Should be sending loan_taken to #{discordId} - #{event["signature"]}"
         )
 
         {:user, discordId, build_take_loan_embed(event)}

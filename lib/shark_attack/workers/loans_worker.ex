@@ -234,6 +234,8 @@ defmodule SharkAttack.LoansWorker do
 
     :ets.delete_all_objects(:offers)
     :ets.insert(:offers, offers)
+
+    SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
   end
 
   @impl true
