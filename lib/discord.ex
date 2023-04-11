@@ -1,18 +1,3 @@
-defmodule SharkAttack.Discord do
-  use Supervisor
-
-  def start_link(args) do
-    Supervisor.start_link(__MODULE__, args, name: __MODULE__)
-  end
-
-  @impl true
-  def init(_init_arg) do
-    children = [SharkAttack.DiscordConsumer]
-
-    Supervisor.init(children, strategy: :one_for_one)
-  end
-end
-
 defmodule SharkAttack.DiscordConsumer do
   use Nostrum.Consumer
 
@@ -52,6 +37,19 @@ defmodule SharkAttack.DiscordConsumer do
     id
   end
 
+  def send_to_webhook("me", message) do
+    embed =
+      %Nostrum.Struct.Embed{}
+      |> put_title("Logging")
+      |> put_description(message)
+
+    Api.execute_webhook(
+      "1079515258529521725",
+      "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
+      %{embeds: [embed]}
+    )
+  end
+
   # anthonypacheco
   def send_to_webhook(
         "4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK",
@@ -74,19 +72,6 @@ defmodule SharkAttack.DiscordConsumer do
         avatar_url:
           "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.jpg"
       }
-    )
-  end
-
-  def send_to_webook("me", title, message) do
-    embed =
-      %Nostrum.Struct.Embed{}
-      |> put_title(title)
-      |> put_description(message)
-
-    Api.execute_webhook(
-      "1079515258529521725",
-      "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
-      %{embeds: [embed]}
     )
   end
 

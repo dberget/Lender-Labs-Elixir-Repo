@@ -27,12 +27,11 @@ defmodule SharkAttackWeb.OffersChannel do
   end
 
   defp get_lender_name(offer) do
-    name =
-      SharkAttack.Helpers.do_get_request(
-        "https://api.helius.xyz/v0/addresses/#{offer["lender"]}/names?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
-      )
-      |> Map.get("domainNames")
-      |> List.first()
+    SharkAttack.Helpers.do_get_request(
+      "https://api.helius.xyz/v0/addresses/#{offer["lender"]}/names?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
+    )
+    |> Map.get("domainNames")
+    |> List.first()
   end
 
   def push(offer) do

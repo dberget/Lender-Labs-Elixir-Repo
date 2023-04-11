@@ -29,7 +29,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def get_loan(loan) do
-    {:ok, :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten()}
+    {:ok, :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten() |> List.first()}
   end
 
   def get_collection_loans(collection) do
@@ -89,7 +89,7 @@ defmodule SharkAttack.LoansWorker do
           |> Map.get("accounts", [])
           |> Enum.at(1)
 
-        add_new_loan(new_loan)
+        GenServer.cast(__MODULE__, {:add_new_loan, new_loan, 0})
     end
   end
 
@@ -101,7 +101,7 @@ defmodule SharkAttack.LoansWorker do
       |> Map.get("accounts")
       |> Enum.at(4)
 
-    add_new_loan(loanAddress)
+    GenServer.cast(__MODULE__, {:add_new_loan, loanAddress, 0})
   end
 
   def update_loan(loan, "OFFER_LOAN") do
@@ -111,7 +111,7 @@ defmodule SharkAttack.LoansWorker do
     |> Enum.each(fn offer ->
       %{"toUserAccount" => loanAddress} = hd(offer)
 
-      add_new_offer(loanAddress)
+      GenServer.cast(__MODULE__, {:add_new_offer, loanAddress, 0})
     end)
   end
 
@@ -125,7 +125,7 @@ defmodule SharkAttack.LoansWorker do
     case SharkyApi.get_loan(loanAddress) do
       nil ->
         if attempts < 5 do
-          Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
+          Logger.info("Loan not found: #{loanAddress} - #{attempts} - retrying in 1 second")
 
           Process.send_after(__MODULE__, {:add_new_loan, loanAddress, attempts + 1}, 1000)
         else
@@ -134,7 +134,7 @@ defmodule SharkAttack.LoansWorker do
 
       {:error, %Mint.TransportError{reason: :closed}} ->
         if attempts < 5 do
-          Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
+          Logger.info("Loan not found: #{loanAddress} - #{attempts} -  retrying in 1 second")
 
           Process.send_after(__MODULE__, {:add_new_loan, loanAddress, attempts + 1}, 1000)
         else
@@ -152,18 +152,18 @@ defmodule SharkAttack.LoansWorker do
     case SharkyApi.get_loan(loanAddress) do
       nil ->
         if attempts < 5 do
-          Logger.info("Offer not found: #{loanAddress} - retrying in 1 second")
+          Logger.info("Offer not found: #{loanAddress} - #{attempts} - retrying in 1 second")
 
-          Process.send_after(__MODULE__, {:add_new_offer, loanAddress, attempts + 1}, 1000)
+          Process.send_after(self(), {:add_new_offer, loanAddress, attempts + 1}, 1000)
         else
           Logger.error("Offer not found: #{loanAddress}")
         end
 
       {:error, %Mint.TransportError{reason: :closed}} ->
         if attempts < 5 do
-          Logger.info("Offer not found: #{loanAddress} - retrying in 1 second")
+          Logger.info("Offer not found: #{loanAddress} - #{attempts} - retrying in 1 second")
 
-          Process.send_after(__MODULE__, {:add_new_offer, loanAddress, attempts + 1}, 1000)
+          Process.send_after(self(), {:add_new_offer, loanAddress, attempts + 1}, 1000)
         else
           Logger.error("Offer not found: #{loanAddress}")
         end
@@ -206,7 +206,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def flush() do
-    Logger.info("Flushing Loans")
+    SharkAttack.DiscordConsumer.send_to_webhook("me", "Flushing loans")
 
     loanData = SharkyApi.get_all_loan_data()
 
@@ -262,6 +262,22 @@ defmodule SharkAttack.LoansWorker do
 
   @impl true
   def handle_info(:fetch, state) do
+    {:noreply, state}
+  end
+
+  def handle_cast({:add_new_offer, loanAddress, attempts}, state) do
+    Logger.info("Attempt #{attempts} to add new offer: #{loanAddress}")
+
+    add_new_offer(loanAddress, attempts)
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:add_new_loan, loanAddress, attempts}, state) do
+    Logger.info("Aattempting to add new loan: #{loanAddress}")
+
+    add_new_loan(loanAddress, attempts)
+
     {:noreply, state}
   end
 

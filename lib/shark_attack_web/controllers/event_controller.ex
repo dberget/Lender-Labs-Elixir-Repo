@@ -2,19 +2,32 @@ defmodule SharkAttackWeb.EventController do
   use SharkAttackWeb, :controller
   require Logger
 
-  @dao_webook_addresses ["4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK"]
-
   def index(conn, params) do
     event = Map.get(params, "_json") |> hd
 
-    queue_message(event)
     SharkAttack.LoansWorker.update_loan(event, event["type"])
+
+    handle_message(event)
 
     conn
     |> json(%{message: "ok"})
   end
 
-  defp queue_message(event) do
-    SharkAttack.Notifications.Producer.add(event)
+  defp handle_message(event) do
+    message =
+      SharkAttack.Notifications.NotificationHelpers.build_message(
+        event["source"],
+        event["type"],
+        event
+      )
+
+    if message do
+      SharkAttack.Notifications.NotificationHelpers.send_message(message)
+
+      SharkAttack.DiscordConsumer.send_to_webhook(
+        "me",
+        "Sending loan taken #{event["signature"]}"
+      )
+    end
   end
 end

@@ -9,6 +9,14 @@ config :shark_attack, SharkAttack.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+config :shark_attack, SharkAttack.Scheduler,
+  jobs: [
+    {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
+    {"*/12 * * * *", {SharkAttack.LoansWorker, :flush, []}},
+    {"*/60 * * * *", {SharkAttack.Stats, :update_loans, []}},
+    {"*/8 * * * *", {SharkAttack.Notifications, :foreclosures, []}}
+  ]
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

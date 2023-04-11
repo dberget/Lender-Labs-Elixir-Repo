@@ -20,12 +20,12 @@ defmodule SharkAttack.Application do
       SharkAttack.Vault,
       SharkAttack.Discord,
       SharkAttack.LoansWorker,
-      SharkAttack.NotificationWorker,
       SharkAttack.FloorWorker,
-      SharkAttack.Scheduler,
-      {SharkAttack.Notifications.Producer, []},
-      {SharkAttack.Notifications.ProducerConsumer, []},
-      {SharkAttack.Notifications.Consumer, []}
+      SharkAttack.Scheduler
+      # {SharkAttack.Notifications.Producer, []},
+      # {SharkAttack.Notifications.ProducerConsumer, []},
+      # Supervisor.child_spec({SharkAttack.Notifications.Consumer, []}, id: :consumer_1),
+      # Supervisor.child_spec({SharkAttack.Notifications.Consumer, []}, id: :consumer_2)
       # {SharkAttack.SolanaWS, name: SharkAttack.SolanaWS}
       # Start a worker by calling: SharkAttack.Worker.start_link(arg)
       # {SharkAttack.Worker, arg}

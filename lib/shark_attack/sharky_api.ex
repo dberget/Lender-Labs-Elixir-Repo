@@ -42,7 +42,7 @@ defmodule SharkAttack.SharkyApi do
         {:error, body}
 
       body ->
-        Map.get(body, "loanData", [])
+        Map.get(body, "loanData", %{})
     end
   end
 
