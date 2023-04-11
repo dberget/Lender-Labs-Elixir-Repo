@@ -18,7 +18,7 @@ defmodule SharkAttack.FloorWorker do
 
   @impl true
   def init(state) do
-    :timer.send_after(:timer.seconds(1), :create_table)
+    create_and_hydrate_table()
 
     :timer.send_interval(:timer.minutes(@floor_fetch_interval), :fetch)
 
@@ -44,13 +44,6 @@ defmodule SharkAttack.FloorWorker do
   @impl true
   def handle_info(:fetch, state) do
     update_floor_prices()
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(:create_table, state) do
-    create_and_hydrate_table()
 
     {:noreply, state}
   end

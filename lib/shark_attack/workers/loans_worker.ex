@@ -77,7 +77,7 @@ defmodule SharkAttack.LoansWorker do
 
     case closed_loan do
       nil ->
-        Logger.info("Unknown loan: #{loan}")
+        Logger.info("Unknown loan")
 
       _ ->
         GenServer.cast(__MODULE__, {:delete, closed_loan})
@@ -127,7 +127,7 @@ defmodule SharkAttack.LoansWorker do
         if attempts < 5 do
           Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
 
-          Process.send_after(self(), {:add_new_loan, loanAddress, attempts + 1}, 1000)
+          Process.send_after(__MODULE__, {:add_new_loan, loanAddress, attempts + 1}, 1000)
         else
           Logger.error("Loan not found: #{loanAddress}")
         end
@@ -136,7 +136,7 @@ defmodule SharkAttack.LoansWorker do
         if attempts < 5 do
           Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
 
-          Process.send_after(self(), {:add_new_loan, loanAddress, attempts + 1}, 1000)
+          Process.send_after(__MODULE__, {:add_new_loan, loanAddress, attempts + 1}, 1000)
         else
           Logger.error("Loan not found: #{loanAddress}")
         end
@@ -154,18 +154,18 @@ defmodule SharkAttack.LoansWorker do
         if attempts < 5 do
           Logger.info("Offer not found: #{loanAddress} - retrying in 1 second")
 
-          Process.send_after(self(), {:add_new_offer, loanAddress, attempts + 1}, 1000)
+          Process.send_after(__MODULE__, {:add_new_offer, loanAddress, attempts + 1}, 1000)
         else
           Logger.error("Offer not found: #{loanAddress}")
         end
 
       {:error, %Mint.TransportError{reason: :closed}} ->
         if attempts < 5 do
-          Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
+          Logger.info("Offer not found: #{loanAddress} - retrying in 1 second")
 
-          Process.send_after(self(), {:add_new_loan, loanAddress, attempts + 1}, 1000)
+          Process.send_after(__MODULE__, {:add_new_offer, loanAddress, attempts + 1}, 1000)
         else
-          Logger.error("Loan not found: #{loanAddress}")
+          Logger.error("Offer not found: #{loanAddress}")
         end
 
       loanData ->
@@ -239,10 +239,30 @@ defmodule SharkAttack.LoansWorker do
   @impl true
   def init([]) do
     generate_tables()
-
     flush()
 
     {:ok, []}
+  end
+
+  def handle_info({:add_new_offer, loanAddress, attempts}, state) do
+    Logger.info("Reattempting to add new offer: #{loanAddress}")
+
+    add_new_offer(loanAddress, attempts)
+
+    {:noreply, state}
+  end
+
+  def handle_info({:add_new_loan, loanAddress, attempts}, state) do
+    Logger.info("Reattempting to add new loan: #{loanAddress}")
+
+    add_new_loan(loanAddress, attempts)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:fetch, state) do
+    {:noreply, state}
   end
 
   @impl true
@@ -260,11 +280,6 @@ defmodule SharkAttack.LoansWorker do
     SharkAttackWeb.LoansChannel.delete(key)
     SharkAttackWeb.OffersChannel.delete(key)
 
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(:fetch, state) do
     {:noreply, state}
   end
 
