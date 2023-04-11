@@ -132,6 +132,15 @@ defmodule SharkAttack.LoansWorker do
           Logger.error("Loan not found: #{loanAddress}")
         end
 
+      {:error, %Mint.TransportError{reason: :closed}} ->
+        if attempts < 5 do
+          Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
+
+          Process.send_after(self(), {:add_new_loan, loanAddress, attempts + 1}, 1000)
+        else
+          Logger.error("Loan not found: #{loanAddress}")
+        end
+
       loan ->
         insert_loan(loan)
     end
@@ -150,6 +159,15 @@ defmodule SharkAttack.LoansWorker do
           Logger.error("Offer not found: #{loanAddress}")
         end
 
+      {:error, %Mint.TransportError{reason: :closed}} ->
+        if attempts < 5 do
+          Logger.info("Loan not found: #{loanAddress} - retrying in 1 second")
+
+          Process.send_after(self(), {:add_new_loan, loanAddress, attempts + 1}, 1000)
+        else
+          Logger.error("Loan not found: #{loanAddress}")
+        end
+
       loanData ->
         :ets.insert(:offers, {loanAddress, Map.drop(loanData, ["rawData"])})
 
@@ -164,6 +182,10 @@ defmodule SharkAttack.LoansWorker do
 
   def remove_loan(loanAddress) do
     GenServer.cast(__MODULE__, {:delete, loanAddress})
+  end
+
+  def insert_loan(nil) do
+    nil
   end
 
   def insert_loan(loan) do
