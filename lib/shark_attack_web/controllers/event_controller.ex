@@ -14,8 +14,6 @@ defmodule SharkAttackWeb.EventController do
 
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
-    # handle_message(event)
-
     conn
     |> json(%{message: "ok"})
   end

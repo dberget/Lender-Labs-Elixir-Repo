@@ -28,7 +28,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   def check_is_user_and_subscribed?(address, setting) do
     with %User{} = user <-
            SharkAttack.Users.get_user_from_address!(
-             "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+             address,
              :user_settings
            ),
          %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
