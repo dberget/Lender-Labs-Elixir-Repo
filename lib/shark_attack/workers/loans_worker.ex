@@ -32,6 +32,10 @@ defmodule SharkAttack.LoansWorker do
     {:ok, :ets.match(:collection_loans, {:_, loan, :_, :"$1"}) |> List.flatten() |> List.first()}
   end
 
+  def get_collection_loans(nil) do
+    nil
+  end
+
   def get_collection_loans(collection) do
     :ets.lookup(:collection_loans, collection)
     |> Enum.map(fn {_key, _loan, _lender, value} -> value end)

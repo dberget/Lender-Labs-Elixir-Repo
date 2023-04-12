@@ -145,13 +145,15 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     amount = parse_amount(loan)
     name = parse_name(nft, c)
 
+    pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
+
     embed = %Nostrum.Struct.Embed{
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
         url: get_thumbnail_url(c)
       },
       title: "**#{name}** Foreclosure",
       color: 5_815_448,
-      url: "https://solscan.io/account/#{loan.loan}",
+      url: "https://solscan.io/account/#{pubkey}",
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",

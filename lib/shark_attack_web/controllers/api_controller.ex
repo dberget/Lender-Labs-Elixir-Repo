@@ -169,20 +169,8 @@ defmodule SharkAttackWeb.ApiController do
     loans = SharkAttack.SharkyApi.get_lender_loans(params["lender"])
     citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
 
-    takenLoans =
-      [
-        Enum.filter(loans, fn l -> l["state"] == "taken" end)
-        | Enum.filter(citrusLoans, fn l -> l["state"] == "active" end)
-      ]
-      |> List.flatten()
-
-    offers =
-      [
-        Enum.filter(loans, fn l -> l["state"] == "offered" end)
-        | Enum.filter(citrusLoans, fn l -> l["state"] == "waitingForBorrower" end)
-      ]
-      |> List.flatten()
-      |> Enum.sort_by(& &1["offerTime"], :asc)
+    takenLoans = get_active_loans(loans, citrusLoans)
+    offers = get_active_offers(loans, citrusLoans)
 
     loanSummary = %{
       totalSolLoaned: Enum.map(takenLoans, fn l -> l["amountSol"] end) |> Enum.sum(),
@@ -215,31 +203,38 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_collection(conn, params) do
-    collection = SharkAttack.Collections.get_collection(params["collection_id"])
+    case SharkAttack.Collections.get_collection(params["collection_id"]) do
+      nil ->
+        conn
+        |> put_status(404)
+        |> json(%{error: "Collection not found"})
 
-    loans_and_offers = SharkAttack.LoansWorker.get_collection_loans(collection.sharky_address)
+      collection ->
+        loans_and_offers =
+          SharkAttack.LoansWorker.get_collection_loans(Map.get(collection, :sharky_address))
 
-    offers =
-      loans_and_offers
-      |> Enum.filter(&(&1["state"] == "offered"))
-      |> Enum.sort_by(& &1["amountSol"], :desc)
+        offers =
+          loans_and_offers
+          |> Enum.filter(&(&1["state"] == "offered"))
+          |> Enum.sort_by(& &1["amountSol"], :desc)
 
-    loans =
-      loans_and_offers
-      |> Enum.filter(&(&1["state"] == "taken"))
-      |> Enum.sort_by(& &1["start"], :desc)
+        loans =
+          loans_and_offers
+          |> Enum.filter(&(&1["state"] == "taken"))
+          |> Enum.sort_by(& &1["start"], :desc)
 
-    floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
+        floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
 
-    conn
-    |> json(%{
-      collection: %{
-        collection
-        | fp: floor_price,
-          offers: offers,
-          loans: loans
-      }
-    })
+        conn
+        |> json(%{
+          collection: %{
+            collection
+            | fp: floor_price,
+              offers: offers,
+              loans: loans
+          }
+        })
+    end
   end
 
   def get_collection_offers(conn, params) do
@@ -590,5 +585,54 @@ defmodule SharkAttackWeb.ApiController do
         conn
         |> json(%{message: "Error, please try again"})
     end
+  end
+
+  defp get_active_loans(sharkyLoans, citrusLoans) do
+    [
+      get_active_sharky_loans(sharkyLoans)
+      | get_active_citrus_loans(citrusLoans)
+    ]
+    |> List.flatten()
+  end
+
+  defp get_active_sharky_loans(loans) when is_list(loans) do
+    Enum.filter(loans, fn l -> l["state"] == "taken" end)
+  end
+
+  defp get_active_sharky_loans(_) do
+    []
+  end
+
+  defp get_active_citrus_loans(loans) when is_list(loans) do
+    Enum.filter(loans, fn l -> l["state"] == "active" end)
+  end
+
+  defp get_active_citrus_loans(_) do
+    []
+  end
+
+  defp get_active_offers(sharkyOffers, citrusOffers) do
+    [
+      get_active_sharky_offers(sharkyOffers)
+      | get_active_citrus_offers(citrusOffers)
+    ]
+    |> List.flatten()
+    |> Enum.sort_by(& &1["offerTime"], :asc)
+  end
+
+  defp get_active_sharky_offers(offers) when is_list(offers) do
+    Enum.filter(offers, fn l -> l["state"] == "offered" end)
+  end
+
+  defp get_active_sharky_offers(_) do
+    []
+  end
+
+  defp get_active_citrus_offers(offers) when is_list(offers) do
+    Enum.filter(offers, fn l -> l["state"] == "waitingForBorrower" end)
+  end
+
+  defp get_active_citrus_offers(_) do
+    []
   end
 end

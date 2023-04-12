@@ -54,11 +54,16 @@ defmodule SharkAttack.Stats do
   end
 
   def update_citrus_history_safe(pk) do
-    citrusLoans =
-      SharkAttack.SharkyApi.get_lender_loans(pk, "citrus")
-      |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
-      |> Enum.map(&format_historical_citrus_loan/1)
-      |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+    case SharkAttack.SharkyApi.get_lender_loans(pk, "citrus") do
+      {:error, _} ->
+        []
+
+      loans ->
+        loans
+        |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
+        |> Enum.map(&format_historical_citrus_loan/1)
+        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+    end
   end
 
   def save_lender_history(pk) do

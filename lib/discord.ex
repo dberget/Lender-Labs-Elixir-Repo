@@ -43,6 +43,7 @@ defmodule SharkAttack.DiscordConsumer do
       |> put_title("Logging")
       |> put_description(message)
 
+    # LenderLabs
     Api.execute_webhook(
       "1079515258529521725",
       "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
@@ -66,6 +67,18 @@ defmodule SharkAttack.DiscordConsumer do
     Api.execute_webhook(
       "1078718321370865808",
       "tPsSVIJ7VEKGz635sRrBzdXOHUgZVksvKHfcr4q4iZEzZAmbbkvMGxjZy45SzB1a0NC9",
+      %{
+        embeds: [embed],
+        username: "Lender Labs Foreclosure Bot",
+        avatar_url:
+          "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.jpg"
+      }
+    )
+
+    # Zaker - ChestFi
+    Api.execute_webhook(
+      "1095507780749758585",
+      "hl8z0pQ2AQTmbqOeS8Kf3rIHdKL9OmMlYR_LhaN8R4TfLbrw_Z73VE0mzIKTsAoWMCK3",
       %{
         embeds: [embed],
         username: "Lender Labs Foreclosure Bot",
