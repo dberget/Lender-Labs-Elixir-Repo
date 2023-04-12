@@ -44,32 +44,40 @@ defmodule SharkAttack.LoansWorker do
     end)
   end
 
-  def update_loan(loan, "REPAY_LOAN") do
-    loanAddress = Map.get(loan, "instructions") |> List.last() |> Map.get("accounts") |> hd
-
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
-  end
-
-  def update_loan(loan, "RESCIND_LOAN") do
-    loanAddress = Map.get(loan, "instructions") |> hd() |> Map.get("accounts") |> hd
-
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
-  end
-
-  def update_loan(loan, "FORECLOSE_LOAN") do
+  def update_loan(event, "REPAY_LOAN") do
     loanAddress =
-      loan
+      Map.get(event, "instructions") |> Enum.at(1) |> Map.get("accounts", []) |> List.first()
+
+    loan = SharkAttack.Loans.get_loan(loanAddress)
+
+    SharkAttack.Events.send_event("REPAY_LOAN", loan)
+
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
+  end
+
+  def update_loan(event, "RESCIND_LOAN") do
+    loanAddress = Map.get(event, "instructions") |> hd() |> Map.get("accounts") |> hd
+
+    GenServer.cast(__MODULE__, {:delete, loanAddress})
+  end
+
+  def update_loan(event, "FORECLOSE_LOAN") do
+    loanAddress =
+      event
       |> Map.get("instructions")
       |> Enum.at(1)
       |> Map.get("accounts", [])
       |> List.first()
 
+    loan = SharkAttack.Loans.get_loan(loanAddress)
+    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
+
     GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
-  def update_loan(loan, "UNKNOWN") do
+  def update_loan(event, "UNKNOWN") do
     closed_loan =
-      loan
+      event
       |> Map.get("instructions")
       |> Enum.at(1)
       |> Map.get("accounts", [])
@@ -80,10 +88,14 @@ defmodule SharkAttack.LoansWorker do
         Logger.info("Unknown loan")
 
       _ ->
+        loan = SharkAttack.Loans.get_loan(closed_loan)
+
+        SharkAttack.Events.send_event("REPAY_LOAN", loan)
+
         GenServer.cast(__MODULE__, {:delete, closed_loan})
 
         new_loan =
-          loan
+          event
           |> Map.get("instructions")
           |> Enum.at(1)
           |> Map.get("accounts", [])
@@ -142,6 +154,8 @@ defmodule SharkAttack.LoansWorker do
         end
 
       loan ->
+        Logger.info("Inserting #{loanAddress} after #{attempts} attempts.")
+
         insert_loan(loan)
     end
   end
@@ -197,6 +211,9 @@ defmodule SharkAttack.LoansWorker do
     :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
 
     SharkAttackWeb.LoansChannel.push(loan)
+
+    SharkAttack.Events.send_event("TAKE_LOAN", loan)
+
     SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
 
     :ets.insert(
@@ -276,7 +293,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def handle_cast({:add_new_loan, loanAddress, attempts}, state) do
-    Logger.info("Aattempting to add new loan: #{loanAddress}")
+    Logger.info("Attempting to add new loan: #{loanAddress}")
 
     add_new_loan(loanAddress, attempts)
 

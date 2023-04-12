@@ -1,4 +1,6 @@
 defmodule SharkAttack.Notifications.NotificationHelpers do
+  require Logger
+
   alias SharkAttack.Collections
   alias SharkAttack.Collections.Nft
   alias SharkAttack.Accounts.{User, UserSettings}
@@ -26,7 +28,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   def check_is_user_and_subscribed?(address, setting) do
     with %User{} = user <-
            SharkAttack.Users.get_user_from_address!(
-             address,
+             "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
              :user_settings
            ),
          %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
@@ -48,119 +50,97 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     end
   end
 
-  def build_message("SHARKY_FI", "REPAY_LOAN", event) do
-    %{"toUserAccount" => to} = hd(event["nativeTransfers"])
-
+  def build_message("REPAY_LOAN", loan) do
     case check_is_user_and_subscribed?(
-           to,
+           loan.lender,
            :loan_repaid
          ) do
       false ->
         nil
 
       {:dao, address} ->
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Should be sending loan_repaid to dao - #{event["signature"]}"
-        )
-
-        {:dao, address, build_repaid_loan_embed(event)}
+        {:dao, address, build_repaid_loan_embed(loan)}
 
       {:user, discordId} ->
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Should be sending loan_repaid to #{discordId} - #{event["signature"]}"
-        )
-
-        {:user, discordId, build_repaid_loan_embed(event)}
+        {:user, discordId, build_repaid_loan_embed(loan)}
     end
   end
 
-  def build_message("SHARKY_FI", "UNKNOWN", event) do
-    repaid_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(3)
-    new_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(4)
+  def build_message("UNKNOWN", loan) do
+    Logger.warn("Unknown loan: #{inspect(loan)}")
+    # repaid_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(3)
+    # new_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(4)
 
+    # loan_address =
+    #   event
+    #   |> Map.get("instructions")
+    #   |> Enum.at(1)
+    #   |> Map.get("accounts", [])
+    #   |> Enum.at(1)
+
+    # case check_is_user_and_subscribed?(
+    #        repaid_lender,
+    #        :loan_repaid
+    #      ) do
+    #   false ->
+    #     nil
+
+    #   {:dao, address} ->
+    #     {:dao, address, build_repaid_loan_embed(event)}
+    #     |> SharkAttack.Notifications.NotificationHelpers.send_message()
+
+    #   {:user, discordId} ->
+    #     {:user, discordId, build_repaid_loan_embed(event)}
+    #     |> SharkAttack.Notifications.NotificationHelpers.send_message()
+    # end
+
+    # case check_is_user_and_subscribed?(
+    #        new_lender,
+    #        :loan_taken
+    #      ) do
+    #   false ->
+    #     nil
+
+    #   {:dao, address} ->
+    #     {:dao, address, build_take_loan_embed(event)}
+
+    #   {:user, discordId} ->
+    #     {:user, discordId, build_take_loan_embed(event)}
+    # end
+  end
+
+  def build_message("TAKE_LOAN", loan) do
     case check_is_user_and_subscribed?(
-           repaid_lender,
-           :loan_repaid
-         ) do
-      false ->
-        nil
-
-      {:dao, address} ->
-        {:dao, address, build_repaid_loan_embed(event)}
-        |> SharkAttack.Notifications.NotificationHelpers.send_message()
-
-      {:user, discordId} ->
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Should be sending loan_repaid for extend to #{discordId} - #{event["signature"]}"
-        )
-
-        {:user, discordId, build_repaid_loan_embed(event)}
-        |> SharkAttack.Notifications.NotificationHelpers.send_message()
-    end
-
-    case check_is_user_and_subscribed?(
-           new_lender,
+           Map.get(loan, "lender"),
            :loan_taken
          ) do
       false ->
         nil
 
       {:dao, address} ->
-        {:dao, address, build_take_loan_embed(event)}
+        {:dao, address, build_take_loan_embed(loan)}
 
       {:user, discordId} ->
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Should be sending loan_taken for extend to #{discordId} - #{event["signature"]}"
-        )
-
-        {:user, discordId, build_take_loan_embed(event)}
+        {:user, discordId, build_take_loan_embed(loan)}
     end
   end
 
-  def build_message("SHARKY_FI", "TAKE_LOAN", event) do
-    from = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> List.first()
+  def build_message("FORECLOSE_LOAN", loan) do
+    c =
+      case SharkAttack.Collections.get_collection(loan.orderBook) do
+        nil ->
+          %Collections.Collection{
+            id: nil,
+            name: "Unknown",
+            logo: nil
+          }
 
-    case check_is_user_and_subscribed?(
-           from,
-           :loan_taken
-         ) do
-      false ->
-        nil
+        c ->
+          c
+      end
 
-      {:dao, address} ->
-        {:dao, address, build_take_loan_embed(event)}
-
-      {:user, discordId} ->
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Should be sending loan_taken to #{discordId} - #{event["signature"]}"
-        )
-
-        {:user, discordId, build_take_loan_embed(event)}
-    end
-  end
-
-  def build_message("SHARKY_FI", "FORECLOSE_LOAN", event) do
-    loan_address =
-      event
-      |> Map.get("instructions")
-      |> Enum.at(1)
-      |> Map.get("accounts")
-      |> List.first()
-
-    %{"mint" => mint} = hd(event["tokenTransfers"])
-
-    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
-
-    c = SharkAttack.Collections.get_collection_from_mint(mint)
-
+    nft = SharkAttack.Nfts.get_nft_by_mint(loan.nftCollateralMint)
     fp = SharkAttack.FloorWorker.get_floor_price(c) |> Number.Delimit.number_to_delimited()
-
-    loan = SharkAttack.Loans.get_loan(loan_address)
 
     amount = parse_amount(loan)
     name = parse_name(nft, c)
@@ -170,8 +150,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         url: get_thumbnail_url(c)
       },
       title: "**#{name}** Foreclosure",
-      url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
+      url: "https://solscan.io/account/#{loan.loan}",
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
@@ -189,17 +169,13 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     {:foreclosure, embed}
   end
 
-  def build_message(_platform, _, _event) do
+  def build_message(_, _event) do
     nil
   end
 
-  def build_take_loan_embed(event) do
-    %{"nativeBalanceChange" => amount} = hd(event["accountData"])
-
-    %{"mint" => mint} = hd(event["tokenTransfers"])
-
+  def build_take_loan_embed(loan) do
     c =
-      case SharkAttack.Collections.get_collection_from_mint(mint) do
+      case SharkAttack.Collections.get_collection(Map.get(loan, "orderBook")) do
         nil ->
           %Collections.Collection{
             id: nil,
@@ -211,7 +187,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           c
       end
 
-    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
+    nft = SharkAttack.Nfts.get_nft_by_mint(Map.get(loan, "nftCollateralMint"))
     fp = SharkAttack.FloorWorker.get_floor_price(c) |> Number.Delimit.number_to_delimited()
 
     %Nostrum.Struct.Embed{
@@ -222,13 +198,13 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
         url: get_thumbnail_url(c)
       },
+      url: "https://solscan.io/account/#{Map.get(loan, "pubkey")}",
       title: "**#{parse_name(nft, c)}** Offer Accepted",
-      url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Number.Delimit.number_to_delimited(amount / 1_000_000_000)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(parse_amount(loan))} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
@@ -236,12 +212,9 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     }
   end
 
-  defp build_repaid_loan_embed(event) do
-    %{"amount" => amount} = hd(event["nativeTransfers"])
-    %{"mint" => mint} = hd(event["tokenTransfers"])
-
+  defp build_repaid_loan_embed(loan) do
     c =
-      case SharkAttack.Collections.get_collection_from_mint(mint) do
+      case SharkAttack.Collections.get_collection(loan.orderBook) do
         nil ->
           %Collections.Collection{
             id: nil,
@@ -253,12 +226,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           c
       end
 
-    nft = SharkAttack.Nfts.get_nft_by_mint(mint)
-
-    loan_address =
-      Map.get(event, "instructions") |> List.last() |> Map.get("accounts") |> List.first()
-
-    loan = SharkAttack.Loans.get_loan(loan_address)
+    nft = SharkAttack.Nfts.get_nft_by_mint(Map.get(loan, :nftCollateralMint))
 
     duration = :os.system_time(:second) - Map.get(loan, :start, 0)
 
@@ -271,12 +239,12 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         url: get_thumbnail_url(c)
       },
       title: "**#{parse_name(nft, c)}** Loan Repaid",
-      url: "https://solscan.io/tx/#{event["signature"]}",
       color: 5_815_448,
+      url: "https://solscan.io/account/#{loan.pubkey}",
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",
-          value: "#{Number.Delimit.number_to_delimited(amount / 1_000_000_000)} ◎",
+          value: "#{Number.Delimit.number_to_delimited(parse_amount(loan))} ◎",
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
@@ -303,6 +271,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   def parse_amount(%{amountSol: amount, earnings: profit}) do
+    amount + profit + profit * 0.16
+  end
+
+  def parse_amount(%{"amountSol" => amount, "earnings" => profit}) do
     amount + profit + profit * 0.16
   end
 

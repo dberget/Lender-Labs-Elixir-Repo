@@ -246,4 +246,16 @@ defmodule SharkAttack.Notifications do
     |> SharkAttack.Notifications.EventNotification.changeset(params)
     |> SharkAttack.Repo.insert()
   end
+
+  def get_notification!(id) do
+    SharkAttack.Repo.get!(SharkAttack.Notifications.EventNotification, id)
+  end
+
+  def mark_notification_as_sent(id) do
+    notification = SharkAttack.Notifications.get_notification!(id)
+
+    notification
+    |> SharkAttack.Notifications.EventNotification.changeset(%{sent: true})
+    |> SharkAttack.Repo.update()
+  end
 end

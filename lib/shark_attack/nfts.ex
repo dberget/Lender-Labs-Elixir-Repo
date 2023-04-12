@@ -9,6 +9,10 @@ defmodule SharkAttack.Nfts do
     |> Repo.update()
   end
 
+  def get_nft_by_mint(nil) do
+    nil
+  end
+
   def get_nft_by_mint(mint) do
     Repo.get_by(Nft, mint: mint)
   end
