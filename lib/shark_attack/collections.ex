@@ -9,11 +9,63 @@ defmodule SharkAttack.Collections do
     Repo.all(Collection)
   end
 
-  def read_me_data() do
-    read_json_file("./sharky-me.json")
-    |> Enum.reject(&Map.get(&1, "disabled", false))
-    |> Enum.map(&%{name: &1["collectionName"], me_slug: &1["me_slug"]})
-    |> Enum.map(&SharkAttack.Collections.get_and_update_collection/1)
+  def update_me_data() do
+    collections =
+      list_collections()
+      |> Enum.filter(&is_nil(&1.me_slug))
+
+    nft =
+      collections
+      |> Enum.take(5)
+      |> Enum.map(fn c ->
+        nft = SharkAttack.Nfts.get_collection_nfts(c.id) |> List.first()
+
+        query = """
+        query Mints($tokenMints: [String!]!) {
+          mints(tokenMints: $tokenMints) {
+            collection {
+              slugMe
+              imageUri
+            }
+          }
+        }
+        """
+
+        post_data =
+          %{
+            query: query,
+            variables: %{tokenMints: [nft.mint]}
+          }
+          |> Jason.encode!()
+
+        slug =
+          Finch.build(
+            :post,
+            "https://api.tensor.so/graphql",
+            [
+              {"content-type", "application/json"},
+              {"X-TENSOR-API-KEY", "e7b23445-cb60-4faa-8939-d3c571cd2fd7"}
+            ],
+            post_data
+          )
+          |> Finch.request(SharkAttackWeb.Finch)
+          |> parse_res()
+
+        collection =
+          Map.get(slug, "data", %{})
+          |> Map.get("mints", [])
+          |> List.first()
+          |> Map.get("collection", nil)
+
+        update_collection(c, %{
+          me_slug: Map.get(collection, "slugMe", nil),
+          logo: Map.get(collection, "imageUri", nil)
+        })
+      end)
+  end
+
+  def parse_res({:ok, %{status: 200, body: body}}) do
+    body |> Jason.decode!()
   end
 
   def read_json_file(file_path) do
