@@ -9,6 +9,29 @@ defmodule SharkAttack.Collections do
     Repo.all(Collection)
   end
 
+  def read_me_data() do
+    read_json_file("./sharky-me.json")
+    |> Enum.reject(&Map.get(&1, "disabled", false))
+    |> Enum.map(&%{name: &1["collectionName"], me_slug: &1["me_slug"]})
+    |> Enum.map(&SharkAttack.Collections.get_and_update_collection/1)
+  end
+
+  def read_json_file(file_path) do
+    case File.read(file_path) do
+      {:ok, contents} ->
+        case Jason.decode!(contents) do
+          json ->
+            json
+
+          {:error, _} ->
+            raise "Failed to decode JSON in file: #{file_path}"
+        end
+
+      {:error, _} ->
+        raise "Failed to read file: #{file_path}"
+    end
+  end
+
   def list_collections(%{sharky: "1"}) do
     query = from(c in Collection, where: not is_nil(c.sharky_address))
 

@@ -17,7 +17,8 @@ defmodule SharkAttack.Collections.Collection do
              :apy,
              :offers,
              :fp,
-             :nfts
+             :nfts,
+             :me_slug
            ]}
   schema "collections" do
     field(:name, :string)
@@ -29,6 +30,7 @@ defmodule SharkAttack.Collections.Collection do
     field(:rain_fi_id, :string)
     field(:duration, :integer)
     field(:apy, :integer)
+    field(:me_slug, :string)
 
     field(:hyperspace_id, :string)
 
@@ -36,7 +38,7 @@ defmodule SharkAttack.Collections.Collection do
     field(:offers, :map, virtual: true)
     field(:fp, :integer, virtual: true)
 
-    has_many :nfts, SharkAttack.Collections.Nft
+    has_many(:nfts, SharkAttack.Collections.Nft)
     timestamps()
   end
 
@@ -52,6 +54,7 @@ defmodule SharkAttack.Collections.Collection do
       :apy,
       :duration,
       :logo,
+      :me_slug,
       :rain_fi_id
     ])
     |> validate_required([])

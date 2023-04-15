@@ -1,4 +1,4 @@
-defmodule SharkAttack.Hyperspace do
+defmodule SharkAttack.Tensor do
   require Logger
 
   @magic_eden_instance_id "E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe"
@@ -7,42 +7,80 @@ defmodule SharkAttack.Hyperspace do
   def get_floor_prices([]), do: []
 
   def get_floor_prices(tokens) do
-    solanalysis_ids =
+    slugs =
       tokens
-      |> Enum.reject(&is_nil(&1.hyperspace_id))
-      |> Enum.map(& &1.hyperspace_id)
-      |> Enum.chunk_every(15)
+      |> Enum.reject(&is_nil(&1.me_slug))
+      |> Enum.map(& &1.me_slug)
+      |> Enum.chunk_every(30)
 
-    url = "https://app.hyperspace.xyz/graphql"
+    url = "https://api.tensor.so/graphql"
 
     query = """
-    query getProjectAttributesQuery($conditions: GetProjectStatsCondition, $orderBy: [OrderConfig!], $paginationInfo: PaginationConfig) {
-      getProjectStats(conditions: $conditions, order_by: $orderBy, pagination_info: $paginationInfo) {
-        project_stats {
-          project_id
-          floor_price
-          project {
-            img_url
+    query CollectionsStats(
+      $slugs: [String!],
+      $slugsMe: [String!],
+      $slugsDisplay: [String!],
+      $ids: [String!],
+      $sortBy: String,
+      $page: Int,
+      $limit: Int,
+    ) {
+      allCollections(
+        slugs: $slugs,
+        slugsMe: $slugsMe,
+        slugsDisplay: $slugsDisplay,
+        ids: $ids,
+        sortBy: $sortBy,
+        page: $page,
+        limit: $limit
+      ) {
+        total
+        collections {
+          id # Used to find corresponding whitelist PDA (`uuid`) if using SDK
+          slug # internal ID for collection (UUID or human-readable)
+          slugMe # MagicEden's symbol
+          slugDisplay # What's displayed in the URL on tensor.trade
+          statsOverall { # Across pools & marketplace listings
+            floor1h
+            floor7d
+            floorPrice
+            numListed
+            sales1h
+            sales24h
+            sales7d
+            volume1h
+            volume24h
+            volume7d
           }
+          name
         }
       }
     }
     """
 
-    Enum.map(solanalysis_ids, fn ids ->
+    Enum.map(slugs, fn slug ->
       post_data =
         %{
           query: query,
-          variables: %{conditions: %{project_ids: ids}}
+          variables: %{slugsMe: slug}
         }
         |> Jason.encode!()
 
       Logger.debug("Making graphql query to #{url}")
 
-      request = Finch.build(:post, url, [{"Content-Type", "application/json"}], post_data)
+      request =
+        Finch.build(
+          :post,
+          url,
+          [
+            {"content-type", "application/json"},
+            {"X-TENSOR-API-KEY", "e7b23445-cb60-4faa-8939-d3c571cd2fd7"}
+          ],
+          post_data
+        )
 
       Finch.request(request, SharkAttackWeb.Finch)
-      |> parse_floor_response()
+      |> parse_floor_response(slug)
     end)
     |> Enum.map(fn
       :error -> []
@@ -52,37 +90,42 @@ defmodule SharkAttack.Hyperspace do
     |> Map.new()
   end
 
-  defp parse_floor_response({:ok, %{status: 200, body: body}}) do
+  defp parse_floor_response({:ok, %{status: 200, body: body}}, slug) do
     response = body |> Jason.decode!()
 
-    %{"data" => %{"getProjectStats" => %{"project_stats" => project_stats}}} = response
+    project_stats = get_in(response, ["data", "allCollections", "collections"])
 
     project_stats
     |> Enum.map(fn %{
-                     "project_id" => project_id,
-                     "floor_price" => fp,
-                     "project" => %{"img_url" => img_url}
+                     "slugMe" => slugMe,
+                     "statsOverall" => stats
                    } ->
-      {project_id, %{fp: fp, img_url: img_url}}
+      {slugMe, %{stats: stats}}
     end)
     |> Map.new()
   end
 
-  defp parse_floor_response({:ok, %{status: 503, body: _body}}) do
-    Logger.warn("Error calling solanalysis: 503 Service Unavailable")
+  defp parse_floor_response({:ok, %{status: 503, body: _body}}, slug) do
+    Logger.warn("Error calling solanalysis: 503 Service Unavailable, #{slug}")
 
     :error
   end
 
-  defp parse_floor_response({:ok, %{body: body}}) do
-    Logger.warn("Error calling solanalysis")
+  defp parse_floor_response({:ok, %{body: body}}, slug) do
+    Logger.warn("Error calling solanalysis - #{slug}")
     IO.inspect(body)
 
     :error
   end
 
-  defp parse_floor_response({:error, %Mint.TransportError{reason: reason}}) do
-    Logger.warn("Error calling solanalysis: #{reason}")
+  defp parse_floor_response({:error, %Mint.TransportError{reason: reason}}, slug) do
+    Logger.warn("Error calling solanalysis: #{reason}, #{slug}")
+
+    :error
+  end
+
+  defp parse_floor_response({:error, _}, _) do
+    Logger.warn("Error calling solanalysis")
 
     :error
   end

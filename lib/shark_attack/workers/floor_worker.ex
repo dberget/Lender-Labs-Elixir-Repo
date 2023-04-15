@@ -34,7 +34,22 @@ defmodule SharkAttack.FloorWorker do
     ])
 
     all_collections =
-      SharkAttack.Collections.list_collections(%{sharky: "1"}) |> Enum.map(&{&1.id, 0})
+      SharkAttack.Collections.list_collections(%{sharky: "1"})
+      |> Enum.map(
+        &{&1.id,
+         %{
+           "floor1h" => 0,
+           "floor7d" => 0,
+           "floorPrice" => "0",
+           "numListed" => 0,
+           "sales1h" => 0,
+           "sales24h" => 0,
+           "sales7d" => 0,
+           "volume1h" => "0",
+           "volume24h" => 0,
+           "volume7d" => 0
+         }}
+      )
 
     :ets.insert(:floor_prices, all_collections)
 
@@ -57,32 +72,67 @@ defmodule SharkAttack.FloorWorker do
   end
 
   def get_floor_price(id) do
-    floor_price =
+    data =
       case :ets.whereis(:floor_prices) do
         :undefined ->
           Logger.info("Floor prices table not found, creating and hydrating")
 
-          create_and_hydrate_table()
+          # create_and_hydrate_table()
 
-          0
+          %{
+            "floor1h" => 0,
+            "floor7d" => 0,
+            "floorPrice" => "0",
+            "numListed" => 0,
+            "sales1h" => 0,
+            "sales24h" => 0,
+            "sales7d" => 0,
+            "volume1h" => "0",
+            "volume24h" => 0,
+            "volume7d" => 0
+          }
 
         _ ->
-          :ets.lookup(:floor_prices, id) |> List.first({nil, 0.0}) |> elem(1)
+          :ets.lookup(:floor_prices, id)
+          |> List.first(
+            {nil,
+             %{
+               "floor1h" => 0,
+               "floor7d" => 0,
+               "floorPrice" => "0",
+               "numListed" => 0,
+               "sales1h" => 0,
+               "sales24h" => 0,
+               "sales7d" => 0,
+               "volume1h" => "0",
+               "volume24h" => 0,
+               "volume7d" => 0
+             }}
+          )
+          |> elem(1)
       end
 
-    floor_price
+    fp_lamports = data |> Map.get("floorPrice", "0")
+
+    floor =
+      unless fp_lamports == "0" or is_nil(fp_lamports) do
+        {floor, ""} = fp_lamports |> Float.parse()
+        floor / 1_000_000_000
+      end
+
+    floor
   end
 
   def update_floor_prices() do
     all_collections = SharkAttack.Collections.list_collections()
 
     all_collections
-    |> SharkAttack.Hyperspace.get_floor_prices()
-    |> Enum.each(fn {collection, %{fp: fp}} ->
+    |> SharkAttack.Tensor.get_floor_prices()
+    |> Enum.each(fn {collection, %{stats: stats}} ->
       all_collections
-      |> Enum.filter(&(&1.hyperspace_id == collection))
+      |> Enum.filter(&(&1.me_slug == collection))
       |> Enum.each(fn token ->
-        :ets.insert(:floor_prices, {token.id, fp})
+        :ets.insert(:floor_prices, {token.id, stats})
       end)
     end)
   end

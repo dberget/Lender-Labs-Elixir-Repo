@@ -64,6 +64,7 @@ defmodule SharkAttackWeb.Router do
     pipe_through(:api)
 
     post("/", EventController, :index)
+    post("/debug", EventController, :debug)
   end
 
   scope "/", SharkAttackWeb do

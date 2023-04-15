@@ -342,6 +342,13 @@ defmodule SharkAttackWeb.ApiController do
       end)
       |> length()
 
+    last_hour =
+      loans
+      |> Enum.filter(fn l ->
+        DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(l["start"]), :second) < 3600
+      end)
+      |> length()
+
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
     underWater =
@@ -391,8 +398,9 @@ defmodule SharkAttackWeb.ApiController do
       averageUnderwater: elem(underWater, 1),
       fp: fp,
       last_24: last_24,
+      last_hour: last_hour,
       ltf:
-        unless highestOffer == 0 or fp == 0 do
+        unless highestOffer == 0 or fp == 0 or is_nil(fp) do
           highestOffer / fp * 100
         end
     }
