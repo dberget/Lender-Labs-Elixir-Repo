@@ -5,12 +5,6 @@ defmodule SharkAttackWeb.EventController do
   def debug(conn, params) do
     event = Map.get(params, "_json") |> Jason.decode!()
 
-    SharkAttack.Events.insert_loan_event(
-      event["type"],
-      event["source"],
-      event
-    )
-
     SharkAttack.LoansWorker.update_loan(event, event["type"])
 
     conn

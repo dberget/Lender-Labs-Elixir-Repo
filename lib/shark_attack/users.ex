@@ -14,7 +14,10 @@ defmodule SharkAttack.Users do
     # "63c936661e7e23ce43237023",
     # "63caba0dbc4646a3c14090f4",
     # "63d2bbeb52ad37f49859a3b2",
-    "642f1d287a50dc6571bba6b4"
+    "642f1d287a50dc6571bba6b4",
+    "643c4823d6c7494a1cabd9c2",
+    "643c3b7631aa7f16621c3373",
+    "643c3afde4db33096821cf77"
   ]
 
   def get!(address), do: Repo.get(User, address)
@@ -46,7 +49,7 @@ defmodule SharkAttack.Users do
   def list!(), do: Repo.all(User)
 
   def get_users_with_discord_id!() do
-    Repo.all(from u in User, where: not is_nil(u.discordId)) |> Repo.preload(:user_settings)
+    Repo.all(from(u in User, where: not is_nil(u.discordId))) |> Repo.preload(:user_settings)
   end
 
   def create_user(attrs \\ %{}) do
@@ -67,7 +70,7 @@ defmodule SharkAttack.Users do
   end
 
   def get_user_favorites(address) do
-    query = from c in SharkAttack.Accounts.Favorites, where: c.user_address == ^address
+    query = from(c in SharkAttack.Accounts.Favorites, where: c.user_address == ^address)
 
     Repo.all(query) |> Repo.preload(:collection) |> Enum.map(& &1.collection)
   end

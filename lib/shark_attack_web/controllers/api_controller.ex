@@ -350,6 +350,7 @@ defmodule SharkAttackWeb.ApiController do
       |> length()
 
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+    volume = SharkAttack.FloorWorker.get_volume(c)
 
     underWater =
       case loans do
@@ -390,11 +391,13 @@ defmodule SharkAttackWeb.ApiController do
       offers: length(offers),
       offersList: grouped_offers,
       loans: length(loans),
-      lastTaken: Enum.take(loans, 1),
+      lastTaken: Enum.take(loans, 1) |> List.first(%{}) |> Map.drop(["rawData"]),
       logo: c.logo,
       highestOffer: highestOffer,
       countUnderWater: elem(underWater, 0),
       hyperspace_id: c.hyperspace_id,
+      me_slug: c.me_slug,
+      volume: volume,
       averageUnderwater: elem(underWater, 1),
       fp: fp,
       last_24: last_24,
