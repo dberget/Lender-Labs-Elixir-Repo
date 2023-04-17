@@ -17,8 +17,7 @@ defmodule SharkAttack.Helpers do
       headers
     )
     |> Finch.request(SharkAttackWeb.Finch,
-      receive_timeout: 15_000_000_000,
-      pool_timeout: 50_000_000
+      receive_timeout: 50_000
     )
     |> parse_response()
   end
@@ -33,6 +32,10 @@ defmodule SharkAttack.Helpers do
 
   def parse_response({:error, %Mint.TransportError{reason: :econnrefused}}) do
     {:error, "Connection refused"}
+  end
+
+  def parse_response({:error, %Mint.TransportError{reason: error}}) do
+    {:error, error}
   end
 
   def parse_response(res) do

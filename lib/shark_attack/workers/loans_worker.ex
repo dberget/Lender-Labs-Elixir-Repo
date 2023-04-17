@@ -140,22 +140,13 @@ defmodule SharkAttack.LoansWorker do
   def add_new_loan(loanAddress, attempts \\ 0) do
     case SharkyApi.get_loan(loanAddress) do
       nil ->
-        if attempts < 5 do
-          Logger.info("Loan not found: #{loanAddress} - #{attempts} - retrying in 1 second")
-
-          Process.send_after(__MODULE__, {:add_new_loan, loanAddress, attempts + 1}, 1000)
-        else
-          Logger.error("Loan not found: #{loanAddress}")
-        end
+        handle_retry(loanAddress, attempts, :add_new_loan)
 
       {:error, %Mint.TransportError{reason: :closed}} ->
-        if attempts < 5 do
-          Logger.info("Loan not found: #{loanAddress} - #{attempts} -  retrying in 1 second")
+        handle_retry(loanAddress, attempts, :add_new_loan)
 
-          Process.send_after(__MODULE__, {:add_new_loan, loanAddress, attempts + 1}, 1000)
-        else
-          Logger.error("Loan not found: #{loanAddress}")
-        end
+      {:error, _} ->
+        handle_retry(loanAddress, attempts, :add_new_loan)
 
       loan ->
         Logger.info("Inserting #{loanAddress} after #{attempts} attempts.")
@@ -169,22 +160,13 @@ defmodule SharkAttack.LoansWorker do
   def add_new_offer(loanAddress, attempts \\ 0) do
     case SharkyApi.get_loan(loanAddress) do
       nil ->
-        if attempts < 5 do
-          Logger.info("Offer not found: #{loanAddress} - #{attempts} - retrying in 1 second")
-
-          Process.send_after(self(), {:add_new_offer, loanAddress, attempts + 1}, 1000)
-        else
-          Logger.error("Offer not found: #{loanAddress}")
-        end
+        handle_retry(loanAddress, attempts, :add_new_offer)
 
       {:error, %Mint.TransportError{reason: :closed}} ->
-        if attempts < 5 do
-          Logger.info("Offer not found: #{loanAddress} - #{attempts} - retrying in 1 second")
+        handle_retry(loanAddress, attempts, :add_new_offer)
 
-          Process.send_after(self(), {:add_new_offer, loanAddress, attempts + 1}, 1000)
-        else
-          Logger.error("Offer not found: #{loanAddress}")
-        end
+      {:error, _} ->
+        handle_retry(loanAddress, attempts, :add_new_offer)
 
       loanData ->
         :ets.insert(:offers, {loanAddress, Map.drop(loanData, ["rawData"])})
@@ -195,6 +177,16 @@ defmodule SharkAttack.LoansWorker do
           :collection_loans,
           {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
         )
+    end
+  end
+
+  def handle_retry(loanAddress, attempts, function) do
+    if attempts < 5 do
+      Logger.info("Not found: #{loanAddress} - #{attempts} - retrying #{function} in 1 second")
+
+      Process.send_after(self(), {function, loanAddress, attempts + 1}, 1000)
+    else
+      Logger.error("Not found: #{loanAddress}")
     end
   end
 

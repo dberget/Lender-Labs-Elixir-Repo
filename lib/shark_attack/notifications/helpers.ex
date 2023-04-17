@@ -192,6 +192,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     nft = SharkAttack.Nfts.get_nft_by_mint(Map.get(loan, "nftCollateralMint"))
     fp = SharkAttack.FloorWorker.get_floor_price(c) |> Number.Delimit.number_to_delimited()
 
+    pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
+
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
         name: "Lender Labs",
@@ -200,7 +202,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
         url: get_thumbnail_url(c)
       },
-      url: "https://solscan.io/account/#{Map.get(loan, "pubkey")}",
+      url: "https://solscan.io/account/#{pubkey}",
       title: "**#{parse_name(nft, c)}** Offer Accepted",
       color: 5_815_448,
       fields: [
@@ -232,6 +234,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
     duration = :os.system_time(:second) - Map.get(loan, :start, 0)
 
+    pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
+
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
         name: "Lender Labs",
@@ -242,7 +246,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       },
       title: "**#{parse_name(nft, c)}** Loan Repaid",
       color: 5_815_448,
-      url: "https://solscan.io/account/#{loan.pubkey}",
+      url: "https://solscan.io/account/#{pubkey}",
       fields: [
         %Nostrum.Struct.Embed.Field{
           name: "Loan Value",

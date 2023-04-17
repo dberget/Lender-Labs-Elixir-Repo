@@ -241,22 +241,6 @@ defmodule SharkAttack.Collections do
     |> Repo.insert(on_conflict: :nothing)
   end
 
-  def update_logos() do
-    all_collections = list_collections()
-
-    all_collections
-    |> SharkAttack.Hyperspace.get_floor_prices()
-    |> Enum.each(fn {collection, %{img_url: img_url}} ->
-      all_collections
-      |> Enum.filter(&(&1.hyperspace_id == collection))
-      |> Enum.each(fn token ->
-        SharkAttack.Collections.update_collection(token, %{
-          logo: img_url
-        })
-      end)
-    end)
-  end
-
   def update_hyperspace_ids do
     collections =
       SharkAttack.Collections.list_collections()
