@@ -27,7 +27,7 @@ defmodule SharkAttack.Notifications do
           )
 
           SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
-          |> SharkAttack.DiscordConsumer.send_foreclosure_msg(loan)
+          |> SharkAttack.DiscordConsumer.send_foreclosure_msg(minutesFromDefault)
         end
       end)
     end)

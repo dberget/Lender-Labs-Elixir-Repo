@@ -63,6 +63,30 @@ defmodule SharkAttack.FloorWorker do
     {:noreply, state}
   end
 
+  def get_volume(nil) do
+    nil
+  end
+
+  def get_volume(%SharkAttack.Collections.Collection{} = collection) do
+    :ets.lookup(:floor_prices, collection.id)
+    |> List.first(
+      {nil,
+       %{
+         "floor1h" => 0,
+         "floor7d" => 0,
+         "floorPrice" => "0",
+         "numListed" => 0,
+         "sales1h" => 0,
+         "sales24h" => 0,
+         "sales7d" => 0,
+         "volume1h" => "0",
+         "volume24h" => 0,
+         "volume7d" => 0
+       }}
+    )
+    |> elem(1)
+  end
+
   def get_floor_price(nil) do
     nil
   end
