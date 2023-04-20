@@ -126,9 +126,9 @@ defmodule SharkAttack.Collections do
       from(c in Collection,
         select: %{c | nfts: []},
         where: c.sharky_address == ^address,
+        or_where: c.id == ^address,
         or_where: c.foxy_address == ^address,
-        or_where: c.frakt_address == ^address,
-        or_where: c.rain_fi_id == ^address
+        or_where: c.frakt_address == ^address
       )
 
     Repo.one(query)

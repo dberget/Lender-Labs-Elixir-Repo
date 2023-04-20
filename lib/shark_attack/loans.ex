@@ -9,25 +9,12 @@ defmodule SharkAttack.Loans do
 
   alias Ecto.Changeset
   alias SharkAttack.LoansWorker
-  alias SharkAttack.Loans.PlanSettings
   alias SharkAttack.Repo
 
-  alias SharkAttack.Loans.{LoanPlan, Loan}
+  alias SharkAttack.Loans.{PlanSettings, Loan}
 
   alias SharkAttack.Accounts.User
-
-  @doc """
-  Returns the list of loan_plans.
-
-  ## Examples
-
-      iex> list_loan_plans()
-      [%LoanPlan{}, ...]
-
-  """
-  def list_loan_plans do
-    Repo.all(LoanPlan)
-  end
+  alias SharkAttack.Loans.LoanData
 
   def list_loans do
     Repo.all(Loan)
@@ -47,12 +34,12 @@ defmodule SharkAttack.Loans do
       ** (Ecto.NoResultsError)
 
   """
-  def get_loan_plan!(id), do: Repo.get!(LoanPlan, id)
+  def get_plan_settings!(id), do: Repo.get!(PlanSettings, id)
 
   def get_loan!(address), do: Repo.get_by(Loan, loan: address)
 
   def get_user_loan_plans(user_address) do
-    Repo.all(LoanPlan, user_address: user_address) |> Repo.preload(:plan_settings)
+    Repo.all(PlanSettings, user_address: user_address)
   end
 
   def get_user!(address), do: Repo.get!(User, address)
@@ -104,24 +91,6 @@ defmodule SharkAttack.Loans do
       )
 
     Repo.all(query)
-  end
-
-  @doc """
-  Creates a loan_plan.
-
-  ## Examples
-
-      iex> create_loan_plan(%{field: value})
-      {:ok, %LoanPlan{}}
-
-      iex> create_loan_plan(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_loan_plan(attrs \\ %{}) do
-    %LoanPlan{}
-    |> LoanPlan.changeset(attrs)
-    |> Repo.insert()
   end
 
   def get_active_loans() do
@@ -226,58 +195,29 @@ defmodule SharkAttack.Loans do
     end
   end
 
-  @doc """
-  Updates a loan_plan.
+  def create_plan_settings(attrs \\ %{}) do
+    %PlanSettings{}
+    |> PlanSettings.changeset(attrs)
+    |> Repo.insert()
+  end
 
-  ## Examples
-
-      iex> update_loan_plan(loan_plan, %{field: new_value})
-      {:ok, %LoanPlan{}}
-
-      iex> update_loan_plan(loan_plan, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_loan_plan(%LoanPlan{} = loan_plan, attrs) do
+  def update_plan_settings(%PlanSettings{} = loan_plan, attrs) do
     loan_plan
-    |> LoanPlan.changeset(attrs)
+    |> PlanSettings.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a loan_plan.
-
-  ## Examples
-
-      iex> delete_loan_plan(loan_plan)
-      {:ok, %LoanPlan{}}
-
-      iex> delete_loan_plan(loan_plan)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_loan_plan(%LoanPlan{} = loan_plan) do
+  def delete_plan_settings(%PlanSettings{} = loan_plan) do
     Repo.delete(loan_plan)
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking loan_plan changes.
-
-  ## Examples
-
-      iex> change_loan_plan(loan_plan)
-      %Ecto.Changeset{data: %LoanPlan{}}
-
-  """
-  def change_loan_plan(%LoanPlan{} = loan_plan, attrs \\ %{}) do
-    LoanPlan.changeset(loan_plan, attrs)
+  def change_loan_plan(%PlanSettings{} = loan_plan, attrs \\ %{}) do
+    PlanSettings.changeset(loan_plan, attrs)
   end
 
   def change_plan_settings(%PlanSettings{} = plan_settings, attrs \\ %{}) do
     PlanSettings.changeset(plan_settings, attrs)
   end
-
-  alias SharkAttack.Loans.LoanData
 
   @doc """
   Returns the list of loan_data.

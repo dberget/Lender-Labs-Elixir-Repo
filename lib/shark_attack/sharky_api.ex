@@ -13,6 +13,23 @@ defmodule SharkAttack.SharkyApi do
     Map.get(res, "orderBooks", []) |> Enum.filter(fn x -> x["name"] !== nil end)
   end
 
+  def sign(address) do
+    res =
+      SharkAttack.Helpers.do_get_request("http://localhost:5001/authenticate?address=#{address}")
+
+    res
+  end
+
+  def verify(message, user_address) do
+    res =
+      SharkAttack.Helpers.do_post_request(
+        "http://localhost:5001/verify",
+        %{msg: message, user_address: user_address}
+      )
+
+    res
+  end
+
   def get_sharky_indexes(mints) do
     SharkAttack.Helpers.do_post_request(
       "https://sharky-backend.herokuapp.com/nft-list/check-mints?network=mainnet&deployEnvironment=production",

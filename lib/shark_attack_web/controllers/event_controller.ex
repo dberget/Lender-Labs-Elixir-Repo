@@ -25,4 +25,11 @@ defmodule SharkAttackWeb.EventController do
     conn
     |> json(%{message: "ok"})
   end
+
+  def purchase(conn, params) do
+    SharkAttack.Users.create_user(%{address: params["transactionObject"]["meta"]["senderPK"]})
+
+    conn
+    |> json(%{message: "ok"})
+  end
 end

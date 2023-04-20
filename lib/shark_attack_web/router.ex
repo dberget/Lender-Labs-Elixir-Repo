@@ -18,6 +18,7 @@ defmodule SharkAttackWeb.Router do
     pipe_through(:api)
 
     get("/", UserController, :index)
+    get("/sign", UserController, :sign)
     get("/update_purchases", UserController, :update_purchases)
     get("/user_wallets", UserController, :user_wallets)
     post("/update_user_wallet", UserController, :update_user_wallet)
@@ -64,7 +65,17 @@ defmodule SharkAttackWeb.Router do
     pipe_through(:api)
 
     post("/", EventController, :index)
+    post("/purchase", EventController, :purchase)
     post("/debug", EventController, :debug)
+  end
+
+  scope "/plans", SharkAttackWeb do
+    pipe_through(:api)
+
+    get("/", PlanController, :index)
+    post("/save", PlanController, :save)
+    post("/update", PlanController, :update)
+    post("/delete", PlanController, :delete)
   end
 
   scope "/", SharkAttackWeb do

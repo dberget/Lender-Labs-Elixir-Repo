@@ -5,7 +5,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   alias SharkAttack.Collections.Nft
   alias SharkAttack.Accounts.{User, UserSettings}
 
-  @dao_webook_addresses ["4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK"]
+  @dao_webook_addresses [
+    "4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK",
+    "49MpTG8dfS7ein97ZvfxTu53u59nixhzu8gZg4B6Qkhw"
+  ]
 
   def send_message({:foreclosure, embed}) do
     SharkAttack.DiscordConsumer.send_to_webhook(

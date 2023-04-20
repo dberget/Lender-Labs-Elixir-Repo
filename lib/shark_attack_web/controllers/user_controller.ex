@@ -9,6 +9,13 @@ defmodule SharkAttackWeb.UserController do
     |> json(user)
   end
 
+  def sign(conn, params) do
+    user = SharkAttack.SharkyApi.sign(params["address"])
+
+    conn
+    |> json(user)
+  end
+
   def user_wallets(conn, %{"pk" => address}) do
     user = SharkAttack.Users.get_user_from_address!(address)
 

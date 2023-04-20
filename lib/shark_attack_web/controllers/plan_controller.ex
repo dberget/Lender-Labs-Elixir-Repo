@@ -1,0 +1,47 @@
+defmodule SharkAttackWeb.PlanController do
+  use SharkAttackWeb, :controller
+  require Logger
+
+  def index(conn, params) do
+    plans = SharkAttack.Loans.get_user_loan_plans(params["user_address"])
+
+    conn
+    |> json(plans)
+  end
+
+  def save(conn, params) do
+    case SharkAttack.SharkyApi.verify(params["msg"], params["user_address"]) do
+      %{"verify" => true} ->
+        {:ok, plan} =
+          %{"user_address" => params["user_address"]}
+          |> Map.put("max_ltf", params["max_ltf"])
+          |> Map.put("collection_id", params["collection_id"])
+          |> SharkAttack.Loans.create_plan_settings()
+
+        conn
+        |> json(plan)
+
+      _ ->
+        conn
+        |> json(%{"error" => "Invalid signature"})
+    end
+  end
+
+  def update(conn, params) do
+    {:ok, plan} =
+      SharkAttack.Loans.get_plan_settings!(params["id"])
+      |> SharkAttack.Loans.update_plan_settings(params)
+
+    conn
+    |> json(plan)
+  end
+
+  def delete(conn, params) do
+    plan =
+      SharkAttack.Loans.get_plan_settings!(params["id"])
+      |> SharkAttack.Loans.delete_plan_settings()
+
+    conn
+    |> json(plan)
+  end
+end
