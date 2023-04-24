@@ -117,21 +117,24 @@ defmodule SharkAttack.Collections do
     Repo.one(query)
   end
 
-  def get_collection(id) when is_integer(id) do
-    Repo.get(Collection, id)
-  end
-
   def get_collection(address) do
     query =
       from(c in Collection,
         select: %{c | nfts: []},
         where: c.sharky_address == ^address,
-        or_where: c.id == ^address,
         or_where: c.foxy_address == ^address,
         or_where: c.frakt_address == ^address
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      nil ->
+        collection = Repo.get(Collection, address)
+
+        %{collection | nfts: []}
+
+      collection ->
+        collection
+    end
   end
 
   def get_and_update_collection(%{name: name} = attrs) do
@@ -147,7 +150,7 @@ defmodule SharkAttack.Collections do
   def search_collection_by_name(name) do
     query =
       from(c in Collection,
-        select: map(c, [:name, :sharky_address]),
+        select: map(c, [:name, :sharky_address, :id]),
         where: like(c.name, ^"%#{name}%")
       )
 

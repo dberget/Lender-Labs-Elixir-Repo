@@ -40,6 +40,9 @@ defmodule SharkAttack.Tensor do
           slug # internal ID for collection (UUID or human-readable)
           slugMe # MagicEden's symbol
           slugDisplay # What's displayed in the URL on tensor.trade
+          statsSwap { # TensorSwap + HadeSwap + Elixir
+            sellNowPrice
+          }
           statsOverall { # Across pools & marketplace listings
             floor1h
             floor7d
@@ -90,7 +93,7 @@ defmodule SharkAttack.Tensor do
     |> Map.new()
   end
 
-  defp parse_floor_response({:ok, %{status: 200, body: body}}, slug) do
+  defp parse_floor_response({:ok, %{status: 200, body: body}}, _slug) do
     response = body |> Jason.decode!()
 
     project_stats = get_in(response, ["data", "allCollections", "collections"])
@@ -98,9 +101,11 @@ defmodule SharkAttack.Tensor do
     project_stats
     |> Enum.map(fn %{
                      "slugMe" => slugMe,
-                     "statsOverall" => stats
+                     "slug" => tensorSlug,
+                     "statsOverall" => stats,
+                     "statsSwap" => prices
                    } ->
-      {slugMe, %{stats: stats}}
+      {slugMe, %{stats: stats |> Map.put("sellPrice", prices["sellNowPrice"]), slug: tensorSlug}}
     end)
     |> Map.new()
   end

@@ -62,7 +62,7 @@ defmodule SharkAttack.Analytics do
       totalValueUnderWater: elem(underWater, 2),
       last_24: last_24,
       ltf:
-        unless highestOffer == 0 or fp == 0 do
+        unless highestOffer == 0 or is_nil(fp) do
           highestOffer / fp * 100
         end
     }

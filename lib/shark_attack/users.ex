@@ -3,25 +3,6 @@ defmodule SharkAttack.Users do
   alias SharkAttack.Repo
   alias SharkAttack.Accounts.User
 
-  @paylinks [
-    # "63c325b709ab5e7d1dd80693",
-    # "63c3264909ab5e7d1dd80906",
-    # "63c314e465f452f94a19a635",
-    # "63c2f71465f452f94a196437",
-    # "63c8793b1e7e23ce432243d2",
-    # "63c87a93f07af110f94a43c3",
-    # "63c87b971e7e23ce4322481d",
-    # "63c936661e7e23ce43237023",
-    # "63caba0dbc4646a3c14090f4",
-    # "63d2bbeb52ad37f49859a3b2",
-    "642f1d287a50dc6571bba6b4",
-    "643c4823d6c7494a1cabd9c2",
-    "643c3b7631aa7f16621c3373",
-    "643c3afde4db33096821cf77",
-    "643d66e7cc02a1e18c3118e7",
-    "643d516d7fb7cd9a89d09a5f"
-  ]
-
   def get!(address), do: Repo.get(User, address)
 
   def get_user_from_address!(address, preloads \\ []) do
@@ -133,7 +114,7 @@ defmodule SharkAttack.Users do
          "Bearer n24Y98PGn/38OZx0vU81pCSVBV6ZvVjYlbkBi1owTOSq+Yt8r75k1jkKVQzN4z6icCOi5M/yDYLbwIN90wC9YN6CRWTxo9yS+bzVBSJX860GRIBK7DJWC7upbDSj44Do"}
       ]
     )
-    |> Enum.filter(fn %{"paymentRequestId" => paymentId} -> paymentId in @paylinks end)
+    # |> Enum.filter(fn %{"paymentRequestId" => paymentId} -> paymentId in @paylinks end)
     |> Enum.map(&(%{address: Map.get(&1, "from")} |> create_user()))
   end
 end

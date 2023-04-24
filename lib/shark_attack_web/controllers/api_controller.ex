@@ -494,7 +494,8 @@ defmodule SharkAttackWeb.ApiController do
         }
       end)
       |> Enum.sort_by(fn v -> v.amount end, :desc)
-      |> Enum.take(20)
+
+    offers = SharkAttack.Offers.last_month_offers()
 
     lenderGroup =
       loans
@@ -506,14 +507,19 @@ defmodule SharkAttackWeb.ApiController do
           loans: v,
           amount: Enum.map(v, & &1.amount) |> Enum.sum(),
           profit: Enum.map(v, & &1.interest) |> Enum.sum(),
+          is_ll_user: Enum.any?(offers, &(&1.lender == k)),
           favorite: get_most_borrowed(v, collections)
         }
       end)
       |> Enum.sort_by(fn v -> v.amount end, :desc)
-      |> Enum.take(20)
 
     conn
-    |> json(%{borrowerGroup: borrowerGroup, lenderGroup: lenderGroup})
+    |> json(%{
+      unique_borrowers: borrowerGroup |> length(),
+      unique_lenders: lenderGroup |> length(),
+      borrowerGroup: borrowerGroup |> Enum.take(1000),
+      lenderGroup: lenderGroup |> Enum.take(1000)
+    })
   end
 
   defp get_most_borrowed(values, collections) do

@@ -87,7 +87,7 @@ defmodule SharkAttack.SharkyApi do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/#{address}")
 
     case res do
-      {:error, body} ->
+      {:error, _body} ->
         Logger.error("Falling back to use cache")
 
         SharkAttack.LoansWorker.get_lender_loans(address) |> Enum.map(&elem(&1, 3))
@@ -101,10 +101,10 @@ defmodule SharkAttack.SharkyApi do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/citrus/#{address}")
 
     case res do
-      {:error, body} ->
+      {:error, _body} ->
         Logger.error("get_citrus_lender_loans")
 
-        :error
+        []
 
       body ->
         Map.get(body, "loanData", [])

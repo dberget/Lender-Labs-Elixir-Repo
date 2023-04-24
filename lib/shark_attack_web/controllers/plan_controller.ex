@@ -21,7 +21,7 @@ defmodule SharkAttackWeb.PlanController do
         conn
         |> json(plan)
 
-      _ ->
+      res ->
         conn
         |> json(%{"error" => "Invalid signature"})
     end
@@ -37,7 +37,7 @@ defmodule SharkAttackWeb.PlanController do
   end
 
   def delete(conn, params) do
-    plan =
+    {:ok, plan} =
       SharkAttack.Loans.get_plan_settings!(params["id"])
       |> SharkAttack.Loans.delete_plan_settings()
 

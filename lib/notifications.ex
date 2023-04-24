@@ -39,13 +39,17 @@ defmodule SharkAttack.Notifications do
     users = Enum.filter(users, fn user -> Map.fetch!(user.user_settings, :summary_report) end)
 
     Enum.map(users, fn user ->
-      loans = SharkAttack.Loans.get_loans_history(user.address, :week)
+      try do
+        loans = SharkAttack.Loans.get_loans_history(user.address, :week)
+        embed = format_weekly_summary(user, loans)
 
-      embed = format_weekly_summary(user, loans)
-
-      user.discordId
-      |> SharkAttack.DiscordConsumer.create_dm_channel()
-      |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+        user.discordId
+        |> SharkAttack.DiscordConsumer.create_dm_channel()
+        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+      rescue
+        _e ->
+          Logger.error("Error sending weekly summary to #{user.discordId}")
+      end
     end)
   end
 

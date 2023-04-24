@@ -73,4 +73,21 @@ defmodule SharkAttack.Offers do
   def get_loan_offers_by_lender(lender) do
     Repo.all(Offer, lender: lender)
   end
+
+  def last_month_offers() do
+    query =
+      from o in Offer,
+        where: o.inserted_at > fragment("NOW() - INTERVAL 4 WEEK")
+
+    Repo.all(query)
+  end
+
+  def user_has_loan_offers(lender) do
+    query =
+      from o in Offer,
+        where: o.lender == ^lender,
+        where: o.inserted_at > fragment("NOW() - INTERVAL 4 WEEK")
+
+    Repo.all(query)
+  end
 end

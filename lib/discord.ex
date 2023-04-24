@@ -63,6 +63,18 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  # burnskyle56
+  def send_to_webhook(
+        "8UaxGpbtgvg7FhwRaAHaHxZBy1ZWGBJQ2xSkPTCSjQ6A",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1099115998990307360",
+      "upeAVDXkoe09CRM3qS-_eYMPubjXaF8vXoP9xBjAriUMkQ8i_VMQTUwvACgW1HYMTzv4",
+      %{embeds: [embed]}
+    )
+  end
+
   # Cherry
   def send_to_webhook(
         "49MpTG8dfS7ein97ZvfxTu53u59nixhzu8gZg4B6Qkhw",

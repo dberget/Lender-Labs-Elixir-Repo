@@ -27,8 +27,8 @@ defmodule SharkAttack.Loans.PlanSettings do
   @doc false
   def changeset(loan_plan, attrs) do
     loan_plan
-    |> cast(attrs, [:style, :max_ltf, :target_ltf, :collection_id])
+    |> cast(attrs, [:user_address, :style, :max_ltf, :target_ltf, :collection_id])
     |> validate_number(:max_ltf, less_than: 100)
-    |> validate_required([])
+    |> validate_required([:user_address, :collection_id, :max_ltf])
   end
 end
