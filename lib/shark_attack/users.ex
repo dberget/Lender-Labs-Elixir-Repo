@@ -81,6 +81,12 @@ defmodule SharkAttack.Users do
     |> Repo.update()
   end
 
+  def create_saved_search(attrs) do
+    %SharkAttack.Accounts.SavedSearch{}
+    |> SharkAttack.Accounts.SavedSearch.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_default_user_setting(user_address) do
     %SharkAttack.Accounts.UserSettings{}
     |> SharkAttack.Accounts.UserSettings.changeset(%{user_address: user_address})

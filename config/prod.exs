@@ -15,7 +15,8 @@ config :shark_attack, SharkAttackWeb.Endpoint,
     "https://lenderlabs.xyz",
     "//lenderlabs.xyz",
     "//stage.lenderlabs.xyz",
-    "//stage--chimerical-custard-213af0.netlify.app"
+    "//stage--chimerical-custard-213af0.netlify.app",
+    "//localhost:3000"
   ]
 
 # Do not print debug messages in production
