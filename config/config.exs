@@ -22,7 +22,8 @@ config :cors_plug,
   origin: [
     "https://lenderlabs.xyz",
     "https://stage.lenderlabs.xyz",
-    "https://stage--chimerical-custard-213af0.netlify.app"
+    "https://stage--chimerical-custard-213af0.netlify.app",
+    "http://localhost:3000"
   ],
   max_age: 86400,
   headers: ["accept", "content-type", "origin", "authorization", "baggage"],
