@@ -49,7 +49,17 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
-  def get_loan(pk) do
+  def get_loan(%{loanAddress: pk, source: "CITRUS"}) do
+    case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/citrus/#{pk}") do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", %{})
+    end
+  end
+
+  def get_loan(%{loanAddress: pk}) do
     case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/#{pk}") do
       {:error, body} ->
         {:error, body}
@@ -57,6 +67,14 @@ defmodule SharkAttack.SharkyApi do
       body ->
         Map.get(body, "loanData", %{})
     end
+  end
+
+  def get_all_loan_data("citrus") do
+    SharkAttack.Collections.list_collections()
+    |> Enum.map(& &1.foxy_address)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.flat_map(&get_collection_loans(&1, "citrus"))
+    |> Enum.reject(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
   end
 
   def get_all_loan_data() do
@@ -116,7 +134,10 @@ defmodule SharkAttack.SharkyApi do
   def get_collection_loans(nil, "citrus"), do: []
 
   def get_collection_loans(address, "citrus") do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/citrus/#{address}")
+    res =
+      SharkAttack.Helpers.do_get_request(
+        "http://localhost:5001/order_book/citrus/#{address}?state=active"
+      )
 
     case res do
       {:error, body} ->

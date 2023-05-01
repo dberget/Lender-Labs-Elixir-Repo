@@ -237,19 +237,26 @@ export const repayAll = async (
 };
 
 const parseLoan = async ({ loan, sharkyClient }) => {
-  let accountInfo = {
-    data: new Buffer.from(loan.rawData.data),
-    executable: false,
-    lamports: 3243360,
-    owner: new PublicKey("SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"),
-    rentEpoch: 0,
-  };
-
-  return sharkyClient.parseLoan({
+  const result = await sharkyClient.fetchLoan({
     program: sharkyClient.program,
-    keyedAccountInfo: {
-      accountId: new PublicKey(loan.pubkey),
-      accountInfo: accountInfo,
-    },
+    loanPubKey: new PublicKey(loan.pubkey),
   });
+
+  return result?.offered ?? result?.taken;
+
+  // let accountInfo = {
+  //   data: new Buffer.from(loan.rawData.data),
+  //   executable: false,
+  //   lamports: 3243360,
+  //   owner: new PublicKey("SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"),
+  //   rentEpoch: 0,
+  // };
+
+  // return sharkyClient.parseLoan({
+  //   program: sharkyClient.program,
+  //   keyedAccountInfo: {
+  //     accountId: new PublicKey(loan.pubkey),
+  //     accountInfo: accountInfo,
+  //   },
+  // });
 };

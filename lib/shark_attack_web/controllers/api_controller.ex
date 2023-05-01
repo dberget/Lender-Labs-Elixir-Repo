@@ -9,7 +9,23 @@ defmodule SharkAttackWeb.ApiController do
   def get_recent_loans(conn, params) do
     SharkAttack.Stats.update_history_safe(params["pk"])
 
-    loans = SharkAttack.Loans.get_loans_history!(params["pk"], Map.get(params, "limit", 5))
+    loans =
+      case params["completed"] do
+        "true" ->
+          SharkAttack.Loans.get_loans_history!(params["pk"], Map.get(params, "limit", 5))
+
+        _ ->
+          SharkAttack.LoansWorker.get_lender_loans(params["pk"])
+          |> Enum.reduce([], fn {_key, _loan, _lender, value}, acc ->
+            if value["state"] in ["taken", "active"] do
+              [value | acc]
+            else
+              acc
+            end
+          end)
+          |> Enum.sort_by(& &1["start"], :desc)
+          |> Enum.take(Map.get(params, "limit", 5))
+      end
 
     conn
     |> json(%{data: loans})
@@ -29,7 +45,7 @@ defmodule SharkAttackWeb.ApiController do
         %{
           name:
             Map.get(
-              Enum.find(collections, %{}, fn c -> c.sharky_address == k end),
+              Enum.find(collections, %{}, fn c -> c.sharky_address == k or c.foxy_address == k end),
               :name,
               "Unknown"
             ),
@@ -138,8 +154,10 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, %{"cache" => "1"} = params) do
-    loans = SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
-    # citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
+    loans =
+      SharkAttack.LoansWorker.get_lender_loans(params["lender"])
+      |> Enum.map(&elem(&1, 3))
+      |> Enum.filter(fn l -> l["platform"] == "Sharky" end)
 
     takenLoans =
       Enum.filter(loans, fn l -> l["state"] == "taken" end)
@@ -165,28 +183,42 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, params) do
-    # loans =
-    #   if params["useCache"] == "true" do
-    #     SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
-    #   else
-    loans = SharkAttack.SharkyApi.get_lender_loans(params["lender"])
-    # end
+    loans =
+      if params["useCache"] == "true" do
+        SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
+      else
+        SharkAttack.SharkyApi.get_lender_loans(params["lender"])
+      end
 
-    citrusLoans = SharkAttack.SharkyApi.get_lender_loans(params["lender"], "citrus")
+    {sharkyLoans, citrusLoans} = loans |> Enum.split_with(fn l -> l["platform"] == "Sharky" end)
 
-    takenLoans = get_active_loans(loans, citrusLoans)
-    offers = get_active_offers(loans, citrusLoans)
+    takenLoans =
+      loans
+      |> Enum.filter(fn l -> l["state"] in ["taken", "active"] end)
+
+    offers =
+      loans
+      |> Enum.filter(fn l -> l["state"] in ["offered", "waitingForBorrower"] end)
+
+    {totalSolLoaned, totalEarnings, activeLoans} =
+      takenLoans
+      |> Enum.reduce({0, 0, []}, fn loan, {sumSol, sumEarnings, loans} ->
+        {sumSol + loan["amountSol"], sumEarnings + loan["earnings"], [loan | loans]}
+      end)
 
     loanSummary = %{
-      totalSolLoaned: Enum.map(takenLoans, fn l -> l["amountSol"] end) |> Enum.sum(),
-      totalEarnings: Enum.map(takenLoans, fn l -> l["earnings"] end) |> Enum.sum(),
-      activeLoans: takenLoans
+      totalSolLoaned: totalSolLoaned,
+      totalEarnings: totalEarnings,
+      activeLoans: activeLoans
     }
 
-    offerSummary = %{
-      totalSolOffered: Enum.map(offers, fn l -> l["amountSol"] end) |> Enum.sum(),
-      activeOffers: offers
-    }
+    {totalSolOffered, activeOffers} =
+      offers
+      |> Enum.reduce({0, []}, fn offer, {sumSol, offers} ->
+        {sumSol + offer["amountSol"], [offer | offers]}
+      end)
+
+    offerSummary = %{totalSolOffered: totalSolOffered, activeOffers: activeOffers}
 
     conn
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
@@ -215,17 +247,20 @@ defmodule SharkAttackWeb.ApiController do
         |> json(%{error: "Collection not found"})
 
       collection ->
-        loans_and_offers =
-          SharkAttack.LoansWorker.get_collection_loans(Map.get(collection, :sharky_address))
+        loans_and_offers = SharkAttack.LoansWorker.get_collection_loans(params["collection_id"])
 
         offers =
           loans_and_offers
-          |> Enum.filter(&(&1["state"] == "offered"))
+          |> Enum.filter(
+            &(&1["state"] == "offered" ||
+                (&1["state"] == "waitingForBorrower" &&
+                   &1["borrower"] == "11111111111111111111111111111111"))
+          )
           |> Enum.sort_by(& &1["amountSol"], :desc)
 
         loans =
           loans_and_offers
-          |> Enum.filter(&(&1["state"] == "taken"))
+          |> Enum.filter(&(&1["state"] == "taken" || &1["state"] == "active"))
           |> Enum.sort_by(& &1["start"], :desc)
 
         floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
@@ -390,17 +425,18 @@ defmodule SharkAttackWeb.ApiController do
     %{
       id: c.id,
       sharky_address: c.sharky_address,
+      foxy_address: c.foxy_address,
       duration: c.duration,
       apy: c.apy,
       name: c.name,
       offers: length(offers),
       offersList: grouped_offers,
+      allOffers: offers,
       loans: length(loans),
       lastTaken: Enum.take(loans, 1) |> List.first(%{}) |> Map.drop(["rawData"]),
       logo: c.logo,
       highestOffer: highestOffer,
       countUnderWater: elem(underWater, 0),
-      hyperspace_id: c.hyperspace_id,
       me_slug: c.me_slug,
       volume: volume,
       averageUnderwater: elem(underWater, 1),
@@ -418,7 +454,7 @@ defmodule SharkAttackWeb.ApiController do
     loans = SharkAttack.LoansWorker.get_all_collection_loans()
 
     collections =
-      SharkAttack.Collections.list_collections(%{sharky: params["sharky"]})
+      SharkAttack.Collections.list_collections()
       |> Enum.map(fn c ->
         fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
@@ -561,8 +597,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def remove_loan(conn, params) do
-    SharkAttack.LoansWorker.remove_loan(params["loanAddress"])
-
+    SharkAttack.LoansWorker.delete_loan(params["loanAddress"])
     SharkAttack.Offers.rescind_offer(params["loanAddress"])
 
     conn

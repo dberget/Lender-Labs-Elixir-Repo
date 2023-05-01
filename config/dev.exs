@@ -12,7 +12,7 @@ config :shark_attack, SharkAttack.Repo,
 config :shark_attack, SharkAttack.Scheduler,
   jobs: [
     {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
-    {"*/12 * * * *", {SharkAttack.LoansWorker, :flush, []}},
+    {"*/30 * * * *", {SharkAttack.LoansWorker, :flush, []}},
     {"*/60 * * * *", {SharkAttack.Stats, :update_loans, []}},
     {"*/8 * * * *", {SharkAttack.Notifications, :foreclosures, []}}
   ]

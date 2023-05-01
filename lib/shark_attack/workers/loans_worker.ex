@@ -48,150 +48,16 @@ defmodule SharkAttack.LoansWorker do
     end)
   end
 
-  def update_loan(event, "REPAY_LOAN") do
-    loanAddress =
-      Map.get(event, "instructions") |> Enum.at(1) |> Map.get("accounts", []) |> List.first()
-
-    loan = SharkAttack.Loans.get_loan(loanAddress)
-
-    SharkAttack.Events.send_event("REPAY_LOAN", loan)
-
+  def delete_loan(loanAddress) do
     GenServer.cast(__MODULE__, {:delete, loanAddress})
   end
 
-  def update_loan(event, "RESCIND_LOAN") do
-    loanAddress = Map.get(event, "instructions") |> hd() |> Map.get("accounts") |> hd
-
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
+  def add_loan(loanData) do
+    GenServer.cast(__MODULE__, {:add_new_loan, loanData, 0})
   end
 
-  def update_loan(event, "FORECLOSE_LOAN") do
-    loanAddress =
-      event
-      |> Map.get("instructions")
-      |> Enum.at(1)
-      |> Map.get("accounts", [])
-      |> List.first()
-
-    loan = SharkAttack.Loans.get_loan(loanAddress)
-    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
-
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
-  end
-
-  def update_loan(event, "UNKNOWN") do
-    closed_loan =
-      event
-      |> Map.get("instructions")
-      |> Enum.at(1)
-      |> Map.get("accounts", [])
-      |> List.first()
-
-    case closed_loan do
-      nil ->
-        Logger.info("Unknown loan")
-
-      _ ->
-        loan = SharkAttack.Loans.get_loan(closed_loan)
-
-        SharkAttack.Events.send_event("REPAY_LOAN", loan)
-
-        GenServer.cast(__MODULE__, {:delete, closed_loan})
-
-        new_loan =
-          event
-          |> Map.get("instructions")
-          |> Enum.at(1)
-          |> Map.get("accounts", [])
-          |> Enum.at(1)
-
-        GenServer.cast(__MODULE__, {:add_new_loan, new_loan, 0})
-    end
-  end
-
-  def update_loan(loan, "TAKE_LOAN") do
-    loanAddress =
-      loan
-      |> Map.get("instructions")
-      |> Enum.at(1)
-      |> Map.get("accounts")
-      |> Enum.at(4)
-
-    GenServer.cast(__MODULE__, {:add_new_loan, loanAddress, 0})
-  end
-
-  def update_loan(loan, "OFFER_LOAN") do
-    loan
-    |> Map.get("nativeTransfers")
-    |> Enum.chunk_every(4)
-    |> Enum.each(fn offer ->
-      %{"toUserAccount" => loanAddress} = hd(offer)
-
-      GenServer.cast(__MODULE__, {:add_new_offer, loanAddress, 0})
-    end)
-  end
-
-  def update_loan(_loan, status) do
-    Logger.info(status)
-  end
-
-  def add_new_loan(nil), do: nil
-
-  def add_new_loan(loanAddress, attempts \\ 0) do
-    case SharkyApi.get_loan(loanAddress) do
-      nil ->
-        handle_retry(loanAddress, attempts, :add_new_loan)
-
-      {:error, %Mint.TransportError{reason: :closed}} ->
-        handle_retry(loanAddress, attempts, :add_new_loan)
-
-      {:error, _} ->
-        handle_retry(loanAddress, attempts, :add_new_loan)
-
-      loan ->
-        Logger.info("Inserting #{loanAddress} after #{attempts} attempts.")
-
-        insert_loan(loan)
-    end
-  end
-
-  def add_new_offer(nil), do: nil
-
-  def add_new_offer(loanAddress, attempts \\ 0) do
-    case SharkyApi.get_loan(loanAddress) do
-      nil ->
-        handle_retry(loanAddress, attempts, :add_new_offer)
-
-      {:error, %Mint.TransportError{reason: :closed}} ->
-        handle_retry(loanAddress, attempts, :add_new_offer)
-
-      {:error, _} ->
-        handle_retry(loanAddress, attempts, :add_new_offer)
-
-      loanData ->
-        :ets.insert(:offers, {loanAddress, Map.drop(loanData, ["rawData"])})
-
-        SharkAttackWeb.OffersChannel.push(loanData)
-
-        :ets.insert(
-          :collection_loans,
-          {loanData["orderBook"], loanAddress, loanData["lender"], loanData}
-        )
-    end
-  end
-
-  def handle_retry(loanAddress, attempts, function) do
-    if attempts < 5 do
-      Logger.info("Not found: #{loanAddress} - #{attempts} - retrying #{function} in 1 second")
-
-      Process.send_after(self(), {function, loanAddress, attempts + 1}, 1000)
-    else
-      Logger.error("Not found: #{loanAddress}")
-    end
-  end
-
-  def remove_loan(loanAddress) do
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
+  def add_offer(loanData) do
+    GenServer.cast(__MODULE__, {:add_new_offer, loanData, 0})
   end
 
   def insert_loan(nil) do
@@ -221,7 +87,10 @@ defmodule SharkAttack.LoansWorker do
   def flush() do
     SharkAttack.DiscordConsumer.send_to_webhook("me", "Flushing loans")
 
-    loanData = SharkyApi.get_all_loan_data()
+    citrusLoans = SharkyApi.get_all_loan_data("citrus")
+    sharkyLoans = SharkyApi.get_all_loan_data()
+
+    loanData = [sharkyLoans, citrusLoans] |> List.flatten()
 
     collection_loans =
       loanData
@@ -232,7 +101,7 @@ defmodule SharkAttack.LoansWorker do
 
     loans =
       loanData
-      |> Enum.reject(&(&1["state"] == "offered"))
+      |> Enum.filter(&(&1["state"] == "taken" || &1["state"] == "active"))
       |> Enum.map(&{&1["pubkey"], &1})
 
     :ets.delete_all_objects(:loans)
@@ -257,18 +126,18 @@ defmodule SharkAttack.LoansWorker do
     {:ok, []}
   end
 
-  def handle_info({:add_new_offer, loanAddress, attempts}, state) do
-    Logger.info("Reattempting to add new offer: #{loanAddress}")
+  def handle_info({:add_new_offer, loanData, attempts}, state) do
+    Logger.info("Reattempting to add new offer: #{loanData.loanAddress}")
 
-    add_new_offer(loanAddress, attempts)
+    add_new_offer(loanData, attempts)
 
     {:noreply, state}
   end
 
-  def handle_info({:add_new_loan, loanAddress, attempts}, state) do
-    Logger.info("Reattempting to add new loan: #{loanAddress}")
+  def handle_info({:add_new_loan, loanData, attempts}, state) do
+    Logger.info("Reattempting to add new loan: #{loanData.loanAddress}")
 
-    add_new_loan(loanAddress, attempts)
+    add_new_loan(loanData, attempts)
 
     {:noreply, state}
   end
@@ -278,18 +147,21 @@ defmodule SharkAttack.LoansWorker do
     {:noreply, state}
   end
 
-  def handle_cast({:add_new_offer, loanAddress, attempts}, state) do
-    Logger.info("Attempt #{attempts} to add new offer: #{loanAddress}")
+  def handle_cast(
+        {:add_new_offer, loanData, attempts},
+        state
+      ) do
+    Logger.info("Attempt #{attempts} to add new offer: #{loanData.loanAddress}")
 
-    add_new_offer(loanAddress, attempts)
+    add_new_offer(loanData, attempts)
 
     {:noreply, state}
   end
 
-  def handle_cast({:add_new_loan, loanAddress, attempts}, state) do
-    Logger.info("Attempting to add new loan: #{loanAddress}")
+  def handle_cast({:add_new_loan, loanData, attempts}, state) do
+    Logger.info("Attempting to add new loan: #{loanData.loanAddress}")
 
-    add_new_loan(loanAddress, attempts)
+    add_new_loan(loanData, attempts)
 
     {:noreply, state}
   end
@@ -310,6 +182,63 @@ defmodule SharkAttack.LoansWorker do
     SharkAttackWeb.OffersChannel.delete(key)
 
     {:noreply, state}
+  end
+
+  defp add_new_loan(nil), do: nil
+
+  defp add_new_loan(loanData, attempts) do
+    case SharkyApi.get_loan(loanData) do
+      nil ->
+        handle_retry(loanData, attempts, :add_new_loan)
+
+      {:error, %Mint.TransportError{reason: :closed}} ->
+        handle_retry(loanData, attempts, :add_new_loan)
+
+      {:error, _} ->
+        handle_retry(loanData, attempts, :add_new_loan)
+
+      loan ->
+        Logger.info("Inserting #{loanData.loanAddress} after #{attempts} attempts.")
+
+        insert_loan(loan)
+    end
+  end
+
+  defp add_new_offer(nil), do: nil
+
+  defp add_new_offer(loanData, attempts \\ 0) do
+    case SharkyApi.get_loan(loanData) do
+      nil ->
+        handle_retry(loanData, attempts, :add_new_offer)
+
+      {:error, %Mint.TransportError{reason: :closed}} ->
+        handle_retry(loanData, attempts, :add_new_offer)
+
+      {:error, _} ->
+        handle_retry(loanData, attempts, :add_new_offer)
+
+      data ->
+        :ets.insert(:offers, {loanData.loanAddress, Map.drop(data, ["rawData"])})
+
+        SharkAttackWeb.OffersChannel.push(data)
+
+        :ets.insert(
+          :collection_loans,
+          {data["orderBook"], loanData.loanAddress, data["lender"], Map.drop(data, ["rawData"])}
+        )
+    end
+  end
+
+  defp handle_retry(loanData, attempts, function) do
+    if attempts < 5 do
+      Logger.info(
+        "Not found: #{loanData.loanAddress} - #{attempts} - retrying #{function} in 1 second"
+      )
+
+      Process.send_after(self(), {function, loanData, attempts + 1}, 1000)
+    else
+      Logger.error("Not found: #{loanData.loanAddress}")
+    end
   end
 
   defp generate_tables() do

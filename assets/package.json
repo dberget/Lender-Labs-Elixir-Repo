@@ -3,9 +3,19 @@
         "build": "node ./build.js --deploy"
     },
     "dependencies": {
-        "@famousfoxfederation/citrus-sdk": "^0.1.6",
-        "@frakt-protocol/frakt-sdk": "^0.8.24",
-        "@rainfi/sdk": "^1.2.38",
-        "@sharkyfi/client": "^5.0.0"
+        "@famousfoxfederation/citrus-sdk": "^0.1.8",
+        "@frakt-protocol/frakt-sdk": "^0.8.28",
+        "@rainfi/sdk": "^1.2.48",
+        "@sharkyfi/client": "^6.1.0",
+        "@solana/wallet-adapter-react-ui": "^0.9.31",
+        "@solana/wallet-adapter-wallets": "^0.19.16",
+        "esbuild": "^0.17.18",
+        "fbonds-core": "^0.5.0-beta.14",
+        "node-stdlib-browser": "^1.2.0",
+        "react-hooks-use-modal": "^3.3.1",
+        "react-hot-toast": "^2.4.0",
+        "react-router-dom": "^6.10.0",
+        "react-tooltip": "^5.11.1",
+        "swr": "^2.1.5"
     }
 }
