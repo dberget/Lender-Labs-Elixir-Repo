@@ -1,4 +1,7 @@
 defmodule SharkAttack.Stats do
+  alias SharkAttack.Repo
+  require Logger
+
   def update_loans() do
     loans = SharkAttack.SharkyApi.get_all_loans()
 
@@ -29,25 +32,79 @@ defmodule SharkAttack.Stats do
 
   # This makes sure you get all loans if none exist so the order is what they expect.
   def update_history_safe(pk) do
-    update_citrus_history_safe(pk)
+    pull_history = SharkAttack.Users.get_user_pull_history?(pk)
 
-    case SharkAttack.Loans.get_loans_history!(pk, 1) do
-      [] ->
-        SharkAttack.Stats.save_lender_history(pk)
+    case pull_history.sharky_lend do
+      nil ->
+        Logger.info("Updating Lender History")
+
+        SharkAttack.Stats.pull_lending_history(pk)
 
       {:error, _} ->
         {:error, []}
 
       _ ->
-        SharkAttack.Stats.save_recent_lender_history(pk)
+        if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -15 do
+          update_citrus_history_safe(pk)
+          SharkAttack.Stats.save_recent_lender_history(pk)
+
+          pull_history
+          |> SharkAttack.Accounts.PullHistory.changeset(%{updated_at: DateTime.utc_now()})
+          |> Repo.update()
+        end
     end
+  end
+
+  def update_borrow_history_safe(pk) do
+    pull_history = SharkAttack.Users.get_user_pull_history?(pk)
+
+    case pull_history.sharky_borrow do
+      nil ->
+        Logger.info("Updating Borrow History")
+
+        SharkAttack.Stats.pull_borrow_history(pk)
+
+      {:error, _} ->
+        {:error, []}
+
+      _ ->
+        Logger.info("CHECKING LAST PULLED #{pk}")
+
+        if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -15 do
+          SharkAttack.Stats.save_recent_lender_history(pk)
+
+          pull_history
+          |> SharkAttack.Accounts.PullHistory.changeset(%{updated_at: DateTime.utc_now()})
+          |> Repo.update()
+        end
+    end
+  end
+
+  def pull_lending_history(address) do
+    pull_history = SharkAttack.Users.get_user_pull_history?(address)
+
+    SharkAttack.Stats.save_lender_history(address)
+
+    pull_history
+    |> SharkAttack.Accounts.PullHistory.changeset(%{address: address, sharky_lend: true})
+    |> Repo.insert_or_update()
+  end
+
+  def pull_borrow_history(address) do
+    pull_history = SharkAttack.Users.get_user_pull_history?(address)
+
+    SharkAttack.Stats.save_borrower_history(address)
+
+    pull_history
+    |> SharkAttack.Accounts.PullHistory.changeset(%{address: address, sharky_borrow: true})
+    |> Repo.insert_or_update()
   end
 
   def pull_all_citrus_loans() do
     SharkAttack.Collections.list_collections()
     |> Enum.map(& &1.foxy_address)
     |> Enum.reject(&is_nil/1)
-    |> Enum.flat_map(&SharkAttack.SharkyApi.get_collection_loans(&1, "citrus"))
+    |> Enum.flat_map(&SharkAttack.SharkyApi.get_complete_citrus_loans(&1))
     |> Enum.filter(fn loan -> loan["state"] in ["defaulted", "repaid"] end)
     |> Enum.map(&format_historical_citrus_loan/1)
     |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
@@ -73,6 +130,27 @@ defmodule SharkAttack.Stats do
     |> Enum.map(&format_historical_sharky_loan/1)
     |> Enum.reverse()
     |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+  end
+
+  def save_borrower_history(pk) do
+    data = SharkAttack.SharkyApi.get_borrower_history(pk)
+
+    data
+    |> Enum.map(&format_historical_sharky_loan/1)
+    |> Enum.reverse()
+    |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+  end
+
+  def save_recent_borrow_history(pk) do
+    case SharkAttack.SharkyApi.get_recent_history(pk, "borrow") do
+      {:error, _} ->
+        {:error, :error}
+
+      data ->
+        data
+        |> Enum.map(&format_historical_sharky_loan/1)
+        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+    end
   end
 
   def save_recent_lender_history(pk) do

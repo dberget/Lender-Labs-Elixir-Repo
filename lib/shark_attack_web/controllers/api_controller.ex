@@ -122,10 +122,11 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_borrower_history(conn, params) do
-    SharkAttack.Stats.update_history_safe(params["borrower"])
+    SharkAttack.Stats.update_borrow_history_safe(params["pk"])
+
     loans = SharkAttack.Loans.get_loans_history!(params["borrower"], "borrower")
 
-    forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.forecloseTxId) end)
+    forelosedLoans = Enum.filter(loans, fn l -> !is_nil(l.dateForeclosed) end)
 
     data = %{
       loans: loans,
@@ -137,6 +138,68 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(data)
+  end
+
+  def get_borrower_summary(conn, params) do
+    SharkAttack.Stats.update_borrow_history_safe(params["pk"])
+
+    historical_loans = SharkAttack.Loans.get_loans_history!(params["pk"], "borrower")
+    historical_loan_count = Enum.count(historical_loans)
+
+    loans = SharkAttack.LoansWorker.get_borrower_loans(params["pk"])
+
+    forelosedLoanCount =
+      Enum.filter(historical_loans, fn l -> !is_nil(l.dateForeclosed) end) |> Enum.count()
+
+    data = %{
+      completed_loans: historical_loan_count,
+      active_loan_count: Enum.count(loans),
+      loans: loans |> Enum.sort_by(& &1["end"]),
+      totalSolLoaned: Enum.map(historical_loans, fn l -> l.amountSol end) |> Enum.sum(),
+      totalInterest: Enum.map(historical_loans, & &1.earnings) |> Enum.sum(),
+      activeSolLoaned: Enum.map(loans, & &1["amountSol"]) |> Enum.sum(),
+      activeInterest: Enum.map(loans, & &1["earnings"]) |> Enum.sum(),
+      default_ratio: get_default_ratio(forelosedLoanCount, historical_loan_count),
+      avg_repayment:
+        Timex.Duration.from_erl(
+          {0,
+           round(
+             (historical_loans
+              |> Enum.filter(&is_nil(&1.dateForeclosed))
+              |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
+              |> Enum.sum()) /
+               historical_loan_count
+           ), 0}
+        )
+        |> Timex.format_duration(:humanized),
+      foreclosedCount: forelosedLoanCount
+    }
+
+    conn
+    |> json(data)
+  end
+
+  def get_default_ratio(0, _total_loans) do
+    0
+  end
+
+  def get_default_ratio(foreclosed_loans, total_loans) do
+    foreclosed_loans / total_loans * 100
+  end
+
+  def get_borrower_loans(conn, params) do
+    loans =
+      SharkAttack.LoansWorker.get_all_loans()
+      |> Enum.filter(&(&1["borrower"] == params["borrower"]))
+      |> Enum.map(&Map.drop(&1, ["secondsUntilForeclosable"]))
+      |> Enum.sort_by(& &1["end"], :asc)
+
+    summary = %{
+      totalSolLoaned: Enum.map(loans, fn l -> l["amountSol"] end) |> Enum.sum(),
+      totalInterest: Enum.map(loans, fn l -> l["earnings"] end) |> Enum.sum()
+    }
+
+    conn |> json(%{loans: loans, summary: summary})
   end
 
   def get_all_loans(conn, _params) do
@@ -190,8 +253,6 @@ defmodule SharkAttackWeb.ApiController do
         SharkAttack.SharkyApi.get_lender_loans(params["lender"])
       end
 
-    {sharkyLoans, citrusLoans} = loans |> Enum.split_with(fn l -> l["platform"] == "Sharky" end)
-
     takenLoans =
       loans
       |> Enum.filter(fn l -> l["state"] in ["taken", "active"] end)
@@ -224,21 +285,6 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
   end
 
-  def get_borrower_loans(conn, params) do
-    loans =
-      SharkAttack.LoansWorker.get_all_loans()
-      |> Enum.filter(&(&1["borrower"] == params["borrower"]))
-      |> Enum.map(&Map.drop(&1, ["secondsUntilForeclosable"]))
-      |> Enum.sort_by(& &1["end"], :asc)
-
-    summary = %{
-      totalSolLoaned: Enum.map(loans, fn l -> l["amountSol"] end) |> Enum.sum(),
-      totalInterest: Enum.map(loans, fn l -> l["earnings"] end) |> Enum.sum()
-    }
-
-    conn |> json(%{loans: loans, summary: summary})
-  end
-
   def get_collection(conn, params) do
     case SharkAttack.Collections.get_collection(params["collection_id"]) do
       nil ->
@@ -247,7 +293,13 @@ defmodule SharkAttackWeb.ApiController do
         |> json(%{error: "Collection not found"})
 
       collection ->
-        loans_and_offers = SharkAttack.LoansWorker.get_collection_loans(params["collection_id"])
+        sharky_loans_and_offers =
+          SharkAttack.LoansWorker.get_collection_loans(collection.sharky_address)
+
+        citrus_loans_and_offers =
+          SharkAttack.LoansWorker.get_collection_loans(collection.foxy_address)
+
+        loans_and_offers = [sharky_loans_and_offers, citrus_loans_and_offers] |> List.flatten()
 
         offers =
           loans_and_offers
@@ -501,7 +553,9 @@ defmodule SharkAttackWeb.ApiController do
 
     loans =
       SharkAttack.LoansWorker.get_all_loans()
-      |> Enum.reject(fn l -> l["borrower"] == "" end)
+      |> Enum.reject(fn l ->
+        l["borrower"] == "" or l["borrower"] == "11111111111111111111111111111111"
+      end)
       |> Enum.map(fn l ->
         %{
           borrower: l["borrower"],
@@ -564,7 +618,10 @@ defmodule SharkAttackWeb.ApiController do
       |> Enum.max_by(fn {_, v} -> v end)
       |> elem(0)
 
-    Enum.find(collections, %{}, fn c -> c.sharky_address == favorite end) |> Map.get(:name)
+    Enum.find(collections, %{}, fn c ->
+      c.sharky_address == favorite or c.foxy_address == favorite
+    end)
+    |> Map.get(:name)
   end
 
   def get_borrower_collections(conn, params) do
@@ -642,54 +699,5 @@ defmodule SharkAttackWeb.ApiController do
         conn
         |> json(%{message: "Error, please try again"})
     end
-  end
-
-  defp get_active_loans(sharkyLoans, citrusLoans) do
-    [
-      get_active_sharky_loans(sharkyLoans)
-      | get_active_citrus_loans(citrusLoans)
-    ]
-    |> List.flatten()
-  end
-
-  defp get_active_sharky_loans(loans) when is_list(loans) do
-    Enum.filter(loans, fn l -> l["state"] == "taken" end)
-  end
-
-  defp get_active_sharky_loans(_) do
-    []
-  end
-
-  defp get_active_citrus_loans(loans) when is_list(loans) do
-    Enum.filter(loans, fn l -> l["state"] == "active" end)
-  end
-
-  defp get_active_citrus_loans(_) do
-    []
-  end
-
-  defp get_active_offers(sharkyOffers, citrusOffers) do
-    [
-      get_active_sharky_offers(sharkyOffers)
-      | get_active_citrus_offers(citrusOffers)
-    ]
-    |> List.flatten()
-    |> Enum.sort_by(& &1["offerTime"], :asc)
-  end
-
-  defp get_active_sharky_offers(offers) when is_list(offers) do
-    Enum.filter(offers, fn l -> l["state"] == "offered" end)
-  end
-
-  defp get_active_sharky_offers(_) do
-    []
-  end
-
-  defp get_active_citrus_offers(offers) when is_list(offers) do
-    Enum.filter(offers, fn l -> l["state"] == "waitingForBorrower" end)
-  end
-
-  defp get_active_citrus_offers(_) do
-    []
   end
 end

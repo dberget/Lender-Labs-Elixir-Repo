@@ -112,6 +112,13 @@ defmodule SharkAttack.Users do
     |> Repo.delete()
   end
 
+  def get_user_pull_history?(address) do
+    case Repo.get_by(SharkAttack.Accounts.PullHistory, address: address) do
+      nil -> %SharkAttack.Accounts.PullHistory{}
+      res -> res
+    end
+  end
+
   def get_purchases() do
     SharkAttack.Helpers.do_get_request(
       "https://api.hel.io/v1/export/payments?publicKey=Labsrz67AZ3Z7zk76k8hWh38nZSsfgUn4VtSU6ZdWL3",

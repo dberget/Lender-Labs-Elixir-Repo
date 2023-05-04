@@ -129,6 +129,18 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
+  def get_complete_citrus_loans(address) do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/citrus/#{address}")
+
+    case res do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
+  end
+
   def get_collection_loans(nil, "frakt"), do: []
 
   def get_collection_loans(nil, "citrus"), do: []
@@ -203,6 +215,18 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
+  def get_recent_history(lender, "borrow") do
+    case SharkAttack.Helpers.do_get_request(
+           "https://sharky.fi/api/loan/my-loans?borrow=#{lender}&network=mainnet&deployEnvironment=production"
+         ) do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        Map.get(body, "historyLoans", [])
+    end
+  end
+
   def get_history(lender, offset \\ 0, all_items \\ []) do
     limit = 50
 
@@ -214,6 +238,23 @@ defmodule SharkAttack.SharkyApi do
 
         if data["historyLoans"] |> length >= limit do
           get_history(lender, offset + limit, all_items)
+        else
+          all_items
+        end
+    end
+  end
+
+  def get_borrower_history(address, offset \\ 0, all_items \\ []) do
+    limit = 50
+
+    case SharkAttack.Helpers.do_get_request(
+           "https://sharky.fi/api/loan/my-loans?borrower=#{address}&network=mainnet&deployEnvironment=production&offset=#{offset}"
+         ) do
+      data ->
+        all_items = all_items ++ data["historyLoans"]
+
+        if data["historyLoans"] |> length >= limit do
+          get_borrower_history(address, offset + limit, all_items)
         else
           all_items
         end

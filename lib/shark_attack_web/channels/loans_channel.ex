@@ -39,14 +39,44 @@ defmodule SharkAttackWeb.LoansChannel do
     #   "https://api.helius.xyz/v0/addresses/#{loan["borrower"]}/names?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
     # )
 
+    # loans_history = SharkAttack.Loans.get_loans_history!(loan["borrower"], "borrower")
+
+    # foreclosed_loans = loans_history |> Enum.filter(&(!is_nil(&1.dateForeclosed)))
+
+    # average_loan_duration =
+    #   Timex.Duration.from_erl(
+    #     {0,
+    #      round(
+    #        (loans_history
+    #         |> Enum.filter(&is_nil(&1.dateForeclosed))
+    #         |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
+    #         |> Enum.sum()) /
+    #          Enum.count(loans_history)
+    #      ), 0}
+    #   )
+    #   |> Timex.format_duration(:humanized)
+
     collections =
       mints
       |> SharkAttack.Collections.get_collections_from_mint_list()
 
     SharkAttackWeb.Endpoint.broadcast!("room:loans", "new", %{
       data: loan,
+      # borrower: %{
+      #   avg_duration: average_loan_duration,
+      #   loans_history: Enum.count(loans_history),
+      #   default_ratio: get_default_ratio(Enum.count(foreclosed_loans), Enum.count(loans_history))
+      # },
       collections: collections
     })
+  end
+
+  def get_default_ratio(0, total_loans) do
+    0
+  end
+
+  def get_default_ratio(foreclosed_loans, total_loans) do
+    foreclosed_loans / total_loans * 100
   end
 
   def delete(loan) do

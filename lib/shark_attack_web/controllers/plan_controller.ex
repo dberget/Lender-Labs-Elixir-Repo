@@ -3,7 +3,9 @@ defmodule SharkAttackWeb.PlanController do
   require Logger
 
   def index(conn, params) do
-    plans = SharkAttack.Loans.get_user_loan_plans(params["user_address"])
+    user = SharkAttack.Users.get_user_from_address!(params["user_address"])
+
+    plans = SharkAttack.Loans.get_user_loan_plans(user.address)
 
     conn
     |> json(plans)
