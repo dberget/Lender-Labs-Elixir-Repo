@@ -86,7 +86,7 @@ defmodule SharkAttack.LoansWorker do
 
     :ets.insert(
       :collection_loans,
-      {loan["orderBook"], loanAddress, loan["lender"], Map.drop(loan, ["rawData"])}
+      {loan["orderBook"], loanAddress, loan["lender"], loan}
     )
   end
 
@@ -100,7 +100,7 @@ defmodule SharkAttack.LoansWorker do
 
     collection_loans =
       loanData
-      |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], Map.drop(&1, ["rawData"])})
+      |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
 
     :ets.delete_all_objects(:collection_loans)
     :ets.insert(:collection_loans, collection_loans)
@@ -230,7 +230,7 @@ defmodule SharkAttack.LoansWorker do
 
         :ets.insert(
           :collection_loans,
-          {data["orderBook"], loanData.loanAddress, data["lender"], Map.drop(data, ["rawData"])}
+          {data["orderBook"], loanData.loanAddress, data["lender"], data}
         )
     end
   end

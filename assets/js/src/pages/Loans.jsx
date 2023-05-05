@@ -49,7 +49,7 @@ export function Loans() {
   const [sortDirection, setSortDirection] = React.useState("DESC");
 
   const { loans: fraktLoans, repayLoan: repayFraktLoan } = useFrakt();
-  const { citrus, loans: citrusLoans, repayLoan } = useCitrus();
+  const { citrus, repayLoan } = useCitrus();
   const { rainLoans, repayAll: repayAllRain } = useRain();
 
   const sharkyClient = initSharkyClient(connection, wallet);
@@ -67,7 +67,9 @@ export function Loans() {
 
   if (!loanData) return <div></div>;
 
-  const { loans: sharkyLoans, summary } = loanData;
+  const { loans, summary } = loanData;
+
+  console.log(loans);
 
   const handleFilterLoans = async (newFilter) => {
     if (filter === newFilter) {
@@ -77,12 +79,9 @@ export function Loans() {
     setFilter(newFilter);
   };
 
-  const allLoans = [
-    ...rainLoans,
-    ...citrusLoans,
-    ...fraktLoans,
-    ...sharkyLoans,
-  ].sort((a, b) => a.end - b.end);
+  const allLoans = [...rainLoans, ...fraktLoans, ...loans].sort(
+    (a, b) => a.end - b.end
+  );
 
   const handleRenewSelected = async () => {
     notify(`Renewing Selected loans ${wallet?.publicKey?.toBase58()}`);
@@ -194,7 +193,7 @@ export function Loans() {
     }
 
     const selectedCitrusLoans = selectedForRepay.filter(
-      (l) => l.loan.platform === "Citrus"
+      (l) => l.loan.platform === "CITRUS"
     );
 
     if (selectedCitrusLoans.length > 0) {
@@ -354,12 +353,12 @@ export function Loans() {
           </div>
           <div
             style={{
-              backgroundColor: filter == "Citrus" ? "#28292B" : "transparent",
+              backgroundColor: filter == "CITRUS" ? "#28292B" : "transparent",
             }}
             className="p-4"
           >
             <img
-              onClick={() => handleFilterLoans("Citrus")}
+              onClick={() => handleFilterLoans("CITRUS")}
               className={"w-auto h-12 cursor-pointer"}
               src={"/images/citrus-logo.png"}
             />
@@ -413,7 +412,7 @@ const LoanCards = ({
     Rain: (props) => (
       <RainCard key={props.index} {...props} metaplex={metaplex} />
     ),
-    Citrus: (props) => (
+    CITRUS: (props) => (
       <CitrusCard key={props.index} {...props} metaplex={metaplex} />
     ),
     FRAKT: (props) => (
@@ -729,7 +728,7 @@ const CitrusCard = ({ loan, metaplex, setSelected, selectedForRepay }) => {
   const [nft, setNft] = React.useState(null);
   const { citrusSdk, repayLoan } = useCitrus();
   const [isSelected, setIsSelected] = React.useState(false);
-  const { collection } = useCollection(loan.collectionConfig);
+  const { collection } = useCollection(loan.orderBook);
 
   React.useEffect(() => {
     const selected = selectedForRepay.find((l) => l.key == loan.loanAccount);
@@ -757,13 +756,15 @@ const CitrusCard = ({ loan, metaplex, setSelected, selectedForRepay }) => {
     // );
 
     loan.amountSol =
-      (loan.terms.principal + loan.terms.interest) / LAMPORTS_PER_SOL;
+      (loan.rawData.terms.principal + loan.rawData.terms.interest) /
+      LAMPORTS_PER_SOL;
 
     setSelected(loan, []);
   };
 
   const loanOwed =
-    (loan.terms.principal + loan.terms.interest) / LAMPORTS_PER_SOL;
+    (loan.rawData.terms.principal + loan.rawData.terms.interest) /
+    LAMPORTS_PER_SOL;
 
   return (
     <div

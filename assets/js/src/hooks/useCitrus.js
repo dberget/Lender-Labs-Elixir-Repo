@@ -43,7 +43,6 @@ export const CitrusProvider = (props) => {
       const loan = loans[index];
 
       loan.end = loan.startTime + loan?.terms?.duration;
-      loan.platform = "Citrus";
 
       newLoans.push(loan);
     }
