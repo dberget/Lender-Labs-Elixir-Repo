@@ -164,11 +164,11 @@ defmodule SharkAttackWeb.ApiController do
         Timex.Duration.from_erl(
           {0,
            round(
-             (historical_loans
-              |> Enum.filter(&is_nil(&1.dateForeclosed))
-              |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
-              |> Enum.sum()) /
-               historical_loan_count
+             historical_loans
+             |> Enum.filter(&is_nil(&1.dateForeclosed))
+             |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
+             |> Enum.sum()
+             |> get_avg_repayment(historical_loan_count)
            ), 0}
         )
         |> Timex.format_duration(:humanized),
@@ -177,6 +177,14 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(data)
+  end
+
+  def get_avg_repayment(0, _total_loans) do
+    0
+  end
+
+  def get_avg_repayment(sum, historical_loan_count) do
+    sum / historical_loan_count
   end
 
   def get_default_ratio(0, _total_loans) do
