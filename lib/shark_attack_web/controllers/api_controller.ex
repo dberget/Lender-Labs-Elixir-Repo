@@ -518,15 +518,19 @@ defmodule SharkAttackWeb.ApiController do
       |> Enum.map(fn c ->
         fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
-        {_ob, collection_loans} =
+        {_ob, sharky_loans} =
           Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.sharky_address end)
 
-        citrus_loans = SharkAttack.SharkyApi.get_collection_loans(c.foxy_address, "citrus")
+        {_ob, citrus_loans} =
+          Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.foxy_address end)
+
+        # citrus_loans = SharkAttack.SharkyApi.get_collection_loans(c.foxy_address, "citrus")
 
         # frakt_loans = SharkAttack.SharkyApi.get_collection_loans(c.frakt_address, "frakt")
 
-        sharky = SharkAttack.Analytics.build_overview(c.id, collection_loans, "sharky")
+        sharky = SharkAttack.Analytics.build_overview(c.id, sharky_loans, "sharky")
         citrus = SharkAttack.Analytics.build_overview(c.id, citrus_loans, "citrus")
+
         # frakt = SharkAttack.Analytics.build_overview(c.id, frakt_loans, "citrus")
 
         rollup = %{

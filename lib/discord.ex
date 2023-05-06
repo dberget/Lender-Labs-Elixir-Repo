@@ -75,9 +75,9 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
-  # Cherry
+  # Cherry - Money Dao
   def send_to_webhook(
-        "49MpTG8dfS7ein97ZvfxTu53u59nixhzu8gZg4B6Qkhw",
+        "Dv4q71A4wot5HiTt1o1WizokuVinV9iZepdDCnxkXsrG",
         embed
       ) do
     Api.execute_webhook(
