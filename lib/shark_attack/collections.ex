@@ -3,10 +3,29 @@ defmodule SharkAttack.Collections do
   import Ecto.Query
   alias SharkAttack.Collections.Collection
   alias SharkAttack.Collections.Nft
+  alias SharkAttack.Loans.Loan
   require Logger
 
   def list_collections() do
     Repo.all(Collection)
+  end
+
+  def get_collection_advanced_stats() do
+    query =
+      from(l in Loan,
+        join: c in Collection,
+        on: c.sharky_address == l.orderBook,
+        where: l.platform == "sharky" and l.status == "complete",
+        group_by: c.id,
+        select: %{
+          collection_id: c.id,
+          ratio: coalesce(count(l.forecloseTxId) / count("*"), 0),
+          avg_repayment_time:
+            avg(fragment("TIMESTAMPDIFF(HOUR, ?, ?)", l.dateTaken, l.dateRepaid))
+        }
+      )
+
+    Repo.all(query)
   end
 
   def update_me_data() do

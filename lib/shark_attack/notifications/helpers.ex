@@ -7,8 +7,9 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
   @dao_webook_addresses [
     "4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK",
-    "49MpTG8dfS7ein97ZvfxTu53u59nixhzu8gZg4B6Qkhw",
-    "8UaxGpbtgvg7FhwRaAHaHxZBy1ZWGBJQ2xSkPTCSjQ6A"
+    "Dv4q71A4wot5HiTt1o1WizokuVinV9iZepdDCnxkXsrG",
+    "8UaxGpbtgvg7FhwRaAHaHxZBy1ZWGBJQ2xSkPTCSjQ6A",
+    "4fUWRM3EKQJuZnNbHdSdd22gMnEosMRMBTGB41Sq7bED"
   ]
 
   def send_message({:foreclosure, embed}) do

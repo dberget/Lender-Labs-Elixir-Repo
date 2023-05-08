@@ -149,6 +149,7 @@ defmodule SharkAttack.FloorWorker do
 
   def update_floor_prices() do
     all_collections = SharkAttack.Collections.list_collections()
+    advanced_stats = SharkAttack.Collections.get_collection_advanced_stats()
 
     all_collections
     |> SharkAttack.Tensor.get_floor_prices()
@@ -156,7 +157,17 @@ defmodule SharkAttack.FloorWorker do
       all_collections
       |> Enum.filter(&(&1.me_slug == collection))
       |> Enum.each(fn token ->
-        :ets.insert(:floor_prices, {token.id, stats})
+        adv_stats = advanced_stats |> Enum.find(%{}, fn x -> x.collection_id == token.id end)
+
+        stats =
+          stats
+          |> Map.put("defaultRatio", Map.get(adv_stats, :ratio, 0))
+          |> Map.put("avgRepayment", Map.get(adv_stats, :avg_repayment_time, 0))
+
+        :ets.insert(
+          :floor_prices,
+          {token.id, stats}
+        )
       end)
     end)
   end

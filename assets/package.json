@@ -5,7 +5,7 @@
     "dependencies": {
         "@famousfoxfederation/citrus-sdk": "^0.1.8",
         "@frakt-protocol/frakt-sdk": "^0.8.28",
-        "@rainfi/sdk": "^1.2.48",
+        "@rainfi/sdk": "^1.2.52",
         "@sharkyfi/client": "^6.1.0",
         "@solana/wallet-adapter-react-ui": "^0.9.31",
         "@solana/wallet-adapter-wallets": "^0.19.16",

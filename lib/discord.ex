@@ -69,8 +69,20 @@ defmodule SharkAttack.DiscordConsumer do
         embed
       ) do
     Api.execute_webhook(
-      "1099115998990307360",
-      "upeAVDXkoe09CRM3qS-_eYMPubjXaF8vXoP9xBjAriUMkQ8i_VMQTUwvACgW1HYMTzv4",
+      "1104834748901245000",
+      "GDkUYp1-w4h1e5KFFse2VlXJuHWaqVO9457ptCVe0Zx7DV1gdaq4alMCmXRYdNPGnG5m",
+      %{embeds: [embed]}
+    )
+  end
+
+  # demise - ChestDefi
+  def send_to_webhook(
+        "4fUWRM3EKQJuZnNbHdSdd22gMnEosMRMBTGB41Sq7bED",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1098674544589414462",
+      "5Pchc3sTCx0pRE5hp5RdaGbGv2d05YCOVUGMDkzM78vxBFwXjrpwd9EhougYKMGEzRnJ",
       %{embeds: [embed]}
     )
   end

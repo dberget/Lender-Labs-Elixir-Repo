@@ -450,6 +450,7 @@ defmodule SharkAttackWeb.ApiController do
       |> length()
 
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+
     volume = SharkAttack.FloorWorker.get_volume(c)
 
     underWater =
@@ -524,8 +525,6 @@ defmodule SharkAttackWeb.ApiController do
         {_ob, citrus_loans} =
           Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.foxy_address end)
 
-        # citrus_loans = SharkAttack.SharkyApi.get_collection_loans(c.foxy_address, "citrus")
-
         # frakt_loans = SharkAttack.SharkyApi.get_collection_loans(c.frakt_address, "frakt")
 
         sharky = SharkAttack.Analytics.build_overview(c.id, sharky_loans, "sharky")
@@ -589,7 +588,6 @@ defmodule SharkAttackWeb.ApiController do
         %{
           borrower: k,
           loanCount: length(v),
-          loans: v,
           amount: Enum.map(v, & &1.amount) |> Enum.sum(),
           interest: Enum.map(v, & &1.interest) |> Enum.sum(),
           favorite: get_most_borrowed(v, collections)
@@ -606,7 +604,6 @@ defmodule SharkAttackWeb.ApiController do
         %{
           lender: k,
           loanCount: length(v),
-          loans: v,
           amount: Enum.map(v, & &1.amount) |> Enum.sum(),
           profit: Enum.map(v, & &1.interest) |> Enum.sum(),
           is_ll_user: Enum.any?(offers, &(&1.lender == k)),
