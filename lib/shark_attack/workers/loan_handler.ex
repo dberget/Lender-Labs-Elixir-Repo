@@ -110,11 +110,11 @@ defmodule SharkAttack.Workers.LoanHandler do
   end
 
   def update_loan(%{"type" => "UNKNOWN"} = event) do
-    Logger.info("Unhandled Event - source: #{event["source"]}]")
+    Logger.info("Unhandled Event - source: #{event["source"]}")
   end
 
   def update_loan(event) do
-    Logger.info("Unhandled Event - source: #{event["source"]}, type: #{event["type"]}]")
+    Logger.info("Unhandled Event - source: #{event["source"]}, type: #{event["type"]}")
   end
 
   def get_loan_address(%{"source" => "SHARKY_FI", "type" => "REPAY_LOAN"} = event) do
