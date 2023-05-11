@@ -325,13 +325,28 @@ defmodule SharkAttackWeb.ApiController do
 
         floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
 
+        underWater = get_underwater_loans(loans, floor_price)
+        volume = SharkAttack.FloorWorker.get_volume(collection)
+
         conn
         |> json(%{
           collection: %{
-            collection
-            | fp: floor_price,
-              offers: offers,
-              loans: loans
+            id: collection.id,
+            sharky_address: collection.sharky_address,
+            foxy_address: collection.foxy_address,
+            rain_fi_id: collection.rain_fi_id,
+            frakt_address: collection.frakt_address,
+            duration: collection.duration,
+            logo: collection.logo,
+            apy: collection.apy,
+            name: collection.name,
+            fp: floor_price,
+            lastTaken: Enum.take(loans, 1) |> List.first(%{}) |> Map.drop(["rawData"]),
+            offers: offers,
+            loans: loans,
+            countUnderWater: elem(underWater, 0),
+            averageUnderwater: elem(underWater, 1),
+            volume: volume
           }
         })
     end
@@ -452,30 +467,7 @@ defmodule SharkAttackWeb.ApiController do
     fp = SharkAttack.FloorWorker.get_floor_price(c.id)
 
     volume = SharkAttack.FloorWorker.get_volume(c)
-
-    underWater =
-      case loans do
-        [] ->
-          {0, 0}
-
-        _ ->
-          underWaterLoans = Enum.filter(loans, fn l -> l["amountSol"] + l["earnings"] > fp end)
-
-          case underWaterLoans do
-            [] ->
-              {0, 0}
-
-            _ ->
-              lengthUnderWaterLoans = length(underWaterLoans)
-
-              averageUnderwater =
-                (Enum.map(underWaterLoans, &(&1["amountSol"] + &1["earnings"]))
-                 |> Enum.sum()) /
-                  lengthUnderWaterLoans
-
-              {lengthUnderWaterLoans, averageUnderwater}
-          end
-      end
+    underWater = get_underwater_loans(loans, fp)
 
     grouped_offers =
       offers
@@ -509,6 +501,27 @@ defmodule SharkAttackWeb.ApiController do
           highestOffer / fp * 100
         end
     }
+  end
+
+  defp get_underwater_loans([], fp), do: {0, 0}
+
+  defp get_underwater_loans(loans, fp) do
+    underWaterLoans = Enum.filter(loans, fn l -> l["amountSol"] + l["earnings"] > fp end)
+
+    case underWaterLoans do
+      [] ->
+        {0, 0}
+
+      _ ->
+        lengthUnderWaterLoans = length(underWaterLoans)
+
+        averageUnderwater =
+          (Enum.map(underWaterLoans, &(&1["amountSol"] + &1["earnings"]))
+           |> Enum.sum()) /
+            lengthUnderWaterLoans
+
+        {lengthUnderWaterLoans, averageUnderwater}
+    end
   end
 
   def analyze_collection_data(conn, params) do
