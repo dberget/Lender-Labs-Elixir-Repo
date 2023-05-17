@@ -87,6 +87,19 @@ defmodule SharkAttack.Users do
     |> Repo.insert()
   end
 
+  def delete_saved_search(id) do
+    %SharkAttack.Accounts.SavedSearch{id: id}
+    |> Repo.delete()
+  end
+
+  def get_saved_searches(address) do
+    Repo.all(
+      from(uw in SharkAttack.Accounts.SavedSearch,
+        where: uw.user_address == ^address
+      )
+    )
+  end
+
   def create_default_user_setting(user_address) do
     %SharkAttack.Accounts.UserSettings{}
     |> SharkAttack.Accounts.UserSettings.changeset(%{user_address: user_address})

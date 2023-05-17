@@ -17,6 +17,8 @@ defmodule SharkAttackWeb.LoansChannel do
     {:noreply, socket}
   end
 
+  def push(nil), do: nil
+
   def push(loan) do
     mints =
       loan["borrower"]
@@ -71,7 +73,7 @@ defmodule SharkAttackWeb.LoansChannel do
     })
   end
 
-  def get_default_ratio(0, total_loans) do
+  def get_default_ratio(0, _total_loans) do
     0
   end
 

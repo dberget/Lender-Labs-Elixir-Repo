@@ -22,7 +22,7 @@ defmodule SharkAttack.Accounts.UserSettings do
     field(:loan_repaid, :boolean, default: true)
     field(:loan_foreclosure, :boolean, default: true)
     field(:ltf_alert, :boolean, default: false)
-    field(:summary_report, :boolean, default: false)
+    field(:summary_report, :boolean, default: true)
     field(:frakt_raffles, :boolean, default: false)
 
     timestamps()

@@ -10,6 +10,7 @@ config :shark_attack, SharkAttack.Repo,
   pool_size: 10
 
 config :shark_attack, SharkAttack.Scheduler,
+  timeout: 500_000,
   jobs: [
     {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
     {"*/30 * * * *", {SharkAttack.LoansWorker, :flush, []}},

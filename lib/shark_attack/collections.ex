@@ -90,11 +90,11 @@ defmodule SharkAttack.Collections do
     case File.read(file_path) do
       {:ok, contents} ->
         case Jason.decode!(contents) do
-          json ->
-            json
-
           {:error, _} ->
             raise "Failed to decode JSON in file: #{file_path}"
+
+          json ->
+            json
         end
 
       {:error, _} ->
@@ -152,6 +152,14 @@ defmodule SharkAttack.Collections do
 
       collection ->
         collection
+    end
+  end
+
+  def insert_new_collection(%{name: name} = attrs) do
+    collection = get_collection_by_name(name)
+
+    if is_nil(collection) do
+      create_collection(attrs)
     end
   end
 
@@ -252,7 +260,7 @@ defmodule SharkAttack.Collections do
         apy: collection["apy"]
       }
 
-      SharkAttack.Collections.get_and_update_collection(data)
+      SharkAttack.Collections.insert_new_collection(data)
     end)
   end
 

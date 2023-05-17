@@ -23,6 +23,10 @@ defmodule SharkAttackWeb.Router do
     get("/user_wallets", UserController, :user_wallets)
     post("/update_user_wallet", UserController, :update_user_wallet)
     post("/remove_user_wallet", UserController, :remove_user_wallet)
+
+    get("/get_user_saved_searches", UserController, :get_user_saved_searches)
+    post("/save_user_search", UserController, :save_user_search)
+    post("/delete_user_saved_search", UserController, :delete_user_saved_search)
   end
 
   scope "/api", SharkAttackWeb do

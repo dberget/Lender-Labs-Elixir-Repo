@@ -4,6 +4,7 @@ defmodule SharkAttack.Accounts.SavedSearch do
 
   @derive {Jason.Encoder,
            only: [
+             :id,
              :user_address,
              :search,
              :name
@@ -26,7 +27,8 @@ defmodule SharkAttack.Accounts.SavedSearch do
     loan_plan
     |> cast(attrs, [
       :user_address,
-      :search
+      :search,
+      :name
     ])
     |> validate_required([:user_address, :search, :name])
   end

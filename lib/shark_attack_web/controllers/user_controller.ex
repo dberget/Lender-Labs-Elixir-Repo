@@ -43,6 +43,36 @@ defmodule SharkAttackWeb.UserController do
     |> json("ok")
   end
 
+  def get_user_saved_searches(conn, %{"pk" => address}) do
+    searches = SharkAttack.Users.get_saved_searches(address)
+
+    conn
+    |> json(searches)
+  end
+
+  def delete_user_saved_search(conn, params) do
+    SharkAttack.Users.delete_saved_search(params["id"])
+
+    conn
+    |> json("ok")
+  end
+
+  def save_user_search(conn, params) do
+    case SharkAttack.Users.create_saved_search(params) do
+      {:ok, _search} ->
+        conn
+        |> json("success")
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "Could not save search",
+          reason: changeset
+        })
+    end
+  end
+
   def update_purchases(conn, _params) do
     SharkAttack.Users.get_purchases()
 

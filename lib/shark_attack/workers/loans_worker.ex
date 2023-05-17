@@ -126,7 +126,9 @@ defmodule SharkAttack.LoansWorker do
 
   @impl true
   def init([]) do
+    SharkAttack.DiscordConsumer.send_to_webhook("me", "Initing Loans Worker")
     generate_tables()
+
     flush()
 
     {:ok, []}
@@ -190,7 +192,7 @@ defmodule SharkAttack.LoansWorker do
     {:noreply, state}
   end
 
-  defp add_new_loan(nil), do: nil
+  defp add_new_loan(nil, _attempts), do: nil
 
   defp add_new_loan(loanData, attempts) do
     case SharkyApi.get_loan(loanData) do
@@ -210,9 +212,9 @@ defmodule SharkAttack.LoansWorker do
     end
   end
 
-  defp add_new_offer(nil), do: nil
+  defp add_new_offer(nil, _attempts), do: nil
 
-  defp add_new_offer(loanData, attempts \\ 0) do
+  defp add_new_offer(loanData, attempts) do
     case SharkyApi.get_loan(loanData) do
       nil ->
         handle_retry(loanData, attempts, :add_new_offer)

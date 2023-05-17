@@ -30,6 +30,7 @@ config :cors_plug,
   methods: ["GET", "POST"]
 
 config :shark_attack, SharkAttack.Scheduler,
+  timeout: 500_000,
   jobs: [
     {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
     {"*/25 * * * *", {SharkAttack.LoansWorker, :flush, []}},

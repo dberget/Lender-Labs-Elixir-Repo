@@ -10,10 +10,6 @@ defmodule SharkAttack do
   def getWallet(),
     do: Solana.Key.pair_from_file("/Users/davidberget/.config/solana/arbot.json")
 
-  def go do
-    SharkAttack.Monitor.monitor_offers("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
-  end
-
   def build_collection_data() do
     order_books = SharkAttack.SharkyApi.get_order_books()
     floors = SharkAttack.SharkyApi.get_floor_prices()

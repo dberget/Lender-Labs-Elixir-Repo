@@ -503,7 +503,7 @@ defmodule SharkAttackWeb.ApiController do
     }
   end
 
-  defp get_underwater_loans([], fp), do: {0, 0}
+  defp get_underwater_loans([], _fp), do: {0, 0}
 
   defp get_underwater_loans(loans, fp) do
     underWaterLoans = Enum.filter(loans, fn l -> l["amountSol"] + l["earnings"] > fp end)
@@ -524,7 +524,7 @@ defmodule SharkAttackWeb.ApiController do
     end
   end
 
-  def analyze_collection_data(conn, params) do
+  def analyze_collection_data(conn, _params) do
     loans = SharkAttack.LoansWorker.get_all_collection_loans()
 
     collections =

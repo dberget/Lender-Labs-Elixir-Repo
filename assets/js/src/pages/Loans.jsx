@@ -69,8 +69,6 @@ export function Loans() {
 
   const { loans, summary } = loanData;
 
-  console.log(loans);
-
   const handleFilterLoans = async (newFilter) => {
     if (filter === newFilter) {
       setFilter(null);
@@ -630,7 +628,7 @@ const SharkyCard = ({
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
             } mr-1 w-7 h-7 text-[#58BC98]`}
           />
-          <span className="font-bold">{collection?.name}</span>
+          <span className="font-bold">{nft?.name ?? collection?.name}</span>
 
           <span
             data-tooltip-variant="light"
@@ -740,7 +738,7 @@ const CitrusCard = ({ loan, metaplex, setSelected, selectedForRepay }) => {
     const getNft = async () => {
       const nft = await metaplex
         .nfts()
-        .findByMint({ mintAddress: new PublicKey(loan.mint) });
+        .findByMint({ mintAddress: new PublicKey(loan.nftCollateralMint) });
 
       setNft(nft);
     };
@@ -778,7 +776,7 @@ const CitrusCard = ({ loan, metaplex, setSelected, selectedForRepay }) => {
               isSelected ? "hero-check-circle-solid" : "hero-check-circle"
             } mr-1 w-7 h-7 text-[#58BC98]`}
           />
-          <span className="font-bold">{collection?.name}</span>
+          <span className="font-bold">{nft?.name}</span>
 
           <span
             data-tooltip-variant="light"

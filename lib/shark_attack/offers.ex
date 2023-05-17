@@ -5,13 +5,8 @@ defmodule SharkAttack.Offers do
 
   import Ecto.Query, warn: false
 
-  alias Ecto.Changeset
-  alias SharkAttack.LoansWorker
-  alias SharkAttack.Loans.PlanSettings
   alias SharkAttack.Loans.Offer
   alias SharkAttack.Repo
-
-  alias SharkAttack.Accounts.User
 
   def update_or_create_offer(attrs) do
     offer = SharkAttack.Offers.get_offer(attrs["loan_address"])
@@ -48,6 +43,12 @@ defmodule SharkAttack.Offers do
     rescind_offer(offer)
   end
 
+  def update_offer(offer, attrs) do
+    offer
+    |> Offer.changeset(attrs)
+    |> Repo.update()
+  end
+
   def taken_offer(offer) do
     offer
     |> Offer.changeset(%{taken: 1})
@@ -57,12 +58,6 @@ defmodule SharkAttack.Offers do
   def rescind_offer(loanAddress) do
     SharkAttack.Offers.get_offer(loanAddress)
     |> Offer.changeset(%{rescinded: 1})
-    |> Repo.update()
-  end
-
-  def update_offer(offer, attrs) do
-    offer
-    |> Offer.changeset(attrs)
     |> Repo.update()
   end
 
