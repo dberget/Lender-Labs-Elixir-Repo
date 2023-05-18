@@ -47,9 +47,9 @@ defmodule SharkAttack.Users do
           |> User.changeset(%{address: address})
           |> Repo.insert(on_conflict: :nothing)
 
-        create_default_user_setting(%{address: address})
+        create_default_user_setting(address)
 
-        user
+        :ok
 
       _ ->
         :ok

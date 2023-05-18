@@ -6,6 +6,13 @@ defmodule SharkAttack.DiscordConsumer do
 
   require Logger
 
+  @gibbers [
+    451_888_759_865_081_866,
+    186_591_084_728_549_377,
+    171_430_746_261_553_152,
+    665_516_900_612_177_941
+  ]
+
   @commands [
     {"subscribe", "Subscribe to notifications.",
      [
@@ -218,8 +225,6 @@ defmodule SharkAttack.DiscordConsumer do
   end
 
   def handle_command("subscribe", account, discordId, interaction) do
-    IO.inspect(account, label: "subscribe")
-
     case SharkAttack.Users.get_user_from_address!(account) do
       %SharkAttack.Accounts.User{} = user ->
         SharkAttack.Users.update_user(user, %{discordId: discordId})
@@ -233,9 +238,7 @@ defmodule SharkAttack.DiscordConsumer do
     end
   end
 
-  def handle_command("gib", account, _discordId, interaction) do
-    IO.inspect(account, label: "GIB")
-
+  def handle_command("gib", account, discordId, interaction) when discordId in @gibbers do
     case SharkAttack.Users.create_user(account) do
       :ok ->
         Api.create_interaction_response(interaction, %{
@@ -249,5 +252,12 @@ defmodule SharkAttack.DiscordConsumer do
           data: %{content: "Error granting access"}
         })
     end
+  end
+
+  def handle_command(_name, _account, _discordId, _interaction) do
+    Api.create_interaction_response(interaction, %{
+      type: 4,
+      data: %{content: "Error"}
+    })
   end
 end
