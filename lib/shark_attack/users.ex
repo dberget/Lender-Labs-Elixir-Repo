@@ -35,15 +35,19 @@ defmodule SharkAttack.Users do
     Repo.all(from(u in User, where: not is_nil(u.discordId))) |> Repo.preload(:user_settings)
   end
 
-  def create_user(attrs \\ %{}) do
-    case Repo.get(User, attrs[:address]) do
+  def create_user(attrs) when is_map(attrs) do
+    create_user(attrs[:address])
+  end
+
+  def create_user(address) do
+    case Repo.get(User, address) do
       nil ->
         user =
           %User{}
-          |> User.changeset(attrs)
+          |> User.changeset(%{address: address})
           |> Repo.insert(on_conflict: :nothing)
 
-        create_default_user_setting(attrs[:address])
+        create_default_user_setting(%{address: address})
 
         user
 

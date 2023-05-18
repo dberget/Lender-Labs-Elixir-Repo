@@ -9,11 +9,11 @@ defmodule SharkAttack.Collections.Nft do
              :name
            ]}
   schema "nfts" do
-    field :mint, :string
-    field :image, :string
-    field :name, :string
+    field(:mint, :string)
+    field(:image, :string)
+    field(:name, :string)
 
-    belongs_to :collection, SharkAttack.Collections.Collection
+    belongs_to(:collection, SharkAttack.Collections.Collection)
 
     timestamps()
   end
@@ -21,7 +21,7 @@ defmodule SharkAttack.Collections.Nft do
   @doc false
   def changeset(nft, attrs) do
     nft
-    |> cast(attrs, [:name, :image, :mint, :collection_id])
+    |> cast(attrs, [:name, :image, :mint, :collection_id, :inserted_at, :updated_at])
     |> validate_required([:mint, :collection_id])
     |> unique_constraint(:mint)
   end

@@ -1,4 +1,5 @@
 defmodule SharkAttack do
+  require Logger
   # %{
   #   payer: "payer-pubkey",
   #   ltf_target: 0.75,
@@ -69,5 +70,19 @@ defmodule SharkAttack do
       )
 
     Map.get(res, "lamports", 0) / 1_000_000_000
+  end
+
+  def update_collection_nfts() do
+    collections = SharkAttack.Collections.list_collections(%{sharky: "1"}) |> Enum.reverse()
+
+    Enum.map(collections, fn c ->
+      case SharkAttack.Collections.update_collection_mint_list(c.sharky_address) do
+        nil ->
+          Logger.info("No new mints for #{c.name}")
+
+        {_, _} ->
+          SharkAttack.Nfts.save_nft_names(c.id)
+      end
+    end)
   end
 end

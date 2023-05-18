@@ -14,6 +14,14 @@ defmodule SharkAttack.DiscordConsumer do
          description: "account to subscribe with",
          type: 3
        }
+     ]},
+    {"gib", "Give user access to dashboard",
+     [
+       %{
+         name: "account",
+         description: "account to gib access to",
+         type: 3
+       }
      ]}
   ]
 
@@ -188,7 +196,7 @@ defmodule SharkAttack.DiscordConsumer do
 
   def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
     %Nostrum.Struct.Interaction{
-      data: %Nostrum.Struct.ApplicationCommandInteractionData{options: options}
+      data: %Nostrum.Struct.ApplicationCommandInteractionData{options: options, name: name}
     } = interaction
 
     [
@@ -199,6 +207,18 @@ defmodule SharkAttack.DiscordConsumer do
     ] = options
 
     discordId = interaction.member.user.id
+
+    handle_command(name, account, discordId, interaction)
+  end
+
+  # Default event handler, if you don't include this, your consumer WILL crash if
+  # you don't have a method definition for each event type.
+  def handle_event(_event) do
+    :noop
+  end
+
+  def handle_command("subscribe", account, discordId, interaction) do
+    IO.inspect(account, label: "subscribe")
 
     case SharkAttack.Users.get_user_from_address!(account) do
       %SharkAttack.Accounts.User{} = user ->
@@ -213,9 +233,21 @@ defmodule SharkAttack.DiscordConsumer do
     end
   end
 
-  # Default event handler, if you don't include this, your consumer WILL crash if
-  # you don't have a method definition for each event type.
-  def handle_event(_event) do
-    :noop
+  def handle_command("gib", account, _discordId, interaction) do
+    IO.inspect(account, label: "GIB")
+
+    case SharkAttack.Users.create_user(account) do
+      :ok ->
+        Api.create_interaction_response(interaction, %{
+          type: 4,
+          data: %{content: "Access Granted!"}
+        })
+
+      _ ->
+        Api.create_interaction_response(interaction, %{
+          type: 4,
+          data: %{content: "Error granting access"}
+        })
+    end
   end
 end

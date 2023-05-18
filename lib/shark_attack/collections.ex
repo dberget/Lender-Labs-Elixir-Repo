@@ -155,6 +155,24 @@ defmodule SharkAttack.Collections do
     end
   end
 
+  def get_collection(address, :nfts) do
+    query =
+      from(c in Collection,
+        where: c.sharky_address == ^address,
+        or_where: c.foxy_address == ^address,
+        or_where: c.frakt_address == ^address
+      )
+
+    case Repo.one(query) do
+      nil ->
+        Repo.get(Collection, address)
+
+      collection ->
+        collection
+    end
+    |> Repo.preload(:nfts)
+  end
+
   def insert_new_collection(%{name: name} = attrs) do
     collection = get_collection_by_name(name)
 
@@ -191,12 +209,10 @@ defmodule SharkAttack.Collections do
     Repo.get_by(Collection, name: name)
   end
 
-  def get_collection_mint_lists(sharky_address) do
-    mintList = SharkAttack.SharkyApi.get_mint_lists(sharky_address)
-
-    case get_collection_by_name(mintList["collectionName"]) do
+  def update_collection_mint_list(sharky_address) do
+    case get_collection(sharky_address, :nfts) do
       nil ->
-        Logger.info("Unable to find collection for #{mintList["collectionName"]}")
+        Logger.info("Unable to find collection for #{sharky_address}")
         nil
 
       collection ->
@@ -205,6 +221,8 @@ defmodule SharkAttack.Collections do
         collection = collection |> Repo.preload(:nfts)
 
         if length(collection.nfts) == 0 do
+          mintList = SharkAttack.SharkyApi.get_mint_lists(sharky_address)
+
           Logger.info("Inserting #{collection.name}")
 
           insert_nfts(collection.id, mintList["mints"])
@@ -244,7 +262,6 @@ defmodule SharkAttack.Collections do
       }
 
       Logger.info("Adding #{c["name"]}")
-
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
@@ -307,13 +324,19 @@ defmodule SharkAttack.Collections do
   end
 
   def insert_nfts(collection_id, nfts) do
-    Enum.each(
-      nfts,
-      &(%Nft{
+    current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    nfts =
+      Enum.map(
+        nfts,
+        &%{
           collection_id: collection_id,
-          mint: &1
+          mint: &1,
+          inserted_at: current_timestamp,
+          updated_at: current_timestamp
         }
-        |> Repo.insert(on_conflict: :nothing))
-    )
+      )
+
+    Repo.insert_all(Nft, nfts)
   end
 end
