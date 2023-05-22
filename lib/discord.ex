@@ -254,7 +254,7 @@ defmodule SharkAttack.DiscordConsumer do
     end
   end
 
-  def handle_command(_name, _account, _discordId, _interaction) do
+  def handle_command(_name, _account, _discordId, interaction) do
     Api.create_interaction_response(interaction, %{
       type: 4,
       data: %{content: "Error"}

@@ -9,6 +9,22 @@ defmodule SharkAttackWeb.UserController do
     |> json(user)
   end
 
+  def create(conn, %{"pk" => address}) do
+    case SharkAttack.Users.create_user(address) do
+      :ok ->
+        conn
+        |> json("success")
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "Could not create user",
+          reason: changeset
+        })
+    end
+  end
+
   def sign(conn, params) do
     user = SharkAttack.SharkyApi.sign(params["address"])
 
