@@ -57,8 +57,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   def build_message("REPAY_LOAN", loan) do
+    lender = Map.get(loan, :lender, Map.get(loan, "lender"))
+
     case check_is_user_and_subscribed?(
-           loan.lender,
+           lender,
            :loan_repaid
          ) do
       false ->
@@ -116,8 +118,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   def build_message("TAKE_LOAN", loan) do
+    lender = Map.get(loan, :lender, Map.get(loan, "lender"))
+
     case check_is_user_and_subscribed?(
-           Map.get(loan, "lender"),
+           "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
            :loan_taken
          ) do
       false ->
@@ -196,9 +200,14 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       end
 
     nft = SharkAttack.Nfts.get_nft_by_mint(Map.get(loan, "nftCollateralMint"))
-    fp = SharkAttack.FloorWorker.get_floor_price(c) |> Number.Delimit.number_to_delimited()
+    fp = SharkAttack.FloorWorker.get_floor_price(c)
 
     pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
+
+    platform =
+      Map.get(loan, :platform, Map.get(loan, "platform", Map.get(loan, :loan, "unknown")))
+
+    ltf = parse_ltf(loan, fp)
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
@@ -217,7 +226,18 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           value: "#{Number.Delimit.number_to_delimited(parse_amount(loan))} ◎",
           inline: true
         },
-        %Nostrum.Struct.Embed.Field{name: "Floor Price", value: "#{fp}  ◎", inline: true}
+        %Nostrum.Struct.Embed.Field{
+          name: "Interest",
+          value: "#{Number.Delimit.number_to_delimited(parse_earnings(loan))} ◎",
+          inline: true
+        },
+        %Nostrum.Struct.Embed.Field{
+          name: "Floor Price",
+          value: "#{fp |> Number.Delimit.number_to_delimited()}  ◎",
+          inline: true
+        },
+        %Nostrum.Struct.Embed.Field{name: "Platform", value: "#{platform}", inline: true},
+        %Nostrum.Struct.Embed.Field{name: "LTF", value: ltf, inline: true}
       ]
     }
   end
@@ -260,37 +280,73 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           inline: true
         },
         %Nostrum.Struct.Embed.Field{
+          name: "Interest",
+          value: "#{Number.Delimit.number_to_delimited(parse_earnings(loan))} ◎",
+          inline: true
+        },
+        %Nostrum.Struct.Embed.Field{
           name: "Duration",
           value:
             Timex.Duration.from_erl({0, round(duration), 0})
-            |> Timex.format_duration(:humanized),
-          inline: true
+            |> Timex.format_duration(:humanized)
         }
       ]
     }
   end
 
-  def parse_amount(%SharkAttack.Loans.Loan{
-        total_owed: nil,
-        amountSol: amount,
-        earnings: profit
-      }) do
-    amount + profit + profit * 0.16
+  defp parse_ltf(
+         _,
+         0
+       ) do
+    "N/A"
   end
 
-  def parse_amount(%SharkAttack.Loans.Loan{total_owed: amount}) do
+  defp parse_ltf(
+         %{
+           "amountSol" => amount
+         },
+         fp
+       ) do
+    (amount / fp * 100) |> Number.Percentage.number_to_percentage(precision: 0)
+  end
+
+  defp parse_ltf(
+         %SharkAttack.Loans.Loan{
+           amountSol: amount
+         },
+         fp
+       ) do
+    (amount / fp * 100) |> Number.Percentage.number_to_percentage(precision: 0)
+  end
+
+  def parse_amount(%SharkAttack.Loans.Loan{
+        total_owed: nil,
+        amountSol: amount
+      }) do
     amount
   end
 
-  def parse_amount(%{amountSol: amount, earnings: profit}) do
-    amount + profit + profit * 0.16
+  def parse_amount(%{amountSol: amount}) do
+    amount
   end
 
-  def parse_amount(%{"amountSol" => amount, "earnings" => profit}) do
-    amount + profit + profit * 0.16
+  def parse_amount(%{"amountSol" => amount}) do
+    amount
   end
 
   def parse_amount(_) do
+    0.0
+  end
+
+  def parse_earnings(%{earnings: profit}) do
+    profit + profit * 0.16
+  end
+
+  def parse_earnings(%{"earnings" => profit}) do
+    profit + profit * 0.16
+  end
+
+  def parse_earnings(_) do
     0.0
   end
 
