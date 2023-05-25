@@ -121,7 +121,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 
     case check_is_user_and_subscribed?(
-           "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+           lender,
            :loan_taken
          ) do
       false ->
