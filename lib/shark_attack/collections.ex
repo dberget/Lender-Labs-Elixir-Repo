@@ -135,6 +135,10 @@ defmodule SharkAttack.Collections do
     Repo.one(query)
   end
 
+  def get_collection(id) when is_integer(id) do
+    Repo.get(Collection, id)
+  end
+
   def get_collection(address) do
     query =
       from(c in Collection,
@@ -146,9 +150,13 @@ defmodule SharkAttack.Collections do
 
     case Repo.one(query) do
       nil ->
-        collection = Repo.get(Collection, address)
+        case Integer.parse(address) do
+          {id, _} ->
+            get_collection(id)
 
-        %{collection | nfts: []}
+          :error ->
+            nil
+        end
 
       collection ->
         collection
