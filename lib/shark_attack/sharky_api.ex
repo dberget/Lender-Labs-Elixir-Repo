@@ -153,7 +153,7 @@ defmodule SharkAttack.SharkyApi do
 
     case res do
       {:error, body} ->
-        {:error, body}
+        []
 
       body ->
         Map.get(body, "loanData", [])

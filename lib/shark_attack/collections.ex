@@ -190,11 +190,13 @@ defmodule SharkAttack.Collections do
   end
 
   def get_and_update_collection(%{name: name} = attrs) do
-    collection = get_collection_by_name(name)
+    collection = search_collection_by_name(name) |> List.first()
 
     if is_nil(collection) do
       create_collection(attrs)
     else
+      collection = %Collection{id: collection.id}
+
       update_collection(collection, attrs)
     end
   end
@@ -202,7 +204,7 @@ defmodule SharkAttack.Collections do
   def search_collection_by_name(name) do
     query =
       from(c in Collection,
-        select: map(c, [:name, :sharky_address, :id]),
+        select: map(c, [:name, :sharky_address, :id, :foxy_address, :rain_fi_id]),
         where: like(c.name, ^"%#{name}%")
       )
 
@@ -250,11 +252,10 @@ defmodule SharkAttack.Collections do
     Enum.map(collections, fn c ->
       data = %{
         name: c["collection_name"],
-        logo: c["image"],
         rain_fi_id: c["collection_id"]
       }
 
-      Logger.info("Adding #{c["name"]}")
+      Logger.info("Adding #{c["collection_name"]}")
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
