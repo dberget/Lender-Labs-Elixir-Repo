@@ -114,6 +114,18 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  # Zini
+  def send_to_webhook(
+        "CQenkRQMkJ3sXBGUu4fJNXDZUu23k7B556JnV1ZNrxik",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1112022631345045586",
+      "ZUEtAwrt1IccRaQHOP-nPEWWLbRIGHJ75S2XScU9Gzs3KgXguefBQLAPmFKdg8evlLZS",
+      %{embeds: [embed]}
+    )
+  end
+
   # Akhil - Suites Dao
   def send_to_webhook(
         "8LyGPy9jPYhtr1FYWG9WAjTzyuZvBMKRsFjnpDGAuLf7",
