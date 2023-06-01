@@ -78,50 +78,62 @@ defmodule SharkAttack.LoansWorker do
 
     :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
 
-    SharkAttackWeb.LoansChannel.push(loan)
-
     SharkAttack.Events.send_event("TAKE_LOAN", loan)
-
-    SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
 
     :ets.insert(
       :collection_loans,
       {loan["orderBook"], loanAddress, loan["lender"], loan}
     )
+
+    try do
+      SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
+      SharkAttackWeb.LoansChannel.push(loan)
+    rescue
+      e ->
+        Logger.error("Error pushing to offers channel: #{inspect(e)}")
+    end
   end
 
   def flush() do
     SharkAttack.DiscordConsumer.send_to_webhook("me", "Flushing loans")
 
-    citrusLoans = SharkyApi.get_all_loan_data("citrus")
-    sharkyLoans = SharkyApi.get_all_loan_data()
+    try do
+      citrusLoans = SharkyApi.get_all_loan_data("citrus")
+      sharkyLoans = SharkyApi.get_all_loan_data()
 
-    loanData = [sharkyLoans, citrusLoans] |> List.flatten()
+      loanData = [sharkyLoans, citrusLoans] |> List.flatten()
 
-    collection_loans =
-      loanData
-      |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
+      collection_loans =
+        loanData
+        |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
 
-    :ets.delete_all_objects(:collection_loans)
-    :ets.insert(:collection_loans, collection_loans)
+      :ets.delete_all_objects(:collection_loans)
+      :ets.insert(:collection_loans, collection_loans)
 
-    loans =
-      loanData
-      |> Enum.filter(&(&1["state"] == "taken" || &1["state"] == "active"))
-      |> Enum.map(&{&1["pubkey"], &1})
+      loans =
+        loanData
+        |> Enum.filter(&(&1["state"] == "taken" || &1["state"] == "active"))
+        |> Enum.map(&{&1["pubkey"], &1})
 
-    :ets.delete_all_objects(:loans)
-    :ets.insert(:loans, loans)
+      :ets.delete_all_objects(:loans)
+      :ets.insert(:loans, loans)
 
-    offers =
-      loanData
-      |> Enum.filter(&(&1["state"] == "offered"))
-      |> Enum.map(&{&1["pubkey"], &1})
+      offers =
+        loanData
+        |> Enum.filter(&(&1["state"] == "offered"))
+        |> Enum.map(&{&1["pubkey"], &1})
 
-    :ets.delete_all_objects(:offers)
-    :ets.insert(:offers, offers)
+      :ets.delete_all_objects(:offers)
+      :ets.insert(:offers, offers)
 
-    SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
+      SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
+    rescue
+      e ->
+        SharkAttack.DiscordConsumer.send_to_webhook(
+          "me",
+          "Error Flushing loans: #{inspect(e)}"
+        )
+    end
   end
 
   @impl true
@@ -228,12 +240,17 @@ defmodule SharkAttack.LoansWorker do
       data ->
         :ets.insert(:offers, {loanData.loanAddress, Map.drop(data, ["rawData"])})
 
-        SharkAttackWeb.OffersChannel.push(data)
-
         :ets.insert(
           :collection_loans,
           {data["orderBook"], loanData.loanAddress, data["lender"], data}
         )
+
+        try do
+          SharkAttackWeb.OffersChannel.push(data)
+        rescue
+          e ->
+            Logger.error("Error pushing to offers channel: #{inspect(e)}")
+        end
     end
   end
 

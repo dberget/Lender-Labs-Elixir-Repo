@@ -143,6 +143,8 @@ defmodule SharkAttack.SharkyApi do
 
   def get_collection_loans(nil, "frakt"), do: []
 
+  def get_collection_loans("", "citrus"), do: []
+
   def get_collection_loans(nil, "citrus"), do: []
 
   def get_collection_loans(address, "citrus") do

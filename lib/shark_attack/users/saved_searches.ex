@@ -10,11 +10,7 @@ defmodule SharkAttack.Accounts.SavedSearch do
              :name
            ]}
   schema "saved_searches" do
-    belongs_to(:user, SharkAttack.Accounts.User,
-      foreign_key: :user_address,
-      references: :address,
-      type: :string
-    )
+    field(:user_address, :string)
 
     field(:search, :map)
     field(:name, :string)

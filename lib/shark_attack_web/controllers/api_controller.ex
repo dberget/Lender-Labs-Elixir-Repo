@@ -254,12 +254,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, params) do
-    loans =
-      if params["useCache"] == "true" do
-        SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
-      else
-        SharkAttack.SharkyApi.get_lender_loans(params["lender"])
-      end
+    loans = SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
 
     takenLoans =
       loans
