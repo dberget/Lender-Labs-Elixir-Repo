@@ -4,7 +4,6 @@ defmodule SharkAttack.Stats do
 
   def update_loans() do
     loans = SharkAttack.SharkyApi.get_all_loans()
-
     Enum.map(loans, &SharkAttack.Loans.create_active_loan(&1))
   end
 
@@ -36,7 +35,7 @@ defmodule SharkAttack.Stats do
 
     case pull_history.sharky_lend do
       nil ->
-        Logger.info("Updating Lender History")
+        Logger.info("Updating full Lender History")
 
         SharkAttack.Stats.pull_lending_history(pk)
 
@@ -112,7 +111,7 @@ defmodule SharkAttack.Stats do
 
   def update_citrus_history_safe(pk) do
     case SharkAttack.SharkyApi.get_lender_loans(pk, "citrus") do
-      {:error, _} ->
+      {:error, _error} ->
         []
 
       loans ->

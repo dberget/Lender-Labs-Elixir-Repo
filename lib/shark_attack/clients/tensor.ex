@@ -204,7 +204,7 @@ defmodule SharkAttack.Tensor do
   end
 
   defp parse_info_response({:ok, %{body: body}}) do
-    Logger.warn("Error calling solanalysis")
+    Logger.warn("Error calling tensor")
     IO.inspect(body)
 
     :error

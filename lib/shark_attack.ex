@@ -11,12 +11,12 @@ defmodule SharkAttack do
   def getWallet(),
     do: Solana.Key.pair_from_file("/Users/davidberget/.config/solana/arbot.json")
 
-  def build_collection_data() do
-    order_books = SharkAttack.SharkyApi.get_order_books()
-    floors = SharkAttack.SharkyApi.get_floor_prices()
+  # def build_collection_data() do
+  # order_books = SharkAttack.SharkyApi.get_order_books()
+  # floors = SharkAttack.SharkyApi.get_floor_prices()
 
-    modify_data(order_books, floors)
-  end
+  # modify_data(order_books, floors)
+  # end
 
   defp modify_data(order_books, floor_prices) do
     Enum.map(order_books, fn order_book ->

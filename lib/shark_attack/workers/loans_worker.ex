@@ -39,7 +39,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def get_collection_loans(nil) do
-    nil
+    []
   end
 
   def get_collection_loans(collection) do

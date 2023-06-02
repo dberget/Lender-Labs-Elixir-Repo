@@ -122,7 +122,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_borrower_history(conn, params) do
-    SharkAttack.Stats.update_borrow_history_safe(params["pk"])
+    SharkAttack.Stats.update_borrow_history_safe(params["borrower"])
 
     loans = SharkAttack.Loans.get_loans_history!(params["borrower"], "borrower")
 
@@ -254,7 +254,9 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, params) do
-    loans = SharkAttack.LoansWorker.get_lender_loans(params["lender"]) |> Enum.map(&elem(&1, 3))
+    loans =
+      SharkAttack.LoansWorker.get_lender_loans(params["lender"])
+      |> Enum.map(&elem(&1, 3))
 
     takenLoans =
       loans
@@ -296,11 +298,16 @@ defmodule SharkAttackWeb.ApiController do
         |> json(%{error: "Collection not found"})
 
       collection ->
+        floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
+
         sharky_loans_and_offers =
           SharkAttack.LoansWorker.get_collection_loans(collection.sharky_address)
 
         citrus_loans_and_offers =
           SharkAttack.LoansWorker.get_collection_loans(collection.foxy_address)
+          |> Enum.map(fn loan ->
+            calculate_ltv_value(loan, floor_price)
+          end)
 
         loans_and_offers = [sharky_loans_and_offers, citrus_loans_and_offers] |> List.flatten()
 
@@ -317,8 +324,6 @@ defmodule SharkAttackWeb.ApiController do
           loans_and_offers
           |> Enum.filter(&(&1["state"] == "taken" || &1["state"] == "active"))
           |> Enum.sort_by(& &1["start"], :desc)
-
-        floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
 
         underWater = get_underwater_loans(loans, floor_price)
         volume = SharkAttack.FloorWorker.get_volume(collection)
@@ -716,5 +721,24 @@ defmodule SharkAttackWeb.ApiController do
         conn
         |> json(%{message: "Error, please try again"})
     end
+  end
+
+  defp calculate_ltv_value(loan, nil) do
+    loan
+  end
+
+  defp calculate_ltv_value(
+         %{"amountSol" => 0, "state" => "waitingForBorrower"} = loan,
+         fp
+       ) do
+    Map.put(
+      loan,
+      "amountSol",
+      get_in(loan, ["rawData", "ltvTerms", "ltvBps"]) / 10000 * fp
+    )
+  end
+
+  defp calculate_ltv_value(loan, _collection) do
+    loan
   end
 end
