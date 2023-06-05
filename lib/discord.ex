@@ -37,13 +37,15 @@ defmodule SharkAttack.DiscordConsumer do
   end
 
   def create_guild_commands(guild_id) do
-    Enum.each(@commands, fn {name, description, options} ->
-      Api.create_guild_application_command(1_073_807_738_007_732_245, guild_id, %{
-        name: name,
-        description: description,
-        options: options
-      })
-    end)
+    if Mix.env() == :prod do
+      Enum.each(@commands, fn {name, description, options} ->
+        Api.create_guild_application_command(1_073_807_738_007_732_245, guild_id, %{
+          name: name,
+          description: description,
+          options: options
+        })
+      end)
+    end
   end
 
   def create_dm_channel(discordId) do

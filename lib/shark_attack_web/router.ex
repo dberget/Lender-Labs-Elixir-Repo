@@ -48,6 +48,7 @@ defmodule SharkAttackWeb.Router do
     get("/search_collections", ApiController, :search_collections)
     get("/get_collection", ApiController, :get_collection)
     get("/get_all_collection_loans", ApiController, :get_all_collection_loans)
+    get("/get_lending_summary", ApiController, :get_lending_summary)
     get("/flush_loans", ApiController, :flush_loans)
     get("/get_borrower_collections", ApiController, :get_borrower_collections)
     get("/get_borrower_loans", ApiController, :get_borrower_loans)

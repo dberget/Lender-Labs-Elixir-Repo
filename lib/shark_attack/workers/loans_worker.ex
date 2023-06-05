@@ -12,8 +12,13 @@ defmodule SharkAttack.LoansWorker do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def get_all_loans() do
+  def get_all_loan_data() do
     :ets.match(:collection_loans, {:_, :_, :_, :"$1"}) |> List.flatten()
+  end
+
+  def get_all_loans() do
+    :ets.match_object(:loans, {:_, :"$1"})
+    |> Enum.map(fn {_key, value} -> value end)
   end
 
   def get_borrower_loans(borrower) do

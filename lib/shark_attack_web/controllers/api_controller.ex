@@ -211,7 +211,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_all_loans(conn, _params) do
-    loans = SharkAttack.LoansWorker.get_all_loans()
+    loans = SharkAttack.LoansWorker.get_all_loan_data()
 
     conn
     |> json(loans)
@@ -222,6 +222,17 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(loans)
+  end
+
+  def get_lending_summary(conn, _params) do
+    loans = SharkAttack.LoansWorker.get_all_loans()
+
+    data = %{
+      activeLoans: Enum.count(loans)
+    }
+
+    conn
+    |> json(data)
   end
 
   def get_lender_loans(conn, %{"cache" => "1"} = params) do
@@ -269,7 +280,8 @@ defmodule SharkAttackWeb.ApiController do
     {totalSolLoaned, totalEarnings, activeLoans} =
       takenLoans
       |> Enum.reduce({0, 0, []}, fn loan, {sumSol, sumEarnings, loans} ->
-        {sumSol + loan["amountSol"], sumEarnings + loan["earnings"], [loan | loans]}
+        {sumSol + loan["amountSol"], sumEarnings + loan["earnings"],
+         [calculate_ltv_value(loan) | loans]}
       end)
 
     loanSummary = %{
@@ -721,6 +733,17 @@ defmodule SharkAttackWeb.ApiController do
         conn
         |> json(%{message: "Error, please try again"})
     end
+  end
+
+  defp calculate_ltv_value(%{"amountSol" => 0, "state" => "waitingForBorrower"} = loan) do
+    collection = SharkAttack.Collections.get_collection(loan["orderBook"])
+    floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
+
+    calculate_ltv_value(loan, floor_price)
+  end
+
+  defp calculate_ltv_value(loan) do
+    loan
   end
 
   defp calculate_ltv_value(loan, nil) do
