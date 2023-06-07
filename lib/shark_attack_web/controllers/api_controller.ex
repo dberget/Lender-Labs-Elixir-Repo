@@ -148,11 +148,12 @@ defmodule SharkAttackWeb.ApiController do
 
     loans = SharkAttack.LoansWorker.get_borrower_loans(params["pk"])
 
-    forelosedLoanCount =
-      Enum.filter(historical_loans, fn l -> !is_nil(l.dateForeclosed) end) |> Enum.count()
+    forelosedLoans = Enum.filter(historical_loans, fn l -> !is_nil(l.dateForeclosed) end)
+    forelosedLoanCount = forelosedLoans |> Enum.count()
 
     data = %{
       completed_loans: historical_loan_count,
+      foreclosed: forelosedLoans,
       active_loan_count: Enum.count(loans),
       loans: loans |> Enum.sort_by(& &1["end"]),
       totalSolLoaned: Enum.map(historical_loans, fn l -> l.amountSol end) |> Enum.sum(),
@@ -225,10 +226,50 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lending_summary(conn, _params) do
-    loans = SharkAttack.LoansWorker.get_all_loans()
+    offers =
+      SharkAttack.Offers.last_two_weeks()
+      |> Enum.map(& &1.loan_address)
+      |> MapSet.new()
+
+    loans = SharkAttack.LoansWorker.get_all_loans() |> Enum.filter(&(&1["platform"] == "CITRUS"))
+    ll_loans = loans |> Enum.filter(&MapSet.member?(offers, &1["pubkey"]))
+
+    count_uw =
+      loans
+      |> Enum.group_by(fn l -> l["orderBook"] end)
+      |> Enum.reduce(0, fn {orderBook, loans}, count ->
+        c = SharkAttack.Collections.get_collection_from_loan(orderBook)
+        floor_price = Map.get(c, :id) |> SharkAttack.FloorWorker.get_floor_price()
+
+        {coll_count, _} = get_underwater_loans(loans, floor_price)
+
+        count + coll_count
+      end)
+
+    {tvl, last_24, last_7} =
+      loans
+      |> Enum.reduce({0, 0, 0}, fn l, {tvl, last_24, last_7} ->
+        second_diff = DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(l["start"]), :second)
+
+        cond do
+          second_diff <= 86400 ->
+            {tvl + l["amountSol"], last_24 + l["amountSol"], last_7}
+
+          second_diff <= 604_800 ->
+            {tvl + l["amountSol"], last_24, last_7 + l["amountSol"]}
+
+          true ->
+            {tvl + l["amountSol"], last_24, last_7}
+        end
+      end)
 
     data = %{
-      activeLoans: Enum.count(loans)
+      activeLoans: Enum.count(loans),
+      ll_tvl: ll_loans |> Enum.map(& &1["amountSol"]) |> Enum.sum(),
+      tvl: tvl,
+      tvl_24: last_24,
+      tvl_7: last_7,
+      underWater: count_uw
     }
 
     conn
@@ -515,6 +556,8 @@ defmodule SharkAttackWeb.ApiController do
     }
   end
 
+  defp get_underwater_loans(_, nil), do: {0, 0}
+
   defp get_underwater_loans([], _fp), do: {0, 0}
 
   defp get_underwater_loans(loans, fp) do
@@ -662,7 +705,7 @@ defmodule SharkAttackWeb.ApiController do
     mints =
       params["borrower"]
       |> SharkAttack.Solana.get_user_token_mints()
-      |> Enum.reject(&(&1["tokenAmount"]["amount"] == "0" || &1["state"] == "frozen"))
+      |> Enum.reject(&(&1["tokenAmount"]["amount"] == "0"))
       |> Enum.map(& &1["mint"])
 
     collections =

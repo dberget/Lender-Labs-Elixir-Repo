@@ -1,7 +1,8 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  @rpc_url "https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
+  # @rpc_url "https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
+  @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
 
   def send_transaction(bin_tx) do
@@ -46,6 +47,8 @@ defmodule SharkAttack.Solana do
     )
   end
 
+  @spec get_account_info(binary | {any, binary}, binary | Tesla.Client.t()) ::
+          {:error, any} | {:ok, Tesla.Env.t()}
   def get_account_info(address, client) do
     request_account_info(address, client)
   end

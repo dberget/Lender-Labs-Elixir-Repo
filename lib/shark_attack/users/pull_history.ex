@@ -33,5 +33,6 @@ defmodule SharkAttack.Accounts.PullHistory do
       :updated_at
     ])
     |> validate_required([:address])
+    |> unique_constraint(:address, name: :pull_history_address_index)
   end
 end

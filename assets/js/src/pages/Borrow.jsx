@@ -122,7 +122,7 @@ const CollectionCard = ({
             <div>
               {collection?.name}{" "}
               <div className="flex font-light text-base">
-                {collection?.fp.toFixed(2)} <SolIcon />
+                {collection?.fp?.toFixed(2)} <SolIcon />
               </div>
             </div>
             {/* {collection?.logo && (

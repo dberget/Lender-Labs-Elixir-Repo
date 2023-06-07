@@ -348,4 +348,15 @@ defmodule SharkAttack.Collections do
 
     Repo.insert_all(Nft, nfts)
   end
+
+  def get_collection_from_loan(orderbook) when is_binary(orderbook) do
+    case SharkAttack.SimpleCache.get(__MODULE__, :get_collection, [orderbook], ttl: 60 * 60 * 24) do
+      nil -> %{}
+      collection -> collection
+    end
+  end
+
+  def get_collection_from_loan(loan) do
+    get_collection_from_loan(loan["orderBook"])
+  end
 end
