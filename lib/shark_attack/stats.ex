@@ -123,12 +123,16 @@ defmodule SharkAttack.Stats do
   end
 
   def save_lender_history(pk) do
-    data = SharkAttack.SharkyApi.get_history(pk)
+    case SharkAttack.SharkyApi.get_history(pk) do
+      {:error, _} ->
+        {:error, :error}
 
-    data
-    |> Enum.map(&format_historical_sharky_loan/1)
-    |> Enum.reverse()
-    |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+      data ->
+        data
+        |> Enum.map(&format_historical_sharky_loan/1)
+        |> Enum.reverse()
+        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+    end
   end
 
   def save_borrower_history(pk) do

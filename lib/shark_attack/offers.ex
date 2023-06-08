@@ -9,20 +9,12 @@ defmodule SharkAttack.Offers do
   alias SharkAttack.Repo
 
   def update_or_create_offer(attrs) do
-    offer = SharkAttack.Offers.get_offer(attrs["loan_address"])
-
-    case offer do
-      nil ->
-        SharkAttack.Offers.create_offer(%{
-          lender: attrs["lender"],
-          loan_address: attrs["loan_address"],
-          amount: attrs["amount"],
-          collection_id: attrs["collection"]
-        })
-
-      _ ->
-        update_offer(offer, attrs["action"])
-    end
+    SharkAttack.Offers.create_offer(%{
+      lender: attrs["lender"],
+      loan_address: attrs["loan_address"],
+      amount: attrs["amount"],
+      collection_id: attrs["collection"]
+    })
   end
 
   def get_active_offers do
@@ -56,9 +48,15 @@ defmodule SharkAttack.Offers do
   end
 
   def rescind_offer(loanAddress) do
-    SharkAttack.Offers.get_offer(loanAddress)
-    |> Offer.changeset(%{rescinded: 1})
-    |> Repo.update()
+    case SharkAttack.Offers.get_offer(loanAddress) do
+      nil ->
+        :not_found
+
+      offer ->
+        offer
+        |> Offer.changeset(%{rescinded: 1})
+        |> Repo.update()
+    end
   end
 
   def get_offer(loan_address) do
