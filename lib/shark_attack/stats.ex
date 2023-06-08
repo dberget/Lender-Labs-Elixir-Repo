@@ -70,7 +70,7 @@ defmodule SharkAttack.Stats do
         Logger.info("CHECKING LAST PULLED #{pk}")
 
         if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -15 do
-          SharkAttack.Stats.save_recent_lender_history(pk)
+          SharkAttack.Stats.save_recent_borrow_history(pk)
 
           pull_history
           |> SharkAttack.Accounts.PullHistory.changeset(%{updated_at: DateTime.utc_now()})
