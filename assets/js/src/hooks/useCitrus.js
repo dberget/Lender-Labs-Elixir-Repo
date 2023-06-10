@@ -21,11 +21,12 @@ export const CitrusProvider = (props) => {
 
   const getOffers = async (foxy_address) => {
     let loans = await citrusSdk.fetchCollectionLoans(
-      new PublicKey(foxy_address)
+      new PublicKey(foxy_address),
+      "waitingForBorrower"
     );
 
     let offers = loans
-      .filter((l) => l.status == "waitingForBorrower")
+      .filter((l) => l.borrower === "11111111111111111111111111111111")
       .sort((a, b) => b.terms.principal - a.terms.principal);
 
     return offers;

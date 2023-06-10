@@ -231,7 +231,7 @@ defmodule SharkAttackWeb.ApiController do
       |> Enum.map(& &1.loan_address)
       |> MapSet.new()
 
-    loans = SharkAttack.LoansWorker.get_all_loans() |> Enum.filter(&(&1["platform"] == "CITRUS"))
+    loans = SharkAttack.LoansWorker.get_all_loans()
     ll_loans = loans |> Enum.filter(&MapSet.member?(offers, &1["pubkey"]))
 
     count_uw =

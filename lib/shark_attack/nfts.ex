@@ -32,10 +32,11 @@ defmodule SharkAttack.Nfts do
       nft_names = get_nft_names(mints)
 
       Enum.each(nft_names, fn nft_name ->
-        nft = Enum.find(nfts, fn n -> n.mint == nft_name["mint"] end)
+        nft = Enum.find(nfts, fn n -> n.mint == nft_name["account"] end)
 
         update_nft(nft, %{
-          name: nft_name["name"]
+          name: get_in(nft, ["offChainMetadata", "metadata", "name"]),
+          image: get_in(nft, ["offChainMetadata", "metadata", "image"])
         })
       end)
     end)
@@ -66,8 +67,8 @@ defmodule SharkAttack.Nfts do
   def get_nft_names(mints) do
     res =
       SharkAttack.Helpers.do_post_request(
-        "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
-        %{mints: mints}
+        "https://api.helius.xyz/v0/token-metadata?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
+        %{mintAccounts: mints, includeOffChain: true, disableCache: false}
       )
 
     res

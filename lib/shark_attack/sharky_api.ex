@@ -231,6 +231,9 @@ defmodule SharkAttack.SharkyApi do
     case SharkAttack.Helpers.do_get_request(
            "https://sharky.fi/api/loan/my-loans?borrower=#{address}&network=mainnet&deployEnvironment=production&offset=#{offset}"
          ) do
+      {:error, :timeout} ->
+        []
+
       data ->
         all_items = all_items ++ data["historyLoans"]
 
