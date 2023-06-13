@@ -216,9 +216,9 @@ defmodule SharkAttack.Stats do
   end
 
   def get_lender_stats() do
-    SharkAttack.Loans.list_loans()
+    SharkAttack.Loans.get_active_loans()
     |> Enum.map(& &1.lender)
     |> Enum.uniq()
-    |> Enum.map(fn x -> SharkAttack.Stats.save_lender_history(x) end)
+    |> Enum.map(fn x -> SharkAttack.Stats.update_history_safe(x) end)
   end
 end

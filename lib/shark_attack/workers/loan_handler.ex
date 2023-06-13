@@ -31,9 +31,13 @@ defmodule SharkAttack.Workers.LoanHandler do
       |> List.first()
 
     loan = SharkAttack.Loans.get_loan(loanAddress)
-    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
 
+    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
     SharkAttack.LoansWorker.delete_loan(loanAddress)
+
+    lender = Map.get(loan, :lender, Map.get(loan, "lender"))
+
+    SharkAttack.Stats.update_history_safe(lender)
   end
 
   def update_loan(%{"type" => "UNKNOWN", "source" => "CARDINAL_RENT"} = event) do

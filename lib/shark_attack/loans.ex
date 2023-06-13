@@ -7,6 +7,7 @@ defmodule SharkAttack.Loans do
 
   require Logger
 
+  alias SharkAttack.Collections.Collection
   alias Ecto.Changeset
   alias SharkAttack.LoansWorker
   alias SharkAttack.Repo
@@ -57,6 +58,20 @@ defmodule SharkAttack.Loans do
         select: l,
         where: l.status == "COMPLETE",
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
+      )
+
+    Repo.all(query)
+  end
+
+  def get_collection_foreclosures(id) do
+    query =
+      from(c in Collection,
+        where: c.id == ^id,
+        join: l in Loan,
+        on: c.sharky_address == l.orderBook,
+        select: l,
+        where: not is_nil(l.dateForeclosed),
+        order_by: [desc: l.dateForeclosed]
       )
 
     Repo.all(query)

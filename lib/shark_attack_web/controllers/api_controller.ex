@@ -435,6 +435,22 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{data: data})
   end
 
+  def get_collection_foreclosures(conn, params) do
+    collection = SharkAttack.Collections.get_collection(params["collection"])
+
+    data = SharkAttack.Loans.get_collection_foreclosures(collection.id)
+
+    count_per_day =
+      data
+      |> Enum.group_by(&(Map.get(&1, :dateForeclosed) |> Timex.to_date()))
+      |> Enum.map(fn {date, loans} -> %{date: date, count: Enum.count(loans)} end)
+      |> Enum.sort_by(& &1.date, {:desc, Date})
+      |> Enum.take(30)
+
+    conn
+    |> json(%{data: count_per_day})
+  end
+
   def get_user_favorites(conn, params) do
     loans = SharkAttack.LoansWorker.get_all_collection_loans()
 
