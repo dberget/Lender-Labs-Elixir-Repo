@@ -42,10 +42,9 @@ defmodule SharkAttack.Users do
   def create_user(address) do
     case Repo.get(User, address) do
       nil ->
-        user =
-          %User{}
-          |> User.changeset(%{address: address})
-          |> Repo.insert(on_conflict: :nothing)
+        %User{}
+        |> User.changeset(%{address: address})
+        |> Repo.insert(on_conflict: :nothing)
 
         create_default_user_setting(address)
 
@@ -102,6 +101,16 @@ defmodule SharkAttack.Users do
         where: uw.user_address == ^address
       )
     )
+  end
+
+  def get_settings(address) do
+    Repo.get_by(SharkAttack.Accounts.UserSettings, user_address: address)
+  end
+
+  def save_user_setting(settings, params) do
+    settings
+    |> SharkAttack.Accounts.UserSettings.changeset(params)
+    |> Repo.update()
   end
 
   def create_default_user_setting(user_address) do

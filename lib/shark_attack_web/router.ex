@@ -22,6 +22,7 @@ defmodule SharkAttackWeb.Router do
     get("/update_purchases", UserController, :update_purchases)
     get("/user_wallets", UserController, :user_wallets)
     post("/update_user_wallet", UserController, :update_user_wallet)
+    post("/save_settings", UserController, :save_settings)
     post("/remove_user_wallet", UserController, :remove_user_wallet)
 
     get("/get_user_saved_searches", UserController, :get_user_saved_searches)

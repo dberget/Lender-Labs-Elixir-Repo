@@ -1,12 +1,13 @@
 defmodule SharkAttackWeb.UserController do
   use SharkAttackWeb, :controller
+  alias SharkAttack.Repo
   require Logger
 
   def index(conn, %{"pk" => address}) do
-    user = SharkAttack.Users.get_user_from_address!(address)
+    user = SharkAttack.Users.get_user_from_address!(address) |> Repo.preload(:user_settings)
 
     conn
-    |> json(user)
+    |> json(%{address: user.address, settings: user.user_settings})
   end
 
   def create(conn, %{"pk" => address}) do
@@ -64,6 +65,15 @@ defmodule SharkAttackWeb.UserController do
 
     conn
     |> json(searches)
+  end
+
+  def save_settings(conn, %{"pk" => address, "settings" => new_settings}) do
+    IO.inspect(new_settings)
+    settings = SharkAttack.Users.get_settings(address)
+    SharkAttack.Users.save_user_setting(settings, new_settings)
+
+    conn
+    |> json(settings)
   end
 
   def delete_user_saved_search(conn, params) do
