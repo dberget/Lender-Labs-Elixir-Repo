@@ -6,7 +6,9 @@ defmodule SharkAttack.Notifications do
 
     SharkAttack.DiscordConsumer.send_to_webhook("me", "Checking for foreclosures")
 
-    users = SharkAttack.Users.get_users_with_discord_id!()
+    users =
+      SharkAttack.Users.get_users_with_discord_id!()
+      |> Enum.filter(users, fn user -> Map.fetch!(user.user_settings, :loan_foreclosure) end)
 
     Enum.map(users, fn user ->
       user.address
