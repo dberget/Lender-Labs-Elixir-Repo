@@ -8,7 +8,7 @@ defmodule SharkAttack.Notifications do
 
     users =
       SharkAttack.Users.get_users_with_discord_id!()
-      |> Enum.filter(users, fn user -> Map.fetch!(user.user_settings, :loan_foreclosure) end)
+      |> Enum.filter(fn user -> Map.fetch!(user.user_settings, :loan_foreclosure) end)
 
     Enum.map(users, fn user ->
       user.address

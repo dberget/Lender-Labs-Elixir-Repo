@@ -169,6 +169,10 @@ defmodule SharkAttack.Stats do
     end
   end
 
+  def get_daily_volume() do
+    Repo.all(SharkAttack.Stats.PlatformVolume)
+  end
+
   def format_historical_citrus_loan(loan) do
     foreclosed_date =
       if loan["state"] == "defaulted" do

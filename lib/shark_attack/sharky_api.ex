@@ -32,7 +32,7 @@ defmodule SharkAttack.SharkyApi do
 
   def get_sharky_indexes(mints) do
     SharkAttack.Helpers.do_post_request(
-      "https://sharky-backend.herokuapp.com/nft-list/check-mints?network=mainnet&deployEnvironment=production",
+      "https://sharky.fi/api/collection/check-mints?network=mainnet&deployEnvironment=production",
       %{"mints" => mints}
     )
   end

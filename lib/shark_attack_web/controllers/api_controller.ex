@@ -740,6 +740,11 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(%{collections: collections, indexes: indexes})
   end
 
+  def get_daily_volume(conn, _params) do
+    conn
+    |> json(%{data: SharkAttack.Stats.get_daily_volume()})
+  end
+
   def get_sharky_indexes(conn, params) do
     res = SharkAttack.SharkyApi.get_sharky_indexes(params["mints"])
 
