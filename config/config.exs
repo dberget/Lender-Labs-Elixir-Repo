@@ -81,14 +81,13 @@ config :shark_attack, SharkAttack.Vault,
   ]
 
 config :nostrum,
-  token: "MTA3MzgwNzczODAwNzczMjI0NQ.GzSo8g.S3fCBm-UsXErrdBkzt-MrUCFVwEuppFugEMqIY",
+  token: "MTA3MzgwNzczODAwNzczMjI0NQ.Gi4Lje.GO7_IkwY4L4TQWDwJ7ncpkY4s5yJ_4i0dALkIw",
   gateway_intents: [
     :guilds,
     :guild_messages,
     :direct_messages,
     :guild_members,
     :message_content
-    # other gateway intents
   ]
 
 # Configures Elixir's Logger

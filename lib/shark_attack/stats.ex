@@ -36,7 +36,7 @@ defmodule SharkAttack.Stats do
 
     case pull_history.sharky_lend do
       nil ->
-        Logger.info("Updating full Lender History")
+        Logger.info("Updating full Lender History - #{pk}")
 
         SharkAttack.Stats.pull_lending_history(pk)
 
@@ -44,6 +44,8 @@ defmodule SharkAttack.Stats do
         {:error, []}
 
       _ ->
+        Logger.info("Checking last pulled #{pk}")
+
         if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -15 do
           update_citrus_history_safe(pk)
           SharkAttack.Stats.save_recent_lender_history(pk)

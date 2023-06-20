@@ -130,6 +130,7 @@ defmodule SharkAttack.Loans do
       |> Map.drop(["earnings"])
       |> Map.put("platform", "SHARKY")
       |> Map.put("status", "ACTIVE")
+      |> Map.put("dateTaken", Timex.from_unix(attrs["start"]))
       |> Map.put("fees", attrs["total_owed"] - attrs["amountSol"])
 
     %Loan{}

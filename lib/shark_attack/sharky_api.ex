@@ -214,6 +214,9 @@ defmodule SharkAttack.SharkyApi do
     case SharkAttack.Helpers.do_get_request(
            "https://sharky.fi/api/loan/my-loans?lender=#{lender}&network=mainnet&deployEnvironment=production&offset=#{offset}"
          ) do
+      {:error, reason} ->
+        {:error, reason}
+
       data ->
         all_items = all_items ++ data["historyLoans"]
 
