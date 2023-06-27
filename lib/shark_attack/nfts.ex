@@ -26,7 +26,7 @@ defmodule SharkAttack.Nfts do
   def save_nft_names(collection_id) do
     nfts = get_collection_nfts(collection_id)
 
-    mint_chunks = Enum.map(nfts, & &1.mint) |> Enum.chunk_every(1000)
+    mint_chunks = Enum.map(nfts, & &1.mint) |> Enum.chunk_every(100)
 
     Enum.each(mint_chunks, fn mints ->
       nft_names = get_nft_names(mints)
