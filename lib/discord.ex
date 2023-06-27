@@ -32,10 +32,6 @@ defmodule SharkAttack.DiscordConsumer do
      ]}
   ]
 
-  def start_link do
-    Consumer.start_link(__MODULE__)
-  end
-
   def create_guild_commands(guild_id) do
     Enum.each(@commands, fn {name, description, options} ->
       Api.create_guild_application_command(1_073_807_738_007_732_245, guild_id, %{
@@ -219,11 +215,11 @@ defmodule SharkAttack.DiscordConsumer do
     :noop
   end
 
-  def handle_event({:READY, %{guilds: guilds} = _event, _ws_state}) do
-    guilds
-    |> Enum.map(fn guild -> guild.id end)
-    |> Enum.each(&create_guild_commands/1)
-  end
+  # def handle_event({:READY, %{guilds: guilds} = _event, _ws_state}) do
+  #   guilds
+  #   |> Enum.map(fn guild -> guild.id end)
+  #   |> Enum.each(&create_guild_commands/1)
+  # end
 
   def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
     %Nostrum.Struct.Interaction{
@@ -237,7 +233,7 @@ defmodule SharkAttack.DiscordConsumer do
       }
     ] = options
 
-    discordId = interaction.member.user.id
+    discordId = interaction.member.user_id
 
     handle_command(name, account, discordId, interaction)
   end

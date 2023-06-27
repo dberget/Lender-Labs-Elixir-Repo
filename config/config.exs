@@ -81,7 +81,7 @@ config :shark_attack, SharkAttack.Vault,
   ]
 
 config :nostrum,
-  token: "MTA3MzgwNzczODAwNzczMjI0NQ.Gi4Lje.GO7_IkwY4L4TQWDwJ7ncpkY4s5yJ_4i0dALkIw",
+  token: "MTA3MzgwNzczODAwNzczMjI0NQ.G7LawU.Zyt_Ea2zGO9nRqM4KuGFZ-4aacEzxOgyCHE2B8",
   gateway_intents: [
     :guilds,
     :guild_messages,

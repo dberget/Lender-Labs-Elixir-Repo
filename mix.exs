@@ -53,7 +53,7 @@ defmodule SharkAttack.MixProject do
       {:finch, "~> 0.10"},
       {:number, "~> 1.0.3"},
       {:cloak_ecto, "~> 1.2.0"},
-      {:nostrum, "~> 0.6.1"},
+      {:nostrum, github: "Kraigie/nostrum", branch: "master", override: true},
       {:sentry, "~> 8.0"},
       {:hackney, "~> 1.8"},
       {:cors_plug, "~> 3.0"},

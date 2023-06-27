@@ -56,14 +56,14 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  token =
-    System.get_env("DISCORD_TOKEN") ||
-      raise """
-      environment variable DISCORD_TOKEN is missing.
-      """
+  # token =
+  #   System.get_env("DISCORD_TOKEN") ||
+  #     raise """
+  #     environment variable DISCORD_TOKEN is missing.
+  #     """
 
   config :nostrum,
-    token: "MTA3MzgwNzczODAwNzczMjI0NQ.Gi4Lje.GO7_IkwY4L4TQWDwJ7ncpkY4s5yJ_4i0dALkIw",
+    token: "MTA3MzgwNzczODAwNzczMjI0NQ.G7LawU.Zyt_Ea2zGO9nRqM4KuGFZ-4aacEzxOgyCHE2B8",
     gateway_intents: [
       :guilds,
       :guild_messages,

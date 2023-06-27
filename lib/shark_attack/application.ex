@@ -22,13 +22,6 @@ defmodule SharkAttack.Application do
       SharkAttack.LoansWorker,
       SharkAttack.FloorWorker,
       SharkAttack.Scheduler
-      # {SharkAttack.Notifications.Producer, []},
-      # {SharkAttack.Notifications.ProducerConsumer, []},
-      # Supervisor.child_spec({SharkAttack.Notifications.Consumer, []}, id: :consumer_1),
-      # Supervisor.child_spec({SharkAttack.Notifications.Consumer, []}, id: :consumer_2)
-      # {SharkAttack.SolanaWS, name: SharkAttack.SolanaWS}
-      # Start a worker by calling: SharkAttack.Worker.start_link(arg)
-      # {SharkAttack.Worker, arg}
     ]
 
     :ets.new(:simple_cache, [:public, :named_table])
