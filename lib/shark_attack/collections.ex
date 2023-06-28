@@ -7,7 +7,9 @@ defmodule SharkAttack.Collections do
   require Logger
 
   def list_collections() do
-    Repo.all(Collection)
+    query = from(c in Collection, where: c.hide == false)
+
+    Repo.all(query)
   end
 
   def get_collection_advanced_stats() do
@@ -103,13 +105,14 @@ defmodule SharkAttack.Collections do
   end
 
   def list_collections(%{sharky: "1"}) do
-    query = from(c in Collection, where: not is_nil(c.sharky_address))
+    query = from(c in Collection, where: not is_nil(c.sharky_address) and c.hide == false)
 
     Repo.all(query)
   end
 
   def list_collections(_opts) do
-    Repo.all(Collection)
+    query = from(c in Collection, where: c.hide == false)
+    Repo.all(query)
   end
 
   def get_collections_from_mint_list(mint_list) do

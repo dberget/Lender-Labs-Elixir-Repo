@@ -1,8 +1,8 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  # @rpc_url "https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
-  @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
+  @rpc_url "https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
+  # @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
 
   def send_transaction(bin_tx) do
@@ -203,6 +203,25 @@ defmodule SharkAttack.Solana do
           "limit" => limit
         }
       ]
+    }
+  end
+
+  def get_assets(mints) do
+    params = Enum.map(mints, &get_assets_request(&1))
+
+    res = do_post_request(@rpc_url, params)
+
+    res
+  end
+
+  def get_assets_request(mint) do
+    %{
+      "jsonrpc" => "2.0",
+      "id" => mint,
+      "method" => "getAsset",
+      "params" => %{
+        "id" => mint
+      }
     }
   end
 

@@ -149,6 +149,7 @@ defmodule SharkAttack.LoansWorker do
   @impl true
   def init([]) do
     SharkAttack.DiscordConsumer.send_to_webhook("me", "Initing Loans Worker")
+
     generate_tables()
 
     flush()

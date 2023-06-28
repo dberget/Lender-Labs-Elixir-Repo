@@ -3,9 +3,19 @@ defmodule SharkAttack.Stats do
   require Logger
 
   def update_loans() do
+    SharkAttack.DiscordConsumer.send_to_webhook(
+      "me",
+      "Updating Loans"
+    )
+
     loans = SharkAttack.SharkyApi.get_all_loans()
 
     Enum.map(loans, &SharkAttack.Loans.create_active_loan(&1))
+
+    SharkAttack.DiscordConsumer.send_to_webhook(
+      "me",
+      "Done Updating Loans"
+    )
   end
 
   def update_active_loans() do

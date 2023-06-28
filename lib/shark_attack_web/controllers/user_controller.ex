@@ -68,7 +68,6 @@ defmodule SharkAttackWeb.UserController do
   end
 
   def save_settings(conn, %{"pk" => address, "settings" => new_settings}) do
-    IO.inspect(new_settings)
     settings = SharkAttack.Users.get_settings(address)
     SharkAttack.Users.save_user_setting(settings, new_settings)
 

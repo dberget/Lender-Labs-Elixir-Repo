@@ -18,7 +18,8 @@ defmodule SharkAttack.Collections.Collection do
              :offers,
              :fp,
              :nfts,
-             :me_slug
+             :me_slug,
+             :hide
            ]}
   schema "collections" do
     field(:name, :string)
@@ -33,6 +34,7 @@ defmodule SharkAttack.Collections.Collection do
     field(:me_slug, :string)
 
     field(:hyperspace_id, :string)
+    field(:hide, :boolean, default: false)
 
     field(:loans, :map, virtual: true)
     field(:offers, :map, virtual: true)
