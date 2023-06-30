@@ -86,6 +86,19 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  # # ilikechickenRice
+
+  def send_to_webhook(
+        "9XNM15JpPsrWEJY5khpkZVPpm5efV8xwP5dKJK1Kizng",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1123466952287997973",
+      "M0DmepGUuSHezb7_cMJZytr0_GPMK0oTcEJGA9oWbjbSEPitRyW15ubvfLARpfwPUqXL",
+      %{embeds: [embed]}
+    )
+  end
+
   # demise - ChestDefi
   def send_to_webhook(
         "4fUWRM3EKQJuZnNbHdSdd22gMnEosMRMBTGB41Sq7bED",
@@ -94,6 +107,18 @@ defmodule SharkAttack.DiscordConsumer do
     Api.execute_webhook(
       "1098674544589414462",
       "5Pchc3sTCx0pRE5hp5RdaGbGv2d05YCOVUGMDkzM78vxBFwXjrpwd9EhougYKMGEzRnJ",
+      %{embeds: [embed]}
+    )
+  end
+
+  # doubleu
+  def send_to_webhook(
+        "4z9xKYvpNqgRaTqJYgBy2etjG5nwpNFV3kykmZrSznBh",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1123480128245207100",
+      "QBI0LTDt6Zr-Bm86ySLqZi-1GqrWFRDYk7jO6LJYYRHapvCdbMm_2AHe0KRGn5alu_iK",
       %{embeds: [embed]}
     )
   end
