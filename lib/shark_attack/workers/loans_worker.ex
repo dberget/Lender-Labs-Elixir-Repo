@@ -157,6 +157,16 @@ defmodule SharkAttack.LoansWorker do
     {:ok, []}
   end
 
+  @impl true
+  def terminate(reason, _state) do
+    SharkAttack.DiscordConsumer.send_to_webhook(
+      "me",
+      "Loans Worker Terminating: #{inspect(reason)}"
+    )
+
+    :shutdown
+  end
+
   def handle_info({:add_new_offer, loanData, attempts}, state) do
     Logger.info("Reattempting to add new offer: #{loanData.loanAddress}")
 

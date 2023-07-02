@@ -1,7 +1,13 @@
 import React from "react";
 import sharky, { aprToInterestRatio, apyToApr } from "@sharkyfi/client";
 import toast from "react-hot-toast";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  PublicKey,
+  Transaction,
+  TransactionMessage,
+  ComputeBudgetProgram,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import { notify } from "./discord";
 
 export const initSharkyClient = (connection, wallet) => {
@@ -88,19 +94,20 @@ export const takeLoan = async (
 };
 
 export const repayLoan = async (loan, sharkyClient, connection) => {
-  const account = await connection.getAccountInfo(
-    new PublicKey(loan.pubkey),
-    "confirmed"
-  );
-
-  const keyedAccountInfo = {
-    accountId: new PublicKey(loan.pubkey),
-    accountInfo: account,
+  let accountInfo = {
+    data: new Buffer.from(loan.rawData.data),
+    executable: false,
+    lamports: 3243360,
+    owner: new PublicKey("SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"),
+    rentEpoch: 0,
   };
 
   const parsedLoan = await sharkyClient.parseLoan({
     program: sharkyClient.program,
-    keyedAccountInfo,
+    keyedAccountInfo: {
+      accountId: new PublicKey(loan.pubkey),
+      accountInfo: accountInfo,
+    },
   });
 
   const { orderBook } = await sharkyClient.fetchOrderBook({
@@ -143,7 +150,7 @@ export const renewLoan = async (
   const parsedLoan = await parseLoan({ loan, sharkyClient });
   const parsedOffer = await parseLoan({ loan: offer, sharkyClient });
 
-  let { instructions } = await parsedLoan.createExtendInstruction({
+  const { instructions } = await parsedLoan.createExtendInstruction({
     program: sharkyClient.program,
     valueMint: new PublicKey(parsedLoan.data.valueTokenMint),
     orderBookPubKey: new PublicKey(parsedLoan.data.orderBook),
@@ -178,7 +185,7 @@ export const repayAll = async (
   publicKey,
   connection
 ) => {
-  let transactions = await Promise.all(
+  const parsedloans = await Promise.all(
     loans.map(async (loan) => {
       let accountInfo = {
         data: new Buffer.from(loan.rawData.data),
@@ -188,15 +195,21 @@ export const repayAll = async (
         rentEpoch: 0,
       };
 
-      const parsedLoan = await sharkyClient.parseLoan({
+      return await sharkyClient.parseLoan({
         program: sharkyClient.program,
         keyedAccountInfo: {
           accountId: new PublicKey(loan.pubkey),
           accountInfo: accountInfo,
         },
       });
+    })
+  );
 
-      let ix = await parsedLoan.createRepayInstruction({
+  const blockhash = await connection.getLatestBlockhash();
+
+  let transactions = await Promise.all(
+    parsedloans.map(async (parsedLoan) => {
+      const { instructions } = await parsedLoan.createRepayInstruction({
         program: sharkyClient.program,
         valueMint: new PublicKey(parsedLoan.data.valueTokenMint),
         orderBookPubKey: new PublicKey(parsedLoan.data.orderBook),
@@ -205,9 +218,18 @@ export const repayAll = async (
         ),
       });
 
-      const blockhash = await connection.getLatestBlockhash();
+      const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 1100000,
+      });
 
-      let transaction = new Transaction().add(ix);
+      instructions.programId = new PublicKey(
+        "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"
+      );
+
+      let transaction = new Transaction()
+        .add(modifyComputeUnits)
+        .add(instructions[0]);
+
       transaction.feePayer = publicKey;
       transaction.recentBlockhash = blockhash.blockhash;
 
@@ -222,6 +244,7 @@ export const repayAll = async (
   signedTxs.map(async (tx) => {
     let res = connection.sendRawTransaction(tx.serialize(), {
       commitment: "confirmed",
+      skipPreflight: true,
     });
 
     await toast.promise(res, {

@@ -184,19 +184,63 @@ defmodule SharkAttack.Collections do
     |> Repo.preload(:nfts)
   end
 
-  def insert_new_collection(%{name: name} = attrs) do
-    collection = get_collection_by_name(name)
+  def insert_new_collection(%{sharky_address: pubkey} = attrs) do
+    collection = get_collection(pubkey)
 
     if is_nil(collection) do
       create_collection(attrs)
     end
   end
 
-  def get_and_update_collection(%{name: name} = attrs) do
-    collection = search_collection_by_name(name) |> List.first()
+  def get_and_update_collection(%{sharky_address: pubkey} = attrs) do
+    collection = get_collection(pubkey)
 
     if is_nil(collection) do
+      IO.inspect("Creating collection #{attrs.name}")
+
       create_collection(attrs)
+    else
+      update =
+        cond do
+          collection.name != attrs.name ->
+            true
+
+          collection.duration != attrs.duration ->
+            true
+
+          collection.apy != attrs.apy ->
+            true
+
+          true ->
+            false
+        end
+
+      if update do
+        IO.inspect("Updating collection #{collection.name}")
+        IO.inspect(attrs)
+
+        collection = %Collection{id: collection.id}
+
+        update_collection(collection, attrs)
+      end
+    end
+  end
+
+  def get_and_update_collection(%{foxy_address: pubkey} = attrs) do
+    collection = get_collection(pubkey)
+
+    collection = if !is_nil(collection), do: collection, else: get_collection_by_name(attrs.name)
+
+    if !is_nil(collection) do
+      update_collection(%Collection{id: collection.id}, attrs)
+    end
+  end
+
+  def get_and_update_collection(%{name: name} = attrs) do
+    collection = get_collection_by_name(name)
+
+    if is_nil(collection) do
+      IO.inspect("No matching collection found - #{name}")
     else
       collection = %Collection{id: collection.id}
 
@@ -274,6 +318,7 @@ defmodule SharkAttack.Collections do
       }
 
       Logger.info("Adding #{c["name"]}")
+
       SharkAttack.Collections.get_and_update_collection(data)
     end)
   end
@@ -289,7 +334,9 @@ defmodule SharkAttack.Collections do
         apy: collection["apy"]
       }
 
-      SharkAttack.Collections.insert_new_collection(data)
+      SharkAttack.Collections.get_and_update_collection(data)
+
+      :ok
     end)
   end
 

@@ -42,6 +42,10 @@ defmodule SharkAttack.Nfts do
     end)
   end
 
+  def parse_nft_name(nil) do
+    ""
+  end
+
   def parse_nft_name([]) do
     ""
   end
