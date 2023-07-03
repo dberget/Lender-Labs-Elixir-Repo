@@ -45,6 +45,7 @@ export function Loans() {
 
   const [selectedForRenew, setSelectedForRenew] = React.useState([]);
   const [sortBy, setSortBy] = React.useState("amountSol");
+  const [showExpired, setShowExpired] = React.useState(false);
 
   const [sortDirection, setSortDirection] = React.useState("DESC");
 
@@ -69,11 +70,16 @@ export function Loans() {
 
   const { loans, summary } = loanData;
 
+  const handleSetShowExpired = async () => {
+    setShowExpired(!showExpired);
+  };
+
   const handleFilterLoans = async (newFilter) => {
     if (filter === newFilter) {
       setFilter(null);
       return;
     }
+
     setFilter(newFilter);
   };
 
@@ -277,6 +283,12 @@ export function Loans() {
       <div className="mt-3 flex flex-col md:flex-row justify-evenly items-center mx-auto w-full xl:w-2/3">
         <div className="mb-1 md:mb-0">
           <Button
+            className="mx-1 py-3 lg:mb-0 lg:mr-2"
+            onClick={() => handleSetShowExpired()}
+          >
+            {showExpired ? "Hide Expired" : "Show Expired"}
+          </Button>
+          <Button
             disabled={selectedForRepay.length == 0}
             className="mx-1 py-3 lg:mb-0 lg:mr-2"
             onClick={() => handleRenewSelected()}
@@ -367,6 +379,7 @@ export function Loans() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center">
         {allLoans.length > 0 && (
           <LoanCards
+            showExpired={showExpired}
             sortBy={sortBy}
             setSortBy={setSortBy}
             collections={data?.collections}
@@ -396,6 +409,7 @@ const StatCard = ({ title, value }) => {
 };
 
 const LoanCards = ({
+  showExpired,
   loans,
   metaplex,
   sharkyClient,
@@ -435,6 +449,12 @@ const LoanCards = ({
 
   if (filter) {
     filteredLoans = filteredLoans.filter((loan) => loan.platform === filter);
+  }
+
+  if (!showExpired) {
+    filteredLoans = filteredLoans.filter(
+      (loan) => new Date() < new Date(loan.end * 1000)
+    );
   }
 
   // if (sortBy) {
