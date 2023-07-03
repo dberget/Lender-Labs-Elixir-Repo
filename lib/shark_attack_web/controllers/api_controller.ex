@@ -718,11 +718,16 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_borrower_collections(conn, params) do
+    borrower_loans =
+      SharkAttack.LoansWorker.get_borrower_loans(params["borrower"])
+      |> Enum.map(fn l -> l["nftCollateralMint"] end)
+
     mints =
       params["borrower"]
       |> SharkAttack.Solana.get_user_token_mints()
       |> Enum.reject(&(&1["tokenAmount"]["amount"] == "0"))
       |> Enum.map(& &1["mint"])
+      |> Enum.reject(fn m -> m in borrower_loans end)
 
     collections =
       mints
