@@ -33,7 +33,7 @@ defmodule SharkAttack.Collections do
   def update_me_data() do
     collections =
       list_collections()
-      |> Enum.filter(&is_nil(&1.me_slug))
+      |> Enum.filter(&is_nil(&1.logo))
 
     collections
     |> Enum.take(5)
