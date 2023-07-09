@@ -38,7 +38,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   def check_is_user_and_subscribed?(address, setting) do
     with %User{} = user <-
            SharkAttack.Users.get_user_from_address!(
-             address,
+             "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
              :user_settings
            ),
          %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
@@ -301,6 +301,13 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   defp parse_ltf(
          _,
          0
+       ) do
+    "N/A"
+  end
+
+  defp parse_ltf(
+         _,
+         nil
        ) do
     "N/A"
   end

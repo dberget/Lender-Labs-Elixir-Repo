@@ -60,14 +60,17 @@ export const RainProvider = (props) => {
     const durationDays = pool?.loanCurve.maxDuration / 60 / 60 / 24;
     const fees = getFeesDetailed(pool, bestOffer, durationDays);
 
-    const { instruction, signers } = await rain.borrow({
-      nftMint: mint,
-      poolOwner: new PublicKey(pool.owner),
-      duration: durationDays,
-      amount: bestOffer,
-      interest: fees.feesInSol,
-      slippage: 50,
-    });
+    const { instruction, signers } = await rain.borrow(
+      {
+        nftMint: mint,
+        poolOwner: new PublicKey(pool.owner),
+        duration: durationDays,
+        amount: bestOffer,
+        interest: fees.feesInSol,
+        slippage: 50,
+      },
+      new PublicKey("ESuP9Y8R2fTWHzrhWy6nCj8AkT4f6Q65n8Sxd5bsMwDx")
+    );
 
     const blockhash = await connection.getLatestBlockhash();
 

@@ -104,6 +104,8 @@ export const useCitrus = (foxy_address) => {
     React.useContext(CitrusContext);
 
   const repayLoan = async (loan) => {
+    loan = await citrusSdk.fetchLoan(loan.pubkey);
+
     let sig = citrusSdk.repayLoan(loan);
 
     await toast.promise(sig, {
