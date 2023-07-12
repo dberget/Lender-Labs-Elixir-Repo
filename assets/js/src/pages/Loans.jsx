@@ -49,8 +49,8 @@ export function Loans() {
 
   const [sortDirection, setSortDirection] = React.useState("DESC");
 
-  const { loans: fraktLoans, repayLoan: repayFraktLoan } = useFrakt();
   const { citrus, repayLoan } = useCitrus();
+  const { loans: fraktLoans, repayLoan: repayFraktLoan } = useFrakt();
   const { rainLoans, repayAll: repayAllRain } = useRain();
 
   const sharkyClient = initSharkyClient(connection, wallet);

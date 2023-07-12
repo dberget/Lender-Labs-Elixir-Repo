@@ -343,6 +343,15 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
   end
 
+  def get_citrus_listings(conn, _params) do
+    offers =
+      SharkAttack.LoansWorker.get_all_offers()
+      |> Enum.filter(&(&1["state"] == "waitingForLender"))
+
+    conn
+    |> json(offers)
+  end
+
   def get_collection(conn, params) do
     case SharkAttack.Collections.get_collection(params["collection_id"]) do
       nil ->

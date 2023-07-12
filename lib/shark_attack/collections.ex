@@ -216,9 +216,6 @@ defmodule SharkAttack.Collections do
         end
 
       if update do
-        IO.inspect("Updating collection #{collection.name}")
-        IO.inspect(attrs)
-
         collection = %Collection{id: collection.id}
 
         update_collection(collection, attrs)

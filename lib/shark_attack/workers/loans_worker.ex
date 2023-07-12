@@ -130,7 +130,7 @@ defmodule SharkAttack.LoansWorker do
 
       offers =
         loanData
-        |> Enum.filter(&(&1["state"] == "offered"))
+        |> Enum.filter(&(&1["state"] in ["offered", "waitingForBorrower", "waitingForLender"]))
         |> Enum.map(&{&1["pubkey"], &1})
 
       :ets.delete_all_objects(:offers)
