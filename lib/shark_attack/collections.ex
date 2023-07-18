@@ -166,6 +166,14 @@ defmodule SharkAttack.Collections do
     end
   end
 
+  def get_collection(id, "RAIN") do
+    Repo.get_by(Collection, rain_fi_id: id)
+  end
+
+  def get_collection(id, _platform) do
+    get_collection(id)
+  end
+
   def get_collection(address, :nfts) do
     query =
       from(c in Collection,

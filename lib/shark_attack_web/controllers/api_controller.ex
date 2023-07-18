@@ -1,9 +1,17 @@
 defmodule SharkAttackWeb.ApiController do
+  alias SharkAttack.SharkyApi
   use SharkAttackWeb, :controller
 
   def index(conn, _params) do
     conn
     |> json(%{message: "Hello from the API!"})
+  end
+
+  def bundle(conn, params) do
+    res = SharkyApi.send_bundle(params)
+
+    conn
+    |> json(:ok)
   end
 
   def get_recent_loans(conn, params) do
@@ -343,7 +351,7 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
   end
 
-  def get_citrus_listings(conn, _params) do
+  def get_citrus_listings(conn, params) do
     offers =
       SharkAttack.LoansWorker.get_all_offers()
       |> Enum.filter(&(&1["state"] == "waitingForLender"))
@@ -353,7 +361,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_collection(conn, params) do
-    case SharkAttack.Collections.get_collection(params["collection_id"]) do
+    case SharkAttack.Collections.get_collection(params["collection_id"], params["platform"]) do
       nil ->
         conn
         |> put_status(404)

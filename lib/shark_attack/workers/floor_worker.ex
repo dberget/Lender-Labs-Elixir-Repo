@@ -7,7 +7,7 @@ defmodule SharkAttack.FloorWorker do
   require Logger
 
   @floor_fetch_interval (if Mix.env() == :dev do
-                           20
+                           30
                          else
                            5
                          end)

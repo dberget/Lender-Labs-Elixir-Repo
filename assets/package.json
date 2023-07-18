@@ -3,7 +3,7 @@
         "build": "node ./build.js --deploy"
     },
     "dependencies": {
-        "@famousfoxfederation/citrus-sdk": "^0.2.1",
+        "@famousfoxfederation/citrus-sdk": "^0.3.0",
         "@frakt-protocol/frakt-sdk": "^0.8.28",
         "@rainfi/sdk": "^1.2.70",
         "@sharkyfi/client": "^6.3.2",

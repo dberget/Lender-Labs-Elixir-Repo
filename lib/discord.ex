@@ -111,6 +111,18 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  # Icon-Nick | iD
+  def send_to_webhook(
+        "DaoSLP3h2ubiXqt7XS64E9xp4XrVjH3DXfr3TMjcL964",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1128384024310730934",
+      "rWT1WoLEOFv64E2EyIDPd8TYkzFdqfQlXHpowCxq6BUE8MXrhKLvHXChh46-9j0ypgl3",
+      %{embeds: [embed]}
+    )
+  end
+
   # doubleu
   def send_to_webhook(
         "4z9xKYvpNqgRaTqJYgBy2etjG5nwpNFV3kykmZrSznBh",

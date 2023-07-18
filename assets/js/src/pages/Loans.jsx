@@ -40,10 +40,11 @@ export function Loans() {
   const { signAllTransactions } = useWallet();
   const metaplex = new Metaplex(connection);
   const [filter, setFilter] = React.useState(null);
-  const [selectedForRepay, setSelectedForRepay] = React.useState([]);
   const [repayAmount, setRepayAmount] = React.useState(0);
 
+  const [selectedForRepay, setSelectedForRepay] = React.useState([]);
   const [selectedForRenew, setSelectedForRenew] = React.useState([]);
+
   const [sortBy, setSortBy] = React.useState("amountSol");
   const [showExpired, setShowExpired] = React.useState(false);
 
@@ -305,7 +306,7 @@ export function Loans() {
             className="mx-1 py-3"
             onClick={() => handleRepaySelected()}
           >
-            Repay Selected {repayAmount.toFixed(2)} <SolIcon />
+            Repay Selected {repayAmount?.toFixed(2) || 0} <SolIcon />
           </Button>
         </div>
 

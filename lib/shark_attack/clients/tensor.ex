@@ -96,7 +96,11 @@ defmodule SharkAttack.Tensor do
   defp parse_floor_response({:ok, %{status: 200, body: body}}, _slug) do
     response = body |> Jason.decode!()
 
-    project_stats = get_in(response, ["data", "allCollections", "collections"])
+    project_stats =
+      case response["data"]["allCollections"]["collections"] do
+        nil -> []
+        project_stats -> project_stats
+      end
 
     project_stats
     |> Enum.map(fn %{
@@ -105,7 +109,14 @@ defmodule SharkAttack.Tensor do
                      "statsOverall" => stats,
                      "statsSwap" => prices
                    } ->
-      {slugMe, %{stats: stats |> Map.put("sellPrice", prices["sellNowPrice"]), slug: tensorSlug}}
+      case stats do
+        nil ->
+          {slugMe, %{stats: %{}, slug: tensorSlug}}
+
+        _ ->
+          {slugMe,
+           %{stats: stats |> Map.put("sellPrice", prices["sellNowPrice"]), slug: tensorSlug}}
+      end
     end)
     |> Map.new()
   end
