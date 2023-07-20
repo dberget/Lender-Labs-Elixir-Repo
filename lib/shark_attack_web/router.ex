@@ -31,6 +31,13 @@ defmodule SharkAttackWeb.Router do
     post("/delete_user_saved_search", UserController, :delete_user_saved_search)
   end
 
+  scope "/borrow", SharkAttackWeb do
+    pipe_through(:api)
+
+    get("/", BorrowController, :index)
+    get("/get_index", BorrowController, :get_index)
+  end
+
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 

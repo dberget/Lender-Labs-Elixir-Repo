@@ -15,7 +15,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     "428JqXgFg3yjuMoa4ZkKi7MBJLn2thvpSTH6HS2NLQC1",
     "4z9xKYvpNqgRaTqJYgBy2etjG5nwpNFV3kykmZrSznBh",
     "9XNM15JpPsrWEJY5khpkZVPpm5efV8xwP5dKJK1Kizng",
-    "DaoSLP3h2ubiXqt7XS64E9xp4XrVjH3DXfr3TMjcL964"
+    "DaoSLP3h2ubiXqt7XS64E9xp4XrVjH3DXfr3TMjcL964",
+    "6uvQA5YweWbKJ9RFvY4wLzVgoqwKj1LFuAvEZbExroHs"
   ]
 
   def send_message({:foreclosure, embed}) do
@@ -141,8 +142,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   def build_message("FORECLOSE_LOAN", loan) do
+    orderBook = Map.get(loan, :orderBook, Map.get(loan, "orderBook"))
+
     c =
-      case SharkAttack.Collections.get_collection(loan.orderBook) do
+      case SharkAttack.Collections.get_collection(orderBook) do
         nil ->
           %Collections.Collection{
             id: nil,
@@ -248,8 +251,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   defp build_repaid_loan_embed(loan) do
+    orderBook = Map.get(loan, :orderBook, Map.get(loan, "orderBook"))
+
     c =
-      case SharkAttack.Collections.get_collection(loan.orderBook) do
+      case SharkAttack.Collections.get_collection(orderBook) do
         nil ->
           %Collections.Collection{
             id: nil,
