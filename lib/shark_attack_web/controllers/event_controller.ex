@@ -3,7 +3,7 @@ defmodule SharkAttackWeb.EventController do
   require Logger
 
   def debug(conn, params) do
-    event = Map.get(params, "_json") |> Jason.decode!()
+    event = Map.get(params, "_json") |> Jason.decode!() |> IO.inspect()
 
     SharkAttack.Workers.LoanHandler.update_loan(event)
 
@@ -14,11 +14,11 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> List.first()
 
-    # SharkAttack.Events.insert_loan_event(
-    #   event["type"],
-    #   event["source"],
-    #   event
-    # )
+    SharkAttack.Events.insert_loan_event(
+      event["type"],
+      event["source"],
+      event
+    )
 
     SharkAttack.Workers.LoanHandler.update_loan(event)
 

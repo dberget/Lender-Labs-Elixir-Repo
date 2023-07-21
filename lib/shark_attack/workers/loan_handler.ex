@@ -5,6 +5,7 @@ defmodule SharkAttack.Workers.LoanHandler do
     loanAddress = get_loan_address(event)
 
     loan = SharkAttack.Loans.get_loan(loanAddress)
+
     SharkAttack.Events.send_event("REPAY_LOAN", loan)
 
     SharkAttack.LoansWorker.delete_loan(loanAddress)
@@ -26,7 +27,7 @@ defmodule SharkAttack.Workers.LoanHandler do
     loanAddress =
       event
       |> Map.get("instructions")
-      |> Enum.at(1)
+      |> List.last()
       |> Map.get("accounts", [])
       |> List.first()
 
@@ -40,7 +41,7 @@ defmodule SharkAttack.Workers.LoanHandler do
     SharkAttack.Stats.update_history_safe(lender)
   end
 
-  def update_loan(%{"type" => "UNKNOWN", "source" => "CARDINAL_RENT"} = event) do
+  def update_loan(%{"type" => "UNKNOWN", "source" => "SHARKY_FI"} = event) do
     closed_loan =
       event
       |> Map.get("instructions")
@@ -132,7 +133,7 @@ defmodule SharkAttack.Workers.LoanHandler do
   def get_loan_address(%{"source" => "CITRUS", "type" => "REPAY_LOAN"} = event) do
     event
     |> Map.get("instructions")
-    |> Enum.at(1)
+    |> List.last()
     |> Map.get("accounts", [])
     |> List.first()
   end

@@ -19,11 +19,19 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     "6uvQA5YweWbKJ9RFvY4wLzVgoqwKj1LFuAvEZbExroHs"
   ]
 
-  def send_message({:foreclosure, embed}) do
+  def send_message({:foreclosure, lender, embed}) do
     SharkAttack.DiscordConsumer.send_to_webhook(
       :foreclosure,
       embed
     )
+
+    case lender in @dao_webook_addresses do
+      true ->
+        SharkAttack.DiscordConsumer.send_message({:dao, lender, embed})
+
+      _ ->
+        :ok
+    end
   end
 
   def send_message({:dao, address, embed}) do
@@ -143,6 +151,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
   def build_message("FORECLOSE_LOAN", loan) do
     orderBook = Map.get(loan, :orderBook, Map.get(loan, "orderBook"))
+    lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 
     c =
       case SharkAttack.Collections.get_collection(orderBook) do
@@ -186,7 +195,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       ]
     }
 
-    {:foreclosure, embed}
+    {:foreclosure, lender, embed}
   end
 
   def build_message(_, _event) do
