@@ -27,7 +27,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
     case lender in @dao_webook_addresses do
       true ->
-        SharkAttack.DiscordConsumer.send_message({:dao, lender, embed})
+        send_message({:dao, lender, embed})
 
       _ ->
         :ok

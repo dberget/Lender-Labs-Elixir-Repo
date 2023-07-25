@@ -6,8 +6,10 @@ defmodule SharkAttackWeb.UserController do
   def index(conn, %{"pk" => address}) do
     user = SharkAttack.Users.get_user_from_address!(address) |> Repo.preload(:user_settings)
 
+    turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address)
+
     conn
-    |> json(%{address: user.address, settings: user.user_settings})
+    |> json(%{address: user.address, settings: user.user_settings, turtles_count: turtles_count})
   end
 
   def create(conn, %{"pk" => address}) do

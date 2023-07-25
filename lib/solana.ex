@@ -225,6 +225,29 @@ defmodule SharkAttack.Solana do
     }
   end
 
+  def fetch_assets(address, page) do
+    body = %{
+      "jsonrpc" => "2.0",
+      "id" => "my-id",
+      "method" => "searchAssets",
+      "params" => %{
+        "ownerAddress" => address,
+        "page" => page,
+        "limit" => 1000
+      }
+    }
+
+    case do_post_request(@rpc_url, body) do
+      {:error, _} ->
+        []
+
+      body ->
+        %{"result" => %{"items" => items}} = body
+
+        items
+    end
+  end
+
   def get_token_balance(address) do
     get_token_account_balance(address)
   end
