@@ -265,7 +265,7 @@ defmodule SharkAttack.LoansWorker do
         handle_retry(loanData, attempts, :add_new_offer)
 
       data ->
-        :ets.insert(:offers, {loanData.loanAddress, Map.drop(data, ["rawData"])})
+        :ets.insert(:offers, {loanData.loanAddress, data})
 
         :ets.insert(
           :collection_loans,
@@ -291,17 +291,6 @@ defmodule SharkAttack.LoansWorker do
     else
       Logger.error("Not found: #{loanData.loanAddress}")
     end
-  end
-
-  def terminate(reason, _state) do
-    Logger.error("Error pushing to offers channel: #{inspect(reason)}")
-
-    SharkAttack.DiscordConsumer.send_to_webhook(
-      "me",
-      "Error Flushing loans: #{inspect(reason)}"
-    )
-
-    :ok
   end
 
   defp generate_tables() do

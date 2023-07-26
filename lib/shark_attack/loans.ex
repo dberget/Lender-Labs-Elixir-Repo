@@ -15,7 +15,6 @@ defmodule SharkAttack.Loans do
   alias SharkAttack.Loans.{PlanSettings, Loan}
 
   alias SharkAttack.Accounts.User
-  alias SharkAttack.Loans.LoanData
 
   def list_loans do
     Repo.all(Loan)

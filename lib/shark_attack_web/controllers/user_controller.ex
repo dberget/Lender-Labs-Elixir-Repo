@@ -4,12 +4,40 @@ defmodule SharkAttackWeb.UserController do
   require Logger
 
   def index(conn, %{"pk" => address}) do
-    user = SharkAttack.Users.get_user_from_address!(address) |> Repo.preload(:user_settings)
+    user =
+      case SharkAttack.Users.get_user_from_address!(address) do
+        nil ->
+          turtles_count = SharkAttack.Clients.Helius.has_turtles(address)
+
+          if turtles_count > 0 do
+            SharkAttack.Users.create_user(address)
+          end
+
+          %{
+            address: address,
+            user_settings: %{
+              loan_taken: true,
+              loan_repaid: true,
+              loan_foreclosure: true,
+              ltf_alert: false,
+              summary_report: true,
+              frakt_raffles: false
+            }
+          }
+
+        user ->
+          user
+          |> Repo.preload(:user_settings)
+      end
 
     turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address)
 
     conn
-    |> json(%{address: user.address, settings: user.user_settings, turtles_count: turtles_count})
+    |> json(%{
+      address: user.address,
+      settings: user.user_settings,
+      turtles_count: turtles_count
+    })
   end
 
   def create(conn, %{"pk" => address}) do

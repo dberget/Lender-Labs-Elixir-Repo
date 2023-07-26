@@ -11,7 +11,7 @@ defmodule SharkAttackWeb.ApiController do
     res = SharkyApi.send_bundle(params)
 
     conn
-    |> json(:ok)
+    |> json(res)
   end
 
   def get_recent_loans(conn, params) do
@@ -351,7 +351,7 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
   end
 
-  def get_citrus_listings(conn, params) do
+  def get_citrus_listings(conn, _params) do
     offers =
       SharkAttack.LoansWorker.get_all_offers()
       |> Enum.filter(&(&1["state"] == "waitingForLender"))
@@ -443,13 +443,6 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(offers)
-  end
-
-  def get_orderbooks(conn, _params) do
-    data = SharkAttack.SharkyApi.get_order_books()
-
-    conn
-    |> json(%{data: data})
   end
 
   def get_collection_foreclosures(conn, params) do
