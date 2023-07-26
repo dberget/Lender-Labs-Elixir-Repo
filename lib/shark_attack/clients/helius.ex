@@ -17,7 +17,6 @@ defmodule SharkAttack.Clients.Helius do
 
   def count_turtles(page, assets, total, address, _new_asset_count) do
     new_assets = Solana.fetch_assets(address, page)
-
     new_asset_count = Enum.count(new_assets)
 
     count_turtles(
@@ -31,9 +30,9 @@ defmodule SharkAttack.Clients.Helius do
 
   defp count_turtles_in_assets(assets) do
     Enum.count(assets, fn %{"creators" => creators} ->
-      first_creator = hd(creators)
+      first_creator = List.first(creators, %{})
 
-      first_creator["address"] == @coll
+      Map.get(first_creator, "address") == @coll
     end)
   end
 end
