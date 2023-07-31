@@ -5,7 +5,7 @@ defmodule SharkAttack.Clients.Helius do
 
   def has_turtles(address) do
     case SharkAttack.SimpleCache.get(__MODULE__, :count_turtles, [1, [], 0, address, 1000],
-           ttl: 60 * 60
+           ttl: 60
          ) do
       count -> count
     end

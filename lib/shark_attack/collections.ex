@@ -36,7 +36,6 @@ defmodule SharkAttack.Collections do
       |> Enum.filter(&is_nil(&1.logo))
 
     collections
-    |> Enum.take(5)
     |> Enum.map(fn c ->
       nft = SharkAttack.Nfts.get_collection_nfts(c.id) |> List.first()
 

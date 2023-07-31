@@ -76,10 +76,9 @@ defmodule SharkAttack.SharkyApi do
   end
 
   def get_all_loan_data("citrus") do
-    SharkAttack.Collections.list_collections()
-    |> Enum.map(& &1.foxy_address)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.flat_map(&get_collection_loans(&1, "citrus"))
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
+
+    Map.get(res, "loanData", [])
     |> Enum.reject(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
   end
 
