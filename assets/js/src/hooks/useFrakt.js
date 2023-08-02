@@ -222,8 +222,6 @@ export const FraktProvider = (props) => {
     let sig = await connection.sendRawTransaction(signedTx.serialize(), {
       skipPreflight: true,
     });
-
-    console.log(sig);
   };
 
   return (

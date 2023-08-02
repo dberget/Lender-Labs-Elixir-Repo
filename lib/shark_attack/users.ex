@@ -5,7 +5,11 @@ defmodule SharkAttack.Users do
 
   def get!(address), do: Repo.get(User, address)
 
-  def get_user_from_address!(address, preloads \\ []) do
+  def get_user_from_address!(address, preloads \\ [])
+
+  def get_user_from_address!(nil, _preloads), do: nil
+
+  def get_user_from_address!(address, preloads) do
     user =
       case Repo.get(User, address) do
         nil -> get_user_from_sub_wallet!(address)
