@@ -34,11 +34,16 @@ defmodule SharkAttack.Workers.LoanHandler do
     loan = SharkAttack.Loans.get_loan(loanAddress)
 
     SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
+
     SharkAttack.LoansWorker.delete_loan(loanAddress)
 
     lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 
-    SharkAttack.Stats.update_history_safe(lender)
+    Task.async(fn ->
+      SharkAttack.Stats.update_history_safe(lender)
+    end)
+
+    :ok
   end
 
   def update_loan(%{"type" => "UNKNOWN", "source" => "SHARKY_FI"} = event) do
@@ -85,7 +90,7 @@ defmodule SharkAttack.Workers.LoanHandler do
     address =
       event
       |> Map.get("instructions")
-      |> Enum.at(1)
+      |> Enum.at(0)
       |> Map.get("accounts")
       |> Enum.at(4)
 

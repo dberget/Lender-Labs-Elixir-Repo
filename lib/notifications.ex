@@ -4,7 +4,7 @@ defmodule SharkAttack.Notifications do
   def foreclosures() do
     Logger.info("Checking for foreclosures")
 
-    SharkAttack.DiscordConsumer.send_to_webhook("me", "Checking for foreclosures")
+    # SharkAttack.DiscordConsumer.send_to_webhook("me", "Checking for foreclosures")
 
     users =
       SharkAttack.Users.get_users_with_discord_id!()

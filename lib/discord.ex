@@ -207,18 +207,6 @@ defmodule SharkAttack.DiscordConsumer do
           "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.jpg"
       }
     )
-
-    # Zaker - ChestFi
-    Api.execute_webhook(
-      "1095507780749758585",
-      "hl8z0pQ2AQTmbqOeS8Kf3rIHdKL9OmMlYR_LhaN8R4TfLbrw_Z73VE0mzIKTsAoWMCK3",
-      %{
-        embeds: [embed],
-        username: "Lender Labs Foreclosure Bot",
-        avatar_url:
-          "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.jpg"
-      }
-    )
   end
 
   def send_raw_message(_dm_id, nil) do

@@ -39,47 +39,51 @@ defmodule SharkAttack.Collections do
     |> Enum.map(fn c ->
       nft = SharkAttack.Nfts.get_collection_nfts(c.id) |> List.first()
 
-      query = """
-      query Mints($tokenMints: [String!]!) {
-        mints(tokenMints: $tokenMints) {
-          collection {
-            slugMe
-            imageUri
+      IO.inspect("Updating #{c.name}")
+
+      unless is_nil(nft) do
+        query = """
+        query Mints($tokenMints: [String!]!) {
+          mints(tokenMints: $tokenMints) {
+            collection {
+              slugMe
+              imageUri
+            }
           }
         }
-      }
-      """
+        """
 
-      post_data =
-        %{
-          query: query,
-          variables: %{tokenMints: [nft.mint]}
-        }
-        |> Jason.encode!()
+        post_data =
+          %{
+            query: query,
+            variables: %{tokenMints: [nft.mint]}
+          }
+          |> Jason.encode!()
 
-      slug =
-        Finch.build(
-          :post,
-          "https://api.tensor.so/graphql",
-          [
-            {"content-type", "application/json"},
-            {"X-TENSOR-API-KEY", "e7b23445-cb60-4faa-8939-d3c571cd2fd7"}
-          ],
-          post_data
-        )
-        |> Finch.request(SharkAttackWeb.Finch)
-        |> parse_res()
+        slug =
+          Finch.build(
+            :post,
+            "https://api.tensor.so/graphql",
+            [
+              {"content-type", "application/json"},
+              {"X-TENSOR-API-KEY", "e7b23445-cb60-4faa-8939-d3c571cd2fd7"}
+            ],
+            post_data
+          )
+          |> Finch.request(SharkAttackWeb.Finch)
+          |> parse_res()
 
-      collection =
-        Map.get(slug, "data", %{})
-        |> Map.get("mints", [])
-        |> List.first()
-        |> Map.get("collection", nil)
+        collection =
+          Map.get(slug, "data", %{})
+          |> Map.get("mints", [])
+          |> List.first()
+          |> Map.get("collection", nil)
 
-      update_collection(c, %{
-        me_slug: Map.get(collection, "slugMe", nil),
-        logo: Map.get(collection, "imageUri", nil)
-      })
+        update_collection(c, %{
+          me_slug: Map.get(collection, "slugMe", nil),
+          logo: Map.get(collection, "imageUri", nil)
+        })
+      end
     end)
   end
 
@@ -169,10 +173,6 @@ defmodule SharkAttack.Collections do
     Repo.get_by(Collection, rain_fi_id: id)
   end
 
-  def get_collection(id, _platform) do
-    get_collection(id)
-  end
-
   def get_collection(address, :nfts) do
     query =
       from(c in Collection,
@@ -189,6 +189,10 @@ defmodule SharkAttack.Collections do
         collection
     end
     |> Repo.preload(:nfts)
+  end
+
+  def get_collection(id, _platform) do
+    get_collection(id)
   end
 
   def insert_new_collection(%{sharky_address: pubkey} = attrs) do

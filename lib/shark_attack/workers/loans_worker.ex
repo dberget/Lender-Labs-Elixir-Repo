@@ -105,7 +105,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def flush() do
-    SharkAttack.DiscordConsumer.send_to_webhook("me", "Flushing loans")
+    # SharkAttack.DiscordConsumer.send_to_webhook("me", "Flushing loans")
 
     try do
       citrusLoans = SharkyApi.get_all_loan_data("citrus")
@@ -136,7 +136,7 @@ defmodule SharkAttack.LoansWorker do
       :ets.delete_all_objects(:offers)
       :ets.insert(:offers, offers)
 
-      SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
+      # SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
     rescue
       e ->
         SharkAttack.DiscordConsumer.send_to_webhook(
@@ -148,7 +148,7 @@ defmodule SharkAttack.LoansWorker do
 
   @impl true
   def init([]) do
-    SharkAttack.DiscordConsumer.send_to_webhook("me", "Initing Loans Worker")
+    # SharkAttack.DiscordConsumer.send_to_webhook("me", "Initing Loans Worker")
 
     generate_tables()
 
