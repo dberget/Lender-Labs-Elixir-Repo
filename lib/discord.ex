@@ -43,9 +43,13 @@ defmodule SharkAttack.DiscordConsumer do
   end
 
   def create_dm_channel(discordId) do
-    {:ok, %Nostrum.Struct.Channel{id: id}} = Api.create_dm(discordId)
+    case Api.create_dm(discordId) do
+      {:ok, %Nostrum.Struct.Channel{id: id}} ->
+        id
 
-    id
+      {:error, _} ->
+        :error
+    end
   end
 
   def send_to_webhook("me", message) do
@@ -209,13 +213,26 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  def send_raw_message(:error, _) do
+    Logger.info("Unable to get DM channel")
+
+    nil
+  end
+
   def send_raw_message(_dm_id, nil) do
     Logger.info("No message to send")
+
     nil
   end
 
   def send_raw_message(dm_id, embed) do
     Api.create_message(dm_id, embeds: [embed])
+  end
+
+  def send_message(:error, _) do
+    Logger.info("Unable to get DM channel")
+
+    nil
   end
 
   def send_message(dm_id, %{collection: collection, position: 0}) do
@@ -237,6 +254,8 @@ defmodule SharkAttack.DiscordConsumer do
 
     Api.create_message(dm_id, embeds: [embed])
   end
+
+  def send_foreclosure_msg(:error, _), do: nil
 
   def send_foreclosure_msg(dm_id, minutesFromDefault) do
     embed =

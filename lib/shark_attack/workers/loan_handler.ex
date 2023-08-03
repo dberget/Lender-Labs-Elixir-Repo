@@ -62,6 +62,7 @@ defmodule SharkAttack.Workers.LoanHandler do
         loan = SharkAttack.Loans.get_loan(closed_loan)
 
         SharkAttack.Events.send_event("REPAY_LOAN", loan)
+
         SharkAttack.LoansWorker.delete_loan(closed_loan)
 
         address =

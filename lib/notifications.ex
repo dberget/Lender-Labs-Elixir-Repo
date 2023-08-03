@@ -23,10 +23,10 @@ defmodule SharkAttack.Notifications do
           minutesFromDefault < 10 and
             minutesFromDefault > -10
         ) do
-          SharkAttack.DiscordConsumer.send_to_webhook(
-            "me",
-            "Sendng Foreclosure Alert to #{user.discordId} - #{minutesFromDefault} - #{loan["pubkey"]}"
-          )
+          # SharkAttack.DiscordConsumer.send_to_webhook(
+          #   "me",
+          #   "Sendng Foreclosure Alert to #{user.discordId} - #{minutesFromDefault} - #{loan["pubkey"]}"
+          # )
 
           SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
           |> SharkAttack.DiscordConsumer.send_foreclosure_msg(minutesFromDefault)
