@@ -91,7 +91,8 @@ defmodule SharkAttack.Workers.LoanHandler do
     address =
       event
       |> Map.get("instructions")
-      |> Enum.at(0)
+      |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+      |> List.first()
       |> Map.get("accounts")
       |> Enum.at(4)
 

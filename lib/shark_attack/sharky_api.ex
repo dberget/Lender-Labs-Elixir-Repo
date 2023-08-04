@@ -55,6 +55,10 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
+  def get_loan(%{loanAddress: nill}) do
+    {:error, "Loan not found"}
+  end
+
   def get_loan(%{loanAddress: pk, source: "CITRUS"}) do
     case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/citrus/#{pk}") do
       {:error, body} ->

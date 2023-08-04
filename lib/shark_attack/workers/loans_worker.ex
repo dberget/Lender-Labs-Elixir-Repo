@@ -241,6 +241,9 @@ defmodule SharkAttack.LoansWorker do
       {:error, _} ->
         handle_retry(loanData, attempts, :add_new_loan)
 
+      :error ->
+        handle_retry(loanData, attempts, :add_new_loan)
+
       loan ->
         Logger.info("Inserting #{loanData.loanAddress} after #{attempts} attempts.")
 
