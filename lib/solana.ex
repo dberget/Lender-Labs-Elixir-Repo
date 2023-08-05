@@ -239,12 +239,12 @@ defmodule SharkAttack.Solana do
 
     case do_post_request(@rpc_url, body) do
       {:error, _} ->
-        []
+        {:error, []}
 
       body ->
         %{"result" => %{"items" => items}} = body
 
-        items
+        {:ok, items}
     end
   end
 

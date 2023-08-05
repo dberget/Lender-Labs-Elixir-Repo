@@ -51,9 +51,12 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
              address,
              :user_settings
            ),
-         %User{discordId: discordId, user_settings: %UserSettings{} = settings} <- user,
+         %User{address: pk, discordId: discordId, user_settings: %UserSettings{} = settings} <-
+           user,
          false <- is_nil(discordId),
-         {:ok, true} <- Map.fetch(settings, setting) do
+         true <- SharkAttack.Clients.Helius.has_turtles(pk, 3) >= 3,
+         {:ok, true} <-
+           Map.fetch(settings, setting) do
       {:user, discordId}
     else
       _ -> is_subscribed_dao?(address)

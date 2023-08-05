@@ -55,7 +55,7 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
-  def get_loan(%{loanAddress: nill}) do
+  def get_loan(%{loanAddress: nil}) do
     {:error, "Loan not found"}
   end
 

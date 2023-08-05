@@ -27,7 +27,8 @@ defmodule SharkAttack.Workers.LoanHandler do
     loanAddress =
       event
       |> Map.get("instructions")
-      |> List.last()
+      |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+      |> List.first()
       |> Map.get("accounts", [])
       |> List.first()
 
@@ -50,7 +51,8 @@ defmodule SharkAttack.Workers.LoanHandler do
     closed_loan =
       event
       |> Map.get("instructions")
-      |> Enum.at(1)
+      |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+      |> List.first()
       |> Map.get("accounts", [])
       |> List.first()
 
@@ -68,7 +70,8 @@ defmodule SharkAttack.Workers.LoanHandler do
         address =
           event
           |> Map.get("instructions")
-          |> Enum.at(1)
+          |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+          |> List.first()
           |> Map.get("accounts", [])
           |> Enum.at(1)
 

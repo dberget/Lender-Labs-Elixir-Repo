@@ -1,4 +1,6 @@
 defmodule SharkAttack.SimpleCache do
+  require Logger
+
   @moduledoc """
   A simple ETS based cache for expensive function calls.
   """
@@ -47,5 +49,9 @@ defmodule SharkAttack.SimpleCache do
     expiration = :os.system_time(:seconds) + ttl
     :ets.insert(:simple_cache, {[mod, fun, args], result, expiration})
     result
+  end
+
+  def delete(mod, fun, args) do
+    :ets.delete(:simple_cache, [mod, fun, args])
   end
 end
