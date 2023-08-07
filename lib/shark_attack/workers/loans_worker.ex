@@ -285,7 +285,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   defp handle_retry(loanData, attempts, function) do
-    if attempts < 5 do
+    if attempts < 3 do
       Logger.info(
         "Not found: #{loanData.loanAddress} - #{attempts} - retrying #{function} in 1 second"
       )
