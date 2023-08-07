@@ -14,5 +14,6 @@ defmodule SharkAttack.Frakt do
 
       SharkAttack.Collections.get_and_update_collection(data)
     end)
+    |> Enum.reject(&is_nil(&1))
   end
 end

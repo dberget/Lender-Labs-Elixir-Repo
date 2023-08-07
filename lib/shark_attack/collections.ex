@@ -249,10 +249,14 @@ defmodule SharkAttack.Collections do
 
     if is_nil(collection) do
       IO.inspect("No matching collection found - #{name}")
+
+      attrs
     else
       collection = %Collection{id: collection.id}
 
       update_collection(collection, attrs)
+
+      nil
     end
   end
 
