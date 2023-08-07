@@ -1,18 +1,15 @@
 defmodule SharkAttack.Frakt do
-  def get_liquidity_pools() do
-    %{"pools" => pools} =
-      SharkAttack.Helpers.do_get_request("https://api.frakt.xyz/liquidity/pools")
-
-    pools
+  def get_bonds_preview() do
+    SharkAttack.Helpers.do_get_request("http://api.frakt.xyz/bonds/preview")
   end
 
-  def save_pools do
-    pools = get_liquidity_pools()
+  def save_frakt_collections do
+    pools = get_bonds_preview()
 
     Enum.map(pools, fn pool ->
       data = %{
-        name: pool["name"],
-        frakt_address: pool["liquidityPoolPubkey"]
+        name: pool["collectionName"],
+        frakt_address: pool["marketPubkey"]
       }
 
       SharkAttack.Collections.get_and_update_collection(data)
