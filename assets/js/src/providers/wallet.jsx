@@ -22,7 +22,7 @@ const WalletContext = ({ children }) => {
   // @ts-ignore
   const endpoint = React.useMemo(
     () =>
-      "https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
+      "https://rpc.helius.xyz/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42",
     []
   );
 

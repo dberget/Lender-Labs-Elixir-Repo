@@ -23,6 +23,41 @@ defmodule SharkAttack.Nfts do
     Repo.all(query)
   end
 
+  def get_and_save_nft_data(mint) do
+    # Refactor all this to a with statement.
+
+    nft =
+      case get_nft_by_mint(mint) do
+        nil ->
+          %Nft{
+            mint: mint,
+            name: nil,
+            image: nil
+          }
+
+        res ->
+          res
+      end
+
+    case Map.get(nft, :image) do
+      nil ->
+        nft_res = SharkAttack.Solana.get_asset(mint) |> List.first()
+
+        update_nft(nft, %{
+          name: nft_res["result"]["content"]["metadata"]["name"],
+          image: parse_nft_image(nft_res["result"]["content"]["files"])
+        })
+
+        %{
+          name: nft_res["result"]["content"]["metadata"]["name"],
+          image: parse_nft_image(nft_res["result"]["content"]["files"])
+        }
+
+      _ ->
+        nft
+    end
+  end
+
   def save_nft_names(collection_id) do
     nfts = get_collection_nfts(collection_id)
 
@@ -36,21 +71,21 @@ defmodule SharkAttack.Nfts do
 
         update_nft(nft, %{
           name: nft_name["result"]["content"]["metadata"]["name"],
-          image: parse_nft_name(nft_name["result"]["content"]["files"])
+          image: parse_nft_image(nft_name["result"]["content"]["files"])
         })
       end)
     end)
   end
 
-  def parse_nft_name(nil) do
+  def parse_nft_image(nil) do
     ""
   end
 
-  def parse_nft_name([]) do
+  def parse_nft_image([]) do
     ""
   end
 
-  def parse_nft_name(nft) do
+  def parse_nft_image(nft) do
     nft |> List.first([%{"uri" => ""}]) |> Map.get("uri")
   end
 
@@ -69,7 +104,7 @@ defmodule SharkAttack.Nfts do
   def get_nft_name_from_api(mint) do
     res =
       SharkAttack.Helpers.do_post_request(
-        "https://api.helius.xyz/v1/nfts?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
+        "https://api.helius.xyz/v1/nfts?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42",
         %{mints: [mint]}
       )
 
@@ -78,9 +113,5 @@ defmodule SharkAttack.Nfts do
 
   def get_nft_names(mints) do
     SharkAttack.Solana.get_assets(mints)
-    # SharkAttack.Helpers.do_post_request(
-    # "https://api.helius.xyz/v0/token-metadata?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444",
-    # %{mintAccounts: mints, includeOffChain: true, disableCache: false}
-    # )
   end
 end

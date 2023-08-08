@@ -784,6 +784,12 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(%{data: res})
   end
 
+  def get_nft(conn, params) do
+    res = SharkAttack.Nfts.get_and_save_nft_data(params["mint"])
+
+    conn |> json(res)
+  end
+
   def search_collections(conn, params) do
     collections = SharkAttack.Collections.search_collection_by_name(params["name"])
 

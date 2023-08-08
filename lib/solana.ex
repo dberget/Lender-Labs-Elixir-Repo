@@ -1,7 +1,7 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  @rpc_url "https://mainnet.helius-rpc.com/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444"
+  @rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
   # @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
 
@@ -204,6 +204,10 @@ defmodule SharkAttack.Solana do
         }
       ]
     }
+  end
+
+  def get_asset(mint) do
+    get_assets([mint])
   end
 
   def get_assets(mints) do

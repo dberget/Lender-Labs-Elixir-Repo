@@ -7,7 +7,7 @@ import {
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import useSwr from "swr";
 
-const url = `https://rpc.helius.xyz/?api-key=d250e974-e6c5-4428-a9ca-25f8cd271444`;
+const url = `https://rpc.helius.xyz/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42`;
 
 export const useBorrower = () => {
   const urlParams = new URLSearchParams(window.location.search);

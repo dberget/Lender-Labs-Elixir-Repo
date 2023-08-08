@@ -66,6 +66,7 @@ defmodule SharkAttackWeb.Router do
     get("/remove_loan", ApiController, :remove_loan)
     get("/analyze_collection_data", ApiController, :analyze_collection_data)
     get("/get_user_favorites", ApiController, :get_user_favorites)
+    get("/get_nft", ApiController, :get_nft)
 
     post("/bundle", ApiController, :bundle)
     get("/get_citrus_listings", ApiController, :get_citrus_listings)

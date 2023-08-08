@@ -82,7 +82,7 @@ defmodule SharkAttack.Tensor do
           post_data
         )
 
-      Process.sleep(500)
+      Process.sleep(1000)
 
       Finch.request(request, SharkAttackWeb.Finch)
       |> parse_floor_response(slug)

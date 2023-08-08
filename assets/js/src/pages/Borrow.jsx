@@ -49,15 +49,25 @@ export function Borrow() {
   }
 
   return (
-    <div className="grid lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center mb-48">
-      {fraktNfts && (
-        <DisplayCollections
-          collections={data?.collections}
-          indexes={data?.indexes}
-          metaplex={metaplex}
-          fraktNfts={fraktNfts}
-        />
-      )}
+    <div className="w-full text-center">
+      <h2 className="font-bold mx-auto mb-2">
+        This page is no longer supported! You can now directly manage your loans
+        on{" "}
+        <a className="underline" href="https://lenderlabs.xyz/borrow">
+          https://lenderlabs.xyz/borrow
+        </a>
+        !
+      </h2>
+      <div className="grid lg:grid-cols-2 gap-5 w-full px-2 xl:px-0 xl:w-5/6 mx-auto justify-items-center mb-48">
+        {fraktNfts && (
+          <DisplayCollections
+            collections={data?.collections}
+            indexes={data?.indexes}
+            metaplex={metaplex}
+            fraktNfts={fraktNfts}
+          />
+        )}
+      </div>
     </div>
   );
 }
