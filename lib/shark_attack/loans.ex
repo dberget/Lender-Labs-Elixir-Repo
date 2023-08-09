@@ -12,7 +12,7 @@ defmodule SharkAttack.Loans do
   alias SharkAttack.LoansWorker
   alias SharkAttack.Repo
 
-  alias SharkAttack.Loans.{PlanSettings, Loan}
+  alias SharkAttack.Loans.{PlanSettings, Loan, TakenLoan}
 
   alias SharkAttack.Accounts.User
 
@@ -49,6 +49,20 @@ defmodule SharkAttack.Loans do
   end
 
   def get_user!(address), do: Repo.get!(User, address)
+
+  def insert_taken_loan(attrs) do
+    changeset = TakenLoan.changeset(%TakenLoan{}, attrs)
+
+    case Repo.insert(changeset) do
+      {:ok, loan} ->
+        Logger.info("Inserted taken loan")
+        loan
+
+      {:error, changeset} ->
+        Logger.error("Error inserting taken loan: #{inspect(changeset)}")
+        changeset
+    end
+  end
 
   def get_loans_history!(address) do
     query =

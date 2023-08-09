@@ -784,6 +784,12 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(%{data: res})
   end
 
+  def save_loan_taken(conn, params) do
+    res = SharkAttack.Loans.insert_taken_loan(params)
+
+    conn |> json(res)
+  end
+
   def get_nft(conn, params) do
     res = SharkAttack.Nfts.get_and_save_nft_data(params["mint"])
 

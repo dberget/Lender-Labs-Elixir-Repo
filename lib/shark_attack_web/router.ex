@@ -67,11 +67,11 @@ defmodule SharkAttackWeb.Router do
     get("/analyze_collection_data", ApiController, :analyze_collection_data)
     get("/get_user_favorites", ApiController, :get_user_favorites)
     get("/get_nft", ApiController, :get_nft)
+    get("/get_citrus_listings", ApiController, :get_citrus_listings)
+    get("/whales", ApiController, :whales)
 
     post("/bundle", ApiController, :bundle)
-    get("/get_citrus_listings", ApiController, :get_citrus_listings)
-
-    get("/whales", ApiController, :whales)
+    post("/save_loan_taken", ApiController, :save_loan_taken)
 
     get("/save_favorite", ApiController, :save_favorite)
     get("/remove_favorite", ApiController, :remove_favorite)
