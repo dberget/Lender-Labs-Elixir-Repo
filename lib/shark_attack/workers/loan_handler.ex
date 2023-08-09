@@ -143,7 +143,8 @@ defmodule SharkAttack.Workers.LoanHandler do
   def get_loan_address(%{"source" => "CITRUS", "type" => "REPAY_LOAN"} = event) do
     event
     |> Map.get("instructions")
-    |> List.last()
+    |> Enum.filter(&(&1["programId"] == "JCFRaPv7852ESRwJJGRy2mysUMydXZgVVhrMLmExvmVp"))
+    |> List.first()
     |> Map.get("accounts", [])
     |> List.first()
   end
@@ -155,6 +156,7 @@ defmodule SharkAttack.Workers.LoanHandler do
   def get_loan_address(%{"source" => "CITRUS", "type" => "CANCEL_OFFER"} = event) do
     event
     |> Map.get("instructions")
+    |> Enum.filter(&(&1["programId"] == "JCFRaPv7852ESRwJJGRy2mysUMydXZgVVhrMLmExvmVp"))
     |> List.first()
     |> Map.get("accounts", [])
     |> List.first()
