@@ -6,7 +6,7 @@ defmodule SharkAttack.Helpers do
       [{"content-type", "application/json"}],
       Jason.encode!(params)
     )
-    |> Finch.request(SharkAttackWeb.Finch)
+    |> Finch.request(SharkAttackWeb.Finch, receive_timeout: 150_000)
     |> parse_response()
   end
 

@@ -5,6 +5,8 @@ defmodule SharkAttack.Clients.Helius do
   require Logger
   alias SharkAttack.Solana
 
+  def has_turtles(nil), do: 0
+
   def has_turtles(address, fallback \\ 3) do
     Logger.info("Checking if #{address} has turtles")
 

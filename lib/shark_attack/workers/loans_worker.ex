@@ -152,9 +152,16 @@ defmodule SharkAttack.LoansWorker do
 
     generate_tables()
 
+    {:ok, [], {:continue, :post_init}}
+  end
+
+  @impl true
+  def handle_continue(:post_init, state) do
+    IO.puts("Loans Worker Started, now flushing")
+
     flush()
 
-    {:ok, []}
+    {:noreply, state}
   end
 
   @impl true
@@ -285,12 +292,12 @@ defmodule SharkAttack.LoansWorker do
   end
 
   defp handle_retry(loanData, attempts, function) do
-    if attempts < 3 do
+    if attempts < 1 do
       Logger.info(
-        "Not found: #{loanData.loanAddress} - #{attempts} - retrying #{function} in 1 second"
+        "Not found: #{loanData.loanAddress} - #{attempts} - retrying #{function} in 3 seconds"
       )
 
-      Process.send_after(self(), {function, loanData, attempts + 1}, 1000)
+      Process.send_after(self(), {function, loanData, attempts + 1}, 3000)
     else
       Logger.error("Not found: #{loanData.loanAddress}")
     end

@@ -33,10 +33,15 @@ defmodule SharkAttack.Users do
     end
   end
 
+  def get_sub_wallets_for_address!(address) do
+    Repo.get_by(SharkAttack.Accounts.UserWallet, user_address: address)
+  end
+
   def list!(), do: Repo.all(User)
 
   def get_users_with_discord_id!() do
-    Repo.all(from(u in User, where: not is_nil(u.discordId))) |> Repo.preload(:user_settings)
+    Repo.all(from(u in User, where: not is_nil(u.discordId)))
+    |> Repo.preload([:user_settings, :user_wallets])
   end
 
   def create_user(attrs) when is_map(attrs) do

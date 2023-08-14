@@ -25,6 +25,8 @@ defmodule SharkAttack.Application do
     ]
 
     :ets.new(:simple_cache, [:public, :named_table])
+
+    SharkAttack.RateLimiter.start_link([])
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: SharkAttack.Supervisor]

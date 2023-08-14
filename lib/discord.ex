@@ -42,6 +42,10 @@ defmodule SharkAttack.DiscordConsumer do
     end)
   end
 
+  def create_dm_channel(nil) do
+    :error
+  end
+
   def create_dm_channel(discordId) do
     case Api.create_dm(discordId) do
       {:ok, %Nostrum.Struct.Channel{id: id}} ->

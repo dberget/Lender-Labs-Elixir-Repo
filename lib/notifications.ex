@@ -35,6 +35,17 @@ defmodule SharkAttack.Notifications do
     end)
   end
 
+  def send_monthly_summary(address) do
+    user = SharkAttack.Users.get_user_from_address!(address)
+
+    loans = SharkAttack.Loans.get_loans_history(address, :month)
+    embed = format_weekly_summary(address, loans)
+
+    user.discordId
+    |> SharkAttack.DiscordConsumer.create_dm_channel()
+    |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+  end
+
   def send_weekly_summary() do
     users = SharkAttack.Users.get_users_with_discord_id!()
 
@@ -42,23 +53,44 @@ defmodule SharkAttack.Notifications do
 
     Enum.map(users, fn user ->
       try do
-        loans = SharkAttack.Loans.get_loans_history(user.address, :week)
-        embed = format_weekly_summary(user, loans)
+        dm_channel =
+          user.discordId
+          |> SharkAttack.DiscordConsumer.create_dm_channel()
 
-        user.discordId
-        |> SharkAttack.DiscordConsumer.create_dm_channel()
-        |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+        addresses = [user.address | Enum.map(user.user_wallets, & &1.address)]
+
+        Enum.map(addresses, fn address ->
+          loans = SharkAttack.Loans.get_loans_history(address, :week)
+
+          embed = format_weekly_summary(address, loans)
+
+          SharkAttack.DiscordConsumer.send_raw_message(dm_channel, embed)
+        end)
       rescue
-        _e ->
+        e ->
+          Logger.error("#{e}")
           Logger.error("Error sending weekly summary to #{user.discordId}")
       end
     end)
   end
 
+  def send_weekly_summary(address) do
+    user = SharkAttack.Users.get_user_from_address!(address)
+
+    loans = SharkAttack.Loans.get_loans_history(user.address, :week)
+    embed = format_weekly_summary(user.address, loans)
+
+    user.discordId
+    |> SharkAttack.DiscordConsumer.create_dm_channel()
+    |> SharkAttack.DiscordConsumer.send_raw_message(embed)
+
+    embed
+  end
+
   defp format_weekly_summary(_user, []), do: nil
 
-  defp format_weekly_summary(user, loans) do
-    Logger.info("Sending weekly summary to #{user.discordId}")
+  defp format_weekly_summary(address, loans) do
+    Logger.info("Sending weekly summary to #{address}")
 
     loan_amounts = Enum.map(loans, fn l -> l.amountSol end)
 
@@ -108,7 +140,7 @@ defmodule SharkAttack.Notifications do
         url:
           "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
       },
-      title: "#{String.slice(user.address, 0..4)} Weekly Summary",
+      title: "#{String.slice(address, 0..4)} Weekly Summary",
       url: "https://lenderlabs.xyz",
       color: 5_815_448,
       fields: [

@@ -18,11 +18,18 @@ defmodule SharkAttack.FloorWorker do
 
   @impl true
   def init(state) do
-    create_and_hydrate_table()
-
     :timer.send_interval(:timer.minutes(@floor_fetch_interval), :fetch)
 
-    {:ok, state}
+    {:ok, state, {:continue, :post_init}}
+  end
+
+  @impl true
+  def handle_continue(:post_init, state) do
+    IO.puts("Creating and hydrating floor prices table")
+
+    create_and_hydrate_table()
+
+    {:noreply, state}
   end
 
   def create_and_hydrate_table() do

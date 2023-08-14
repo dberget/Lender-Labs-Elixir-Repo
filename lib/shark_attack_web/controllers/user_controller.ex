@@ -56,6 +56,44 @@ defmodule SharkAttackWeb.UserController do
     end
   end
 
+  def get_user_summary(conn, params) do
+    user = SharkAttack.Users.get_user_from_address!(params["address"])
+    last_called = SharkAttack.RateLimiter.get(params["address"])
+
+    has_discord = user.discordId != nil
+
+    errorMsg =
+      if has_discord,
+        do: "You can only send once per day",
+        else: "You must subscribe in discord to use this feature"
+
+    valid_to_call =
+      has_discord and
+        case last_called do
+          nil ->
+            true
+
+          _ ->
+            Timex.compare(Timex.today(), last_called) == 1
+        end
+
+    case valid_to_call do
+      false ->
+        conn
+        |> put_status(400)
+        |> json(%{
+          error: errorMsg
+        })
+
+      true ->
+        data = SharkAttack.Notifications.send_weekly_summary(params["address"])
+
+        SharkAttack.RateLimiter.put(params["address"], Timex.today())
+
+        json(conn, data)
+    end
+  end
+
   def sign(conn, params) do
     user = SharkAttack.SharkyApi.sign(params["address"])
 
