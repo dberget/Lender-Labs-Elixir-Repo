@@ -1,9 +1,6 @@
 defmodule SharkAttack.Tensor do
   require Logger
 
-  @magic_eden_instance_id "E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe"
-  @magic_eden_program_id "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K"
-
   def get_floor_prices([]), do: []
 
   def get_floor_prices(tokens) do
@@ -130,95 +127,20 @@ defmodule SharkAttack.Tensor do
   end
 
   defp parse_floor_response({:ok, %{body: body}}, slug) do
-    Logger.warn("Error calling solanalysis - #{slug}")
+    Logger.warn("Error calling Tensor - #{slug}")
     IO.inspect(body)
 
     :error
   end
 
   defp parse_floor_response({:error, %Mint.TransportError{reason: reason}}, slug) do
-    Logger.warn("Error calling solanalysis: #{reason}, #{slug}")
+    Logger.warn("Error calling Tensor: #{reason}, #{slug}")
 
     :error
   end
 
   defp parse_floor_response({:error, _}, _) do
-    Logger.warn("Error calling solanalysis")
-
-    :error
-  end
-
-  def get_collection_info(name) do
-    url = "https://beta.api.hyperspace.xyz/graphql"
-
-    query = """
-    query getProjectAttributesQuery($conditions: GetProjectStatsCondition, $orderBy: [OrderConfig!], $paginationInfo: PaginationConfig) {
-      getProjectStats(
-        conditions: $conditions
-        order_by: $orderBy
-        pagination_info: $paginationInfo
-      ) {
-        project_stats {
-          project {
-            project_id
-            display_name
-            twitter
-            discord
-            img_url
-            website
-          }
-        }
-        pagination_info {
-          current_page_number
-          current_page_size
-          has_next_page
-          total_page_number
-          __typename
-        }
-        __typename
-      }
-    }
-    """
-
-    post_data =
-      %{
-        query: query,
-        variables: %{
-          conditions: %{
-            project_ids: [
-              name
-            ]
-          }
-        }
-      }
-      |> Jason.encode!()
-
-    Logger.debug("Making graphql query to get collection info - #{name}")
-
-    request = Finch.build(:post, url, [{"Content-Type", "application/json"}], post_data)
-
-    Finch.request(request, SharkAttackWeb.Finch) |> parse_info_response()
-  end
-
-  defp parse_info_response({:ok, %{status: 200, body: body}}) do
-    response =
-      body
-      |> Jason.decode!()
-
-    %{"data" => %{"getProjectStats" => %{"project_stats" => project_stats}}} = response
-
-    project_stats
-  end
-
-  defp parse_info_response({:ok, %{status: 503, body: _body}}) do
-    Logger.warn("Error calling solanalysis: 503 Service Unavailable")
-
-    :error
-  end
-
-  defp parse_info_response({:ok, %{body: body}}) do
-    Logger.warn("Error calling tensor")
-    IO.inspect(body)
+    Logger.warn("Error calling Tensor")
 
     :error
   end
