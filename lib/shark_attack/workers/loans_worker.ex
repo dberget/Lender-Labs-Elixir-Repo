@@ -95,6 +95,8 @@ defmodule SharkAttack.LoansWorker do
       {loan["orderBook"], loanAddress, loan["lender"], loan}
     )
 
+    SharkAttack.Loans.create_active_loan(loan)
+
     try do
       SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
       SharkAttackWeb.LoansChannel.push(loan)

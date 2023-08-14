@@ -153,10 +153,11 @@ defmodule SharkAttack.Loans do
     loan =
       attrs
       |> Map.drop(["earnings"])
-      |> Map.put("platform", "SHARKY")
+      |> Map.put("platform", String.upcase(attrs["platform"]))
       |> Map.put("status", "ACTIVE")
+      |> Map.put("length", attrs["duration"])
+      |> Map.put("loan", attrs["pubkey"])
       |> Map.put("dateTaken", Timex.from_unix(attrs["start"]))
-      |> Map.put("fees", attrs["total_owed"] - attrs["amountSol"])
 
     %Loan{}
     |> Loan.changeset(loan)
@@ -188,12 +189,17 @@ defmodule SharkAttack.Loans do
   end
 
   def update_or_insert_completed_loan(attrs \\ %{}) do
-    loan = Repo.get_by(Loan, loan: attrs["loan"])
+    loanAddress = Map.get(attrs, :loan, Map.get(attrs, "pubKey", Map.get(attrs, "pubkey")))
+
+    loan = Repo.get_by(Loan, loan: loanAddress)
 
     cond do
       is_nil(loan) ->
-        %Loan{loan: attrs["loan"]}
+        %Loan{loan: loanAddress}
         |> Loan.changeset(attrs)
+        |> Changeset.put_change(:status, "COMPLETE")
+        |> Changeset.put_change(:length, Map.get(attrs, :duration, Map.get(attrs, :length)))
+        |> Changeset.put_change(:platform, String.upcase(attrs.platform))
         |> Repo.insert()
 
       loan.status == "COMPLETE" ->
@@ -202,6 +208,7 @@ defmodule SharkAttack.Loans do
       loan.status == "ACTIVE" ->
         loan
         |> Loan.changeset(attrs)
+        |> Changeset.put_change(:status, "COMPLETE")
         |> Repo.update()
 
       true ->
@@ -233,9 +240,12 @@ defmodule SharkAttack.Loans do
         end
 
       {:ok, loan} ->
-        for {key, val} <- loan, into: %{} do
-          {String.to_atom(key), val}
-        end
+        loan =
+          for {key, val} <- loan, into: %{} do
+            {String.to_atom(key), val}
+          end
+
+        Map.put(loan, :loan, loan.pubkey)
 
       _ ->
         %{}

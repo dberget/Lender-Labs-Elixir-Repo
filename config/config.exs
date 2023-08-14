@@ -33,7 +33,7 @@ config :shark_attack, SharkAttack.Scheduler,
   timeout: 500_000,
   jobs: [
     {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
-    {"*/25 * * * *", {SharkAttack.LoansWorker, :flush, []}},
+    {"*/20 * * * *", {SharkAttack.LoansWorker, :flush, []}},
     {"*/30 * * * *", {SharkAttack.Stats, :update_loans, []}},
     {"@daily", {SharkAttack.Stats, :pull_all_citrus_loans, []}},
     {"*/5 * * * *", {SharkAttack.Notifications, :foreclosures, []}}
