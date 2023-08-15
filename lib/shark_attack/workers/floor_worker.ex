@@ -27,7 +27,7 @@ defmodule SharkAttack.FloorWorker do
   def handle_continue(:post_init, state) do
     IO.puts("Creating and hydrating floor prices table")
 
-    create_and_hydrate_table()
+    # create_and_hydrate_table()
 
     {:noreply, state}
   end

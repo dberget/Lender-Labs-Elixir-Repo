@@ -188,8 +188,31 @@ defmodule SharkAttack.Loans do
     end
   end
 
+  def update_or_insert_repaid_loan(attrs, sig) do
+    current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    attrs
+    |> Map.put(:repayTxId, sig)
+    |> Map.put(:dateRepaid, current_timestamp)
+    |> update_or_insert_completed_loan()
+  end
+
+  def update_or_insert_foreclosed_loan(attrs, signature) do
+    current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    attrs
+    |> Map.put(:forecloseTxId, signature)
+    |> Map.put(:dateForeclosed, current_timestamp)
+    |> update_or_insert_completed_loan()
+  end
+
   def update_or_insert_completed_loan(attrs \\ %{}) do
-    loanAddress = Map.get(attrs, :loan, Map.get(attrs, "pubKey", Map.get(attrs, "pubkey")))
+    loanAddress =
+      Map.get(
+        attrs,
+        :loan,
+        Map.get(attrs, "pubKey", Map.get(attrs, "pubkey", Map.get(attrs, "loan")))
+      )
 
     loan = Repo.get_by(Loan, loan: loanAddress)
 
