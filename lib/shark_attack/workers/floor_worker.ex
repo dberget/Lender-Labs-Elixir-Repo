@@ -27,7 +27,7 @@ defmodule SharkAttack.FloorWorker do
   def handle_continue(:post_init, state) do
     IO.puts("Creating and hydrating floor prices table")
 
-    # create_and_hydrate_table()
+    create_and_hydrate_table()
 
     {:noreply, state}
   end
@@ -170,6 +170,8 @@ defmodule SharkAttack.FloorWorker do
           stats
           |> Map.put("defaultRatio", Map.get(adv_stats, :ratio, 0))
           |> Map.put("avgRepayment", Map.get(adv_stats, :avg_repayment_time, 0))
+
+        Process.sleep(1000)
 
         :ets.insert(
           :floor_prices,
