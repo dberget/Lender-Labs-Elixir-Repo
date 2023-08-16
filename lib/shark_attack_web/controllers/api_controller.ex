@@ -342,7 +342,7 @@ defmodule SharkAttackWeb.ApiController do
     {totalSolOffered, activeOffers} =
       offers
       |> Enum.reduce({0, []}, fn offer, {sumSol, offers} ->
-        {sumSol + offer["amountSol"], [offer | offers]}
+        {sumSol + offer["amountSol"], [calculate_ltv_value(offer) | offers]}
       end)
 
     offerSummary = %{totalSolOffered: totalSolOffered, activeOffers: activeOffers}
@@ -827,7 +827,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   defp calculate_ltv_value(%{"amountSol" => 0, "state" => "waitingForBorrower"} = loan) do
-    collection = SharkAttack.Collections.get_collection(loan["orderBook"])
+    collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])
     floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
 
     calculate_ltv_value(loan, floor_price)

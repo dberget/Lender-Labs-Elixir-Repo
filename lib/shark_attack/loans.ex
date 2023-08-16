@@ -153,10 +153,11 @@ defmodule SharkAttack.Loans do
     loan =
       attrs
       |> Map.drop(["earnings"])
-      |> Map.put("platform", "SHARKY")
+      |> Map.put("platform", String.upcase(attrs["platform"]))
       |> Map.put("status", "ACTIVE")
+      |> Map.put("length", attrs["duration"])
+      |> Map.put("loan", attrs["pubkey"])
       |> Map.put("dateTaken", Timex.from_unix(attrs["start"]))
-      |> Map.put("fees", attrs["total_owed"] - attrs["amountSol"])
 
     %Loan{}
     |> Loan.changeset(loan)
@@ -187,13 +188,51 @@ defmodule SharkAttack.Loans do
     end
   end
 
+  def update_or_insert_repaid_loan(attrs, sig) do
+    current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    attrs
+    |> Map.put(:repayTxId, sig)
+    |> Map.put(:dateRepaid, current_timestamp)
+    |> update_or_insert_completed_loan()
+  end
+
+  def update_or_insert_foreclosed_loan(attrs, signature) do
+    current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    attrs
+    |> Map.put(:forecloseTxId, signature)
+    |> Map.put(:dateForeclosed, current_timestamp)
+    |> update_or_insert_completed_loan()
+  end
+
   def update_or_insert_completed_loan(attrs \\ %{}) do
-    loan = Repo.get_by(Loan, loan: attrs["loan"])
+    loanAddress =
+      Map.get(
+        attrs,
+        :loan,
+        Map.get(attrs, "pubKey", Map.get(attrs, "pubkey", Map.get(attrs, "loan")))
+      )
+
+    loan = Repo.get_by(Loan, loan: loanAddress)
 
     cond do
       is_nil(loan) ->
-        %Loan{loan: attrs["loan"]}
+        %Loan{loan: loanAddress}
         |> Loan.changeset(attrs)
+        |> Changeset.put_change(:status, "COMPLETE")
+        |> Changeset.put_change(
+          :length,
+          Map.get(
+            attrs,
+            :duration,
+            Map.get(attrs, :length, Map.get(attrs, "length", Map.get(attrs, "duration")))
+          )
+        )
+        |> Changeset.put_change(
+          :platform,
+          Map.get(attrs, :platform, Map.get(attrs, "platform")) |> String.upcase()
+        )
         |> Repo.insert()
 
       loan.status == "COMPLETE" ->
@@ -202,6 +241,7 @@ defmodule SharkAttack.Loans do
       loan.status == "ACTIVE" ->
         loan
         |> Loan.changeset(attrs)
+        |> Changeset.put_change(:status, "COMPLETE")
         |> Repo.update()
 
       true ->
@@ -233,9 +273,12 @@ defmodule SharkAttack.Loans do
         end
 
       {:ok, loan} ->
-        for {key, val} <- loan, into: %{} do
-          {String.to_atom(key), val}
-        end
+        loan =
+          for {key, val} <- loan, into: %{} do
+            {String.to_atom(key), val}
+          end
+
+        Map.put(loan, :loan, loan.pubkey)
 
       _ ->
         %{}

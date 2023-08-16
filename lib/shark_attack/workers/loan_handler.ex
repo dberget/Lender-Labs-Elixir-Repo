@@ -8,6 +8,8 @@ defmodule SharkAttack.Workers.LoanHandler do
 
     SharkAttack.Events.send_event("REPAY_LOAN", loan)
 
+    SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
+
     SharkAttack.LoansWorker.delete_loan(loanAddress)
   end
 
@@ -34,15 +36,17 @@ defmodule SharkAttack.Workers.LoanHandler do
 
     loan = SharkAttack.Loans.get_loan(loanAddress)
 
+    SharkAttack.Loans.update_or_insert_foreclosed_loan(loan, event["signature"])
+
     SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
 
     SharkAttack.LoansWorker.delete_loan(loanAddress)
 
     lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 
-    Task.async(fn ->
-      SharkAttack.Stats.update_history_safe(lender)
-    end)
+    # Task.async(fn ->
+    #   SharkAttack.Stats.update_history_safe(lender)
+    # end)
 
     :ok
   end
@@ -64,6 +68,8 @@ defmodule SharkAttack.Workers.LoanHandler do
         loan = SharkAttack.Loans.get_loan(closed_loan)
 
         SharkAttack.Events.send_event("REPAY_LOAN", loan)
+
+        SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
 
         SharkAttack.LoansWorker.delete_loan(closed_loan)
 
