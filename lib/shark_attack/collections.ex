@@ -157,10 +157,13 @@ defmodule SharkAttack.Collections do
     case Repo.one(query) do
       nil ->
         case Integer.parse(address) do
-          {id, _} ->
+          {id, ""} ->
             get_collection(id)
 
           :error ->
+            nil
+
+          _ ->
             nil
         end
 
@@ -227,6 +230,11 @@ defmodule SharkAttack.Collections do
         end
 
       if update do
+        Logger.info("Updating #{collection.name}")
+        Logger.info("Updating #{collection.duration} to #{attrs.duration}")
+        Logger.info("Updating #{collection.apy} to #{attrs.apy}")
+        Logger.info("----")
+
         collection = %Collection{id: collection.id}
 
         update_collection(collection, attrs)
@@ -332,6 +340,45 @@ defmodule SharkAttack.Collections do
       Logger.info("Adding #{c["name"]}")
 
       SharkAttack.Collections.get_and_update_collection(data)
+    end)
+  end
+
+  def validate_sharky_collections(insert \\ false) do
+    raw_collections = SharkAttack.SharkyApi.get_raw_order_books()
+
+    collections = list_collections(%{sharky: "1"})
+
+    Enum.map(raw_collections, fn collection ->
+      existing_collection =
+        Enum.find(collections, fn c -> c.sharky_address == collection["pubkey"] end)
+
+      if !is_nil(existing_collection) do
+        if existing_collection.apy != collection["apy"],
+          do: Logger.warn("Updating #{existing_collection.apy} to #{collection["apy"]}")
+
+        if existing_collection.duration != collection["duration"],
+          do: Logger.warn("Updating #{existing_collection.duration} to #{collection["duration"]}")
+
+        if existing_collection.name != collection["name"],
+          do: Logger.warn("Updating #{existing_collection.name} to #{collection["name"]}")
+      end
+
+      if is_nil(existing_collection) do
+        Logger.error(
+          "Collection not found or needs update - #{collection["name"]} - #{collection["pubkey"]} - #{collection["duration"]} - #{collection["apy"]}"
+        )
+
+        if insert do
+          data = %{
+            name: collection["name"],
+            sharky_address: collection["pubkey"],
+            duration: collection["duration"],
+            apy: collection["apy"]
+          }
+
+          SharkAttack.Collections.get_and_update_collection(data)
+        end
+      end
     end)
   end
 

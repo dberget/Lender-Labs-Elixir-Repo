@@ -735,7 +735,8 @@ defmodule SharkAttackWeb.ApiController do
     mints =
       params["borrower"]
       |> SharkAttack.Solana.get_user_token_mints()
-      |> Enum.reject(&(&1["tokenAmount"]["amount"] == "0"))
+      |> Enum.filter(&(&1["tokenAmount"]["amount"] == "1"))
+      |> Enum.reject(&(&1["delegatedAmount"]["amount"] === "1"))
       |> Enum.map(& &1["mint"])
       |> Enum.reject(fn m -> m in borrower_loans end)
 
@@ -750,7 +751,7 @@ defmodule SharkAttackWeb.ApiController do
       end)
       |> Enum.sort_by(& &1.fp, :desc)
 
-    %{"indexes" => indexes} = SharkAttack.SharkyApi.get_sharky_indexes(mints)
+    %{"indexes" => indexes} = SharkAttack.SharkyApi.get_sharky_indexes(mints) |> IO.inspect()
 
     conn |> json(%{collections: collections, indexes: indexes})
   end
