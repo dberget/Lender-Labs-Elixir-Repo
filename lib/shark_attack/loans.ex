@@ -221,8 +221,18 @@ defmodule SharkAttack.Loans do
         %Loan{loan: loanAddress}
         |> Loan.changeset(attrs)
         |> Changeset.put_change(:status, "COMPLETE")
-        |> Changeset.put_change(:length, Map.get(attrs, :duration, Map.get(attrs, :length)))
-        |> Changeset.put_change(:platform, String.upcase(attrs.platform))
+        |> Changeset.put_change(
+          :length,
+          Map.get(
+            attrs,
+            :duration,
+            Map.get(attrs, :length, Map.get(attrs, "length", Map.get(attrs, "duration")))
+          )
+        )
+        |> Changeset.put_change(
+          :platform,
+          Map.get(attrs, :platform, Map.get(attrs, "platform")) |> String.upcase()
+        )
         |> Repo.insert()
 
       loan.status == "COMPLETE" ->
