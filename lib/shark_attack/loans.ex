@@ -157,11 +157,19 @@ defmodule SharkAttack.Loans do
       |> Map.put("status", "ACTIVE")
       |> Map.put("length", attrs["duration"])
       |> Map.put("loan", attrs["pubkey"])
-      |> Map.put("dateTaken", Timex.from_unix(attrs["start"]))
+      |> Map.put("dateTaken", build_date_taken(attrs["start"]))
 
     %Loan{}
     |> Loan.changeset(loan)
     |> Repo.insert(on_conflict: :nothing)
+  end
+
+  def build_date_taken(nil) do
+    NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+  end
+
+  def build_date_taken(start) do
+    Timex.from_unix(start)
   end
 
   def create_loan(attrs \\ %{}) do
@@ -201,6 +209,7 @@ defmodule SharkAttack.Loans do
     current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     attrs
+    |> Map.drop([:earnings])
     |> Map.put(:forecloseTxId, signature)
     |> Map.put(:dateForeclosed, current_timestamp)
     |> update_or_insert_completed_loan()
@@ -279,9 +288,6 @@ defmodule SharkAttack.Loans do
           end
 
         Map.put(loan, :loan, loan.pubkey)
-
-      _ ->
-        %{}
     end
   end
 

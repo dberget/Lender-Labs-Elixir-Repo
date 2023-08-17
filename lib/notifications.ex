@@ -65,6 +65,8 @@ defmodule SharkAttack.Notifications do
           embed = format_weekly_summary(address, loans)
 
           SharkAttack.DiscordConsumer.send_raw_message(dm_channel, embed)
+
+          Process.sleep(1000)
         end)
       rescue
         e ->
@@ -77,8 +79,8 @@ defmodule SharkAttack.Notifications do
   def send_weekly_summary(address) do
     user = SharkAttack.Users.get_user_from_address!(address)
 
-    loans = SharkAttack.Loans.get_loans_history(user.address, :week)
-    embed = format_weekly_summary(user.address, loans)
+    loans = SharkAttack.Loans.get_loans_history(address, :week)
+    embed = format_weekly_summary(address, loans)
 
     user.discordId
     |> SharkAttack.DiscordConsumer.create_dm_channel()

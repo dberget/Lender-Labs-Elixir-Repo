@@ -751,7 +751,7 @@ defmodule SharkAttackWeb.ApiController do
       end)
       |> Enum.sort_by(& &1.fp, :desc)
 
-    %{"indexes" => indexes} = SharkAttack.SharkyApi.get_sharky_indexes(mints) |> IO.inspect()
+    %{"indexes" => indexes} = SharkAttack.SharkyApi.get_sharky_indexes(mints)
 
     conn |> json(%{collections: collections, indexes: indexes})
   end

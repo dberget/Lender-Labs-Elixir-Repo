@@ -17,7 +17,7 @@ defmodule SharkAttack.Collections do
       from(l in Loan,
         join: c in Collection,
         on: c.sharky_address == l.orderBook,
-        where: l.platform == "sharky" and l.status == "complete",
+        where: l.platform == "SHARKY" and l.status == "complete",
         group_by: c.id,
         select: %{
           collection_id: c.id,
@@ -354,13 +354,19 @@ defmodule SharkAttack.Collections do
 
       if !is_nil(existing_collection) do
         if existing_collection.apy != collection["apy"],
-          do: Logger.warn("Updating #{existing_collection.apy} to #{collection["apy"]}")
+          do:
+            Logger.warn(
+              "Update #{collection["name"]} APY - #{existing_collection.apy} to #{collection["apy"]}"
+            )
 
         if existing_collection.duration != collection["duration"],
-          do: Logger.warn("Updating #{existing_collection.duration} to #{collection["duration"]}")
+          do:
+            Logger.warn(
+              "Update #{collection["name"]} duration -  #{existing_collection.duration} to #{collection["duration"]}"
+            )
 
         if existing_collection.name != collection["name"],
-          do: Logger.warn("Updating #{existing_collection.name} to #{collection["name"]}")
+          do: Logger.warn("Update Name #{existing_collection.name} to #{collection["name"]}")
       end
 
       if is_nil(existing_collection) do

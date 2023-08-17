@@ -171,8 +171,6 @@ defmodule SharkAttack.FloorWorker do
           |> Map.put("defaultRatio", Map.get(adv_stats, :ratio, 0))
           |> Map.put("avgRepayment", Map.get(adv_stats, :avg_repayment_time, 0))
 
-        Process.sleep(1000)
-
         :ets.insert(
           :floor_prices,
           {token.id, stats}
