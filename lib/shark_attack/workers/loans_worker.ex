@@ -88,21 +88,19 @@ defmodule SharkAttack.LoansWorker do
 
     :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
 
-    SharkAttack.Events.send_event("TAKE_LOAN", loan)
-
     :ets.insert(
       :collection_loans,
       {loan["orderBook"], loanAddress, loan["lender"], loan}
     )
 
-    SharkAttack.Loans.create_active_loan(loan)
-
     try do
+      SharkAttack.Events.send_event("TAKE_LOAN", loan)
       SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
       SharkAttackWeb.LoansChannel.push(loan)
+      SharkAttack.Loans.create_active_loan(loan)
     rescue
       e ->
-        Logger.error("Error pushing to offers channel: #{inspect(e)}")
+        Logger.error("Error inserting new loan: #{inspect(e)}")
     end
   end
 

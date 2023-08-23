@@ -121,7 +121,7 @@ defmodule SharkAttackWeb.ApiController do
         end),
       foreclosed: forelosedLoans,
       totalSolLoaned: Enum.map(loans, fn l -> l.amountSol end) |> Enum.sum(),
-      totalInterest: Enum.map(loans, & &1.earnings) |> Enum.sum(),
+      totalInterest: Enum.map(loans, &Map.get(&1, :earnings, 0.0)) |> Enum.sum(),
       foreclosedCount: Enum.count(forelosedLoans)
     }
 

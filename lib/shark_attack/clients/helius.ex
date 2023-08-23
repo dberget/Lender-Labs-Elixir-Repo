@@ -10,23 +10,30 @@ defmodule SharkAttack.Clients.Helius do
   def has_turtles(address, fallback \\ 3) do
     Logger.info("Checking if #{address} has turtles")
 
-    case SharkAttack.SimpleCache.get(__MODULE__, :count_turtles, [1, [], 0, address, 1000],
-           ttl: 60 * 60
-         ) do
-      0 ->
-        clear_cache(address)
+    try do
+      case SharkAttack.SimpleCache.get(__MODULE__, :count_turtles, [1, [], 0, address, 1000],
+             ttl: 60 * 60
+           ) do
+        0 ->
+          clear_cache(address)
 
-        0
+          0
 
-      :error ->
-        clear_cache(address)
+        :error ->
+          clear_cache(address)
 
+          Logger.info("Error fetching assets for #{address}, using #{fallback}")
+
+          fallback
+
+        count ->
+          count
+      end
+    rescue
+      _ ->
         Logger.info("Error fetching assets for #{address}, using #{fallback}")
 
         fallback
-
-      count ->
-        count
     end
   end
 

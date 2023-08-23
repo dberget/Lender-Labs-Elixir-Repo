@@ -79,8 +79,6 @@ defmodule SharkAttack.Tensor do
           post_data
         )
 
-      Process.sleep(1500)
-
       Finch.request(request, SharkAttackWeb.Finch)
       |> parse_floor_response(slug)
     end)
@@ -128,6 +126,7 @@ defmodule SharkAttack.Tensor do
 
   defp parse_floor_response({:ok, %{body: body}}, slug) do
     Logger.warn("Error calling Tensor - #{slug}")
+
     IO.inspect(body)
 
     :error

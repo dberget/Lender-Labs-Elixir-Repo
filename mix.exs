@@ -53,7 +53,7 @@ defmodule SharkAttack.MixProject do
       {:finch, "~> 0.10"},
       {:number, "~> 1.0.3"},
       {:cloak_ecto, "~> 1.2.0"},
-      {:nostrum, github: "Kraigie/nostrum", branch: "master", override: true},
+      {:nostrum, "~> 0.8.0"},
       {:sentry, "~> 8.0"},
       {:hackney, "~> 1.8"},
       {:cors_plug, "~> 3.0"},
@@ -64,7 +64,8 @@ defmodule SharkAttack.MixProject do
       {:gun, "== 2.0.1",
        [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},
       {:cowlib, "~> 2.11.1",
-       [env: :prod, hex: "remedy_cowlib", repo: "hexpm", optional: false, override: true]}
+       [env: :prod, hex: "remedy_cowlib", repo: "hexpm", optional: false, override: true]},
+      {:ssl_verify_fun, "~> 1.1.7", manager: :rebar3, override: true}
     ]
   end
 
