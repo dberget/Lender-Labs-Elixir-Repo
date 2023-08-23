@@ -23,4 +23,9 @@ defmodule SharkAttackWeb.BorrowController do
     conn
     |> json(%{index: index})
   end
+
+  def get_sell_tx(conn, %{"seller" => seller, "mint" => mint}) do
+    res = SharkAttack.Tensor.get_sell_tx(seller, mint)
+    conn |> json(res)
+  end
 end

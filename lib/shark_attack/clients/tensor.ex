@@ -92,7 +92,7 @@ defmodule SharkAttack.Tensor do
     |> Map.new()
   end
 
-  def get_sell_tx(mint, seller) do
+  def get_sell_tx(seller, mint) do
     url = "https://api.tensor.so/graphql"
 
     query = """
