@@ -37,8 +37,9 @@ defmodule SharkAttack.Tensor do
           slug # internal ID for collection (UUID or human-readable)
           slugMe # MagicEden's symbol
           slugDisplay # What's displayed in the URL on tensor.trade
-          statsSwap { # TensorSwap + HadeSwap + Elixir
+          statsV2 { # TensorSwap + HadeSwap + Elixir
             sellNowPrice
+            sellNowPriceNetFees
           }
           statsOverall { # Across pools & marketplace listings
             floor1h
@@ -80,7 +81,8 @@ defmodule SharkAttack.Tensor do
         )
 
       Finch.request(request, SharkAttackWeb.Finch)
-      |> parse_floor_response(slug)
+      |> parse_tensor_response(slug)
+      |> parse_floor_response
     end)
     |> Enum.map(fn
       :error -> []
@@ -90,9 +92,230 @@ defmodule SharkAttack.Tensor do
     |> Map.new()
   end
 
-  defp parse_floor_response({:ok, %{status: 200, body: body}}, _slug) do
-    response = body |> Jason.decode!()
+  def get_sell_tx(mint, seller) do
+    url = "https://api.tensor.so/graphql"
 
+    query = """
+    query Mint($mint: String!, $sortBy: OrderSortBy, $limit: Int) {
+      mint(mint: $mint) {
+        slug
+        tswapOrders(sortBy: $sortBy, limit: $limit) {
+          address
+          ownerAddress
+          buyNowPrice
+          sellNowPrice # Pass this to tswapSellNftTx!
+          sellNowPriceNetFees
+          feeInfos {
+            bps
+            kind
+          }
+        }
+        hswapOrders {
+          address
+          baseSpotPrice
+          buyOrdersQuantity
+          curveType
+          delta
+          feeBps
+          mathCounter
+          pairType
+        }
+        collection {
+         sellRoyaltyFeeBPS
+        }
+      }
+    }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          mint: mint,
+          sortBy: "SellNowPriceDesc",
+          limit: 1
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    Process.sleep(500)
+
+    Finch.request(request, SharkAttackWeb.Finch) |> parse_tensor_response(mint) |> parse_mint_response(mint, seller)
+  end
+
+  defp get_tswap_sell_tx(mint, seller, best_tensor_order) do
+    url = "https://api.tensor.so/graphql"
+
+    query = """
+        query TswapSellNftTx(
+      $minPriceLamports: Decimal!
+      $mint: String!
+      $pool: String!
+      $seller: String!
+    ) {
+      tswapSellNftTx(
+        minPriceLamports: $minPriceLamports
+        mint: $mint
+        pool: $pool
+        seller: $seller
+      ) {
+        txs {
+          lastValidBlockHeight
+          tx
+          txV0 # If this is present, use this!
+        }
+      }
+    }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          mint: mint,
+          pool: best_tensor_order[:best_order]["address"],
+          seller: seller,
+          minPriceLamports: best_tensor_order[:final_price] |> Integer.to_string
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url} to build tswapSellNftTx")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    Process.sleep(500)
+
+    Finch.request(request, SharkAttackWeb.Finch) |> parse_tensor_response(best_tensor_order) |> parse_tx_response
+  end
+
+  defp get_hswap_sell_tx(mint, seller, best_hswap_order) do
+    url = "https://api.tensor.so/graphql"
+
+    query = """
+    query HswapSellNftTx(
+        $mathCounter: Float!,
+        $minPriceLamports: Decimal!,
+        $mint: String!,
+        $pair: String!,
+        $seller: String!
+      ) {
+      hswapSellNftTx(
+          mathCounter: $mathCounter,
+          minPriceLamports: $minPriceLamports,
+          mint: $mint,
+          pair: $pair,
+          seller: $seller
+      ) {
+          txs {
+              lastValidBlockHeight
+              tx
+              txV0
+          }
+        }
+      }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          mint: mint,
+          pair: best_hswap_order[:best_order]["address"],
+          seller: seller,
+          minPriceLamports: best_hswap_order[:final_price] |> Integer.to_string,
+          mathCounter: best_hswap_order[:best_order]["mathCounter"]
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    Process.sleep(500)
+
+    Finch.request(request, SharkAttackWeb.Finch) |> parse_tensor_response(best_hswap_order) |> parse_tx_response
+  end
+
+  defp parse_mint_response(response, mint, seller) do
+    if response == :error do
+      {:error, "Error fetching mint #{mint} from Tensor"}
+    else
+      info =
+        case response["data"]["mint"] do
+          nil -> {:error, "Mint #{mint} not found on Tensor"}
+          info ->
+            best_tswap_order = calculate_best_tswap_offer(info["tswapOrders"])
+            best_hade_order = calculate_best_hade_offer(
+              info["hswapOrders"],
+              info["collection"]["sellRoyaltyFeeBPS"]
+            )
+            Logger.debug("best Hade order: #{inspect(best_hade_order)}")
+            Logger.debug("best Tensor order: #{inspect(best_tswap_order)}")
+            Logger.debug("#{best_tswap_order[:final_price]}")
+            Logger.debug("#{best_hade_order[:final_price]}")
+            cond do
+              (best_tswap_order[:final_price] == 0 && best_hade_order[:final_price] == 0) -> {:error, "No offers found"}
+              best_hade_order[:final_price] > best_tswap_order[:final_price] -> get_hswap_sell_tx(mint, seller, best_hade_order)
+              best_tswap_order[:final_price] >= best_hade_order[:final_price] -> get_tswap_sell_tx(mint, seller, best_tswap_order)
+              true -> {:error, "Something went wrong"}
+            end
+        end
+      info
+    end
+  end
+
+  defp parse_tx_response(response) do
+    if response == :error do
+      {:error, "Error fetching tx from Tensor"}
+    else
+      info =
+        case Map.get(response, "data") do
+          %{"tswapSellNftTx" => tswap_sell_nft_tx} ->
+            tswap_sell_nft_tx
+
+          %{"hswapSellNftTx" => hswap_sell_nft_tx} ->
+            hswap_sell_nft_tx
+          _ ->
+            {:error, "Unkown order type"}
+        end
+      info
+    end
+  end
+
+  defp parse_floor_response(response) do
     project_stats =
       case response["data"]["allCollections"]["collections"] do
         nil -> []
@@ -104,7 +327,7 @@ defmodule SharkAttack.Tensor do
                      "slugMe" => slugMe,
                      "slug" => tensorSlug,
                      "statsOverall" => stats,
-                     "statsSwap" => prices
+                     "statsV2" => prices
                    } ->
       case stats do
         nil ->
@@ -112,35 +335,143 @@ defmodule SharkAttack.Tensor do
 
         _ ->
           {slugMe,
-           %{stats: stats |> Map.put("sellPrice", prices["sellNowPrice"]), slug: tensorSlug}}
+           %{stats: stats |> Map.put("sellPrice", prices["sellNowPriceNetFees"]), slug: tensorSlug}}
       end
     end)
     |> Map.new()
   end
 
-  defp parse_floor_response({:ok, %{status: 503, body: _body}}, slug) do
-    Logger.warn("Error calling solanalysis: 503 Service Unavailable, #{slug}")
+  defp parse_tensor_response({:ok, %{status: 200, body: body}}, _info) do
+    body |> Jason.decode!()
+  end
+
+  defp parse_tensor_response({:ok, %{status: 503, body: _body}}, info) do
+    Logger.warn("Error calling Tensor: 503 Service Unavailable, #{info}")
 
     :error
   end
 
-  defp parse_floor_response({:ok, %{body: body}}, slug) do
-    Logger.warn("Error calling Tensor - #{slug}")
+  defp parse_tensor_response({:ok, %{status: 400, body: body}}, _info) do
+    Logger.warn("Error calling Tensor: 400 Service Unavailable, #{body}")
 
+    :error
+  end
+
+  defp parse_tensor_response({:ok, %{body: body}}, info) do
+    Logger.warn("Error calling Tensor - #{info}")
     IO.inspect(body)
 
     :error
   end
 
-  defp parse_floor_response({:error, %Mint.TransportError{reason: reason}}, slug) do
-    Logger.warn("Error calling Tensor: #{reason}, #{slug}")
+  defp parse_tensor_response({:error, %Mint.TransportError{reason: reason}}, info) do
+    Logger.warn("Error calling Tensor: #{reason}, #{info}")
 
     :error
   end
 
-  defp parse_floor_response({:error, _}, _) do
+  defp parse_tensor_response({:error, _}, _) do
     Logger.warn("Error calling Tensor")
 
     :error
   end
+
+  defp calculate_best_tswap_offer(orders) do
+    if orders == [] or orders == nil do
+      Logger.debug("No TensorSwap orders found")
+      %{final_price: 0, best_order: nil}
+    else
+      best_order = hd orders
+      %{final_price: best_order["sellNowPriceNetFees"] |> String.to_integer, best_order: best_order}
+    end
+  end
+
+  defp calculate_best_hade_offer(orders, royalties) do
+    Logger.debug("Calculating best Hade offer from #{inspect(orders)}")
+    # calculate the order with the best price
+    if orders == [] or orders == nil do
+      Logger.debug("No Hade orders found")
+      %{final_price: 0, best_order: nil}
+    else
+      best_order = Enum.reduce(orders, hd(orders), fn order, best_order ->
+        if calculate_next_spot_price(
+          "Sell",
+          order["baseSpotPrice"],
+          order["delta"],
+          order["curveType"],
+          order["mathCounter"]
+        ) > calculate_next_spot_price(
+          "Sell",
+          best_order["baseSpotPrice"],
+          best_order["delta"],
+          best_order["curveType"],
+          best_order["mathCounter"]
+        ) do
+          order
+        else
+          best_order
+        end
+      end)
+      Logger.debug("Best Hade order: #{inspect(best_order)}")
+      best_price = calculate_next_spot_price(
+          "Sell",
+          best_order["baseSpotPrice"],
+          best_order["delta"],
+          best_order["curveType"],
+          best_order["mathCounter"]
+      )
+      fees = (royalties  || 0) / 10_000 - (best_order["feeBps"] || 0) / 10_000
+      final_price = floor(best_price * (1 - fees))
+      %{final_price: final_price, best_order: best_order}
+    end
+  end
+
+  defp calculate_next_spot_price(
+        order_type,
+        spot_price,
+        delta,
+        bonding_curve_type,
+        counter
+  ) do
+    Logger.debug("Calculating next spot price for #{spot_price} #{delta} #{bonding_curve_type} #{counter}")
+    spot_price = spot_price |> String.to_integer
+    delta = delta |> String.to_integer
+
+    cond do
+      bonding_curve_type == "LINEAR" ->
+        Logger.debug("Calculating next spot price for linear bonding curve")
+        current_price = spot_price
+        target_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
+        if target_counter >= 0 do
+          for _ <- 0..(abs(target_counter) - 1) do
+            current_price = current_price + delta
+          end
+        else
+          for _ <- 0..(abs(target_counter) - 1) do
+            current_price = current_price - delta
+          end
+        end
+        current_price
+      bonding_curve_type == "EXPONENTIAL" ->
+        Logger.debug("Calculating next spot price for exponential bonding curve")
+        new_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
+        new_delta = if new_counter > 0, do: (delta + 1.0e4) / 1.0e4, else: 1 / ((delta + 1.0e4) / 1.0e4)
+        spot_price * :math.pow(new_delta, abs(new_counter)) |> floor
+      bonding_curve_type == "XYK"  ->
+        nft_tokens_balance = delta * spot_price
+        counter_updated = if order_type == "Buy", do: counter, else: counter - 1
+        current_delta = delta + 1 - counter_updated
+        diff_amount = (counter_updated * nft_tokens_balance) / current_delta
+        new_nft_tokens_balance = nft_tokens_balance + diff_amount
+        if order_type == "Buy" do
+          new_nft_tokens_balance / (current_delta - 1)
+        else
+          new_nft_tokens_balance / (current_delta + 1)
+        end
+      true -> 0
+    end
+  end
 end
+# To test in interactive shell run:
+# iex -S mix
+#SharkAttack.Tensor.get_floor_prices([%{me_slug: "degenfatcats"}])
