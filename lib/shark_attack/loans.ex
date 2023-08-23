@@ -119,7 +119,7 @@ defmodule SharkAttack.Loans do
       from(l in Loan,
         where: l.borrower == ^address,
         select: l,
-        where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
+        where: l.status == "COMPLETE",
         order_by: [desc: coalesce(l.dateRepaid, l.dateForeclosed)]
       )
 
@@ -131,7 +131,7 @@ defmodule SharkAttack.Loans do
       from(l in Loan,
         where: l.lender == ^address,
         select: l,
-        where: not is_nil(l.dateRepaid) or not is_nil(l.dateForeclosed),
+        where: l.status == "COMPLETE",
         order_by: [desc: coalesce(l.dateForeclosed, l.dateRepaid)],
         limit: ^limit
       )
