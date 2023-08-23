@@ -121,7 +121,7 @@ defmodule SharkAttackWeb.ApiController do
         end),
       foreclosed: forelosedLoans,
       totalSolLoaned: Enum.map(loans, fn l -> l.amountSol end) |> Enum.sum(),
-      totalInterest: Enum.map(loans, & &1.earnings) |> Enum.sum(),
+      totalInterest: Enum.map(loans, &Map.get(&1, :earnings, 0.0)) |> Enum.sum(),
       foreclosedCount: Enum.count(forelosedLoans)
     }
 
@@ -735,7 +735,8 @@ defmodule SharkAttackWeb.ApiController do
     mints =
       params["borrower"]
       |> SharkAttack.Solana.get_user_token_mints()
-      |> Enum.reject(&(&1["tokenAmount"]["amount"] == "0"))
+      |> Enum.filter(&(&1["tokenAmount"]["amount"] == "1"))
+      |> Enum.reject(&(&1["delegatedAmount"]["amount"] === "1"))
       |> Enum.map(& &1["mint"])
       |> Enum.reject(fn m -> m in borrower_loans end)
 

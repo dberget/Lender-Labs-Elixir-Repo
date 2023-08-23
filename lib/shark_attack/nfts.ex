@@ -58,6 +58,17 @@ defmodule SharkAttack.Nfts do
     end
   end
 
+  def get_sharky_nft_index(mint, nfts) do
+    {:found, index, _nft} =
+      Enum.reduce_while(nfts, {:not_found, 0}, fn el, {:not_found, index} ->
+        if el.mint == mint,
+          do: {:halt, {:found, index, el}},
+          else: {:cont, {:not_found, index + 1}}
+      end)
+
+    index
+  end
+
   def save_nft_names(collection_id) do
     nfts = get_collection_nfts(collection_id)
 

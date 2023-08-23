@@ -8,7 +8,9 @@ defmodule SharkAttack.Stats do
     #   "Updating Loans"
     # )
 
-    loans = SharkAttack.SharkyApi.get_all_loans()
+    loans =
+      SharkAttack.SharkyApi.get_all_loans() ++
+        SharkAttack.SharkyApi.get_all_loans("citrus")
 
     Enum.map(loans, &SharkAttack.Loans.create_active_loan(&1))
 
@@ -58,6 +60,7 @@ defmodule SharkAttack.Stats do
 
         if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -15 do
           update_citrus_history_safe(pk)
+
           SharkAttack.Stats.save_recent_lender_history(pk)
 
           pull_history
@@ -80,9 +83,11 @@ defmodule SharkAttack.Stats do
         {:error, []}
 
       _ ->
-        Logger.info("CHECKING LAST PULLED #{pk}")
+        Logger.info("CHECKING BORROWER LAST PULLED #{pk}")
 
-        if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -15 do
+        if pull_history.updated_at |> Timex.diff(DateTime.utc_now(), :minutes) < -30 do
+          Logger.info("PULLING BORROWER HISTORY #{pk}")
+
           SharkAttack.Stats.save_recent_borrow_history(pk)
 
           pull_history
@@ -115,7 +120,7 @@ defmodule SharkAttack.Stats do
   def pull_all_citrus_loans() do
     SharkAttack.SharkyApi.get_citrus_loan_history()
     |> Enum.map(&format_historical_loan(&1, "CITRUS"))
-    |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+    |> SharkAttack.Loans.update_or_insert_completed_loans()
   end
 
   def update_citrus_history_safe(pk) do
@@ -127,7 +132,7 @@ defmodule SharkAttack.Stats do
         loans
         |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
         |> Enum.map(&format_historical_loan(&1, "CITRUS"))
-        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+        |> SharkAttack.Loans.update_or_insert_completed_loans()
     end
   end
 
@@ -139,8 +144,7 @@ defmodule SharkAttack.Stats do
       data ->
         data
         |> Enum.map(&format_historical_loan(&1, "Sharky"))
-        |> Enum.reverse()
-        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+        |> SharkAttack.Loans.update_or_insert_completed_loans()
     end
   end
 
@@ -149,19 +153,18 @@ defmodule SharkAttack.Stats do
 
     data
     |> Enum.map(&format_historical_loan(&1, "Sharky"))
-    |> Enum.reverse()
-    |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+    |> SharkAttack.Loans.update_or_insert_completed_loans()
   end
 
   def save_recent_borrow_history(pk) do
     case SharkAttack.SharkyApi.get_recent_history(pk, "borrow") do
-      {:error, _} ->
+      {:error, _r} ->
         {:error, :error}
 
       data ->
         data
         |> Enum.map(&format_historical_loan(&1, "Sharky"))
-        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+        |> SharkAttack.Loans.update_or_insert_completed_loans()
     end
   end
 
@@ -173,7 +176,7 @@ defmodule SharkAttack.Stats do
       data ->
         data
         |> Enum.map(&format_historical_loan(&1, "Sharky"))
-        |> Enum.map(&SharkAttack.Loans.update_or_insert_completed_loan(&1))
+        |> SharkAttack.Loans.update_or_insert_completed_loans()
     end
   end
 
@@ -185,39 +188,84 @@ defmodule SharkAttack.Stats do
     foreclosed_date =
       if loan["state"] == "defaulted" do
         Timex.from_unix(loan["rawData"]["endTime"])
+        |> Timex.to_naive_datetime()
+        |> NaiveDateTime.truncate(:second)
       end
 
     date_repaid =
       if loan["state"] == "repaid" do
         Timex.from_unix(loan["rawData"]["endTime"])
+        |> Timex.to_naive_datetime()
+        |> NaiveDateTime.truncate(:second)
       end
 
-    loan
-    |> Map.put("loan", loan["pubkey"])
-    |> Map.put("length", loan["length"])
-    |> Map.put("status", "COMPLETE")
-    |> Map.put("platform", "CITRUS")
-    |> Map.put("amountSol", loan["amountSol"])
-    |> Map.put("dateOffered", Timex.from_unix(loan["rawData"]["creationTime"]))
-    |> Map.put("dateTaken", Timex.from_unix(loan["rawData"]["startTime"]))
-    |> Map.put("dateRepaid", date_repaid)
-    |> Map.put("dateForeclosed", foreclosed_date)
-    |> Map.put("earnings", loan["earnings"])
+    %{}
+    |> Map.put(:loan, loan["pubkey"])
+    |> Map.put(:length, loan["length"])
+    |> Map.put(:status, "COMPLETE")
+    |> Map.put(:platform, "CITRUS")
+    |> Map.put(:amountSol, loan["amountSol"] / 1)
+    |> Map.put(:lender, loan["lender"])
+    |> Map.put(:orderBook, loan["orderBook"])
+    |> Map.put(:borrower, loan["borrower"])
+    |> Map.put(:end, loan["end"])
+    |> Map.put(:start, loan["rawData"]["startTime"])
+    |> Map.put(
+      :dateOffered,
+      Timex.from_unix(loan["rawData"]["creationTime"])
+      |> Timex.to_naive_datetime()
+      |> NaiveDateTime.truncate(:second)
+    )
+    |> Map.put(:nftCollateralMint, loan["nftCollateralMint"])
+    |> Map.put(
+      :dateTaken,
+      Timex.from_unix(loan["rawData"]["startTime"])
+      |> Timex.to_naive_datetime()
+      |> NaiveDateTime.truncate(:second)
+    )
+    |> Map.put(:dateRepaid, date_repaid)
+    |> Map.put(:dateForeclosed, foreclosed_date)
+    |> Map.put(:earnings, loan["earnings"])
+    |> Map.put(:inserted_at, NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Map.put(:updated_at, NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
   end
 
   def format_historical_loan(loan, "Sharky") do
-    loan
-    |> Map.put("loan", loan["pubKey"])
-    |> Map.put("orderBook", loan["orderBookPubKey"])
-    |> Map.put("nftCollateralMint", loan["collateralMint"])
-    |> Map.put("length", loan["durationSeconds"])
-    |> Map.put("status", "COMPLETE")
-    |> Map.put("platform", "SHARKY")
-    |> Map.put("amountSol", loan["principalLamports"] / 1_000_000_000)
-    |> Map.put("earnings", get_earnings(loan))
+    %{}
+    |> Map.put(:loan, loan["pubKey"])
+    |> Map.put(:orderBook, loan["orderBookPubKey"])
+    |> Map.put(:nftCollateralMint, loan["collateralMint"])
+    |> Map.put(:length, loan["durationSeconds"])
+    |> Map.put(:status, "COMPLETE")
+    |> Map.put(:platform, "SHARKY")
+    |> Map.put(:start, loan["start"])
+    |> Map.put(:end, loan["end"])
+    |> Map.put(:amountSol, loan["principalLamports"] / 1_000_000_000)
+    |> Map.put(:earnings, get_earnings(loan))
+    |> Map.put(:borrower, loan["borrower"])
+    |> Map.put(:lender, loan["lender"])
+    |> Map.put(:dateForeclosed, loan["dateForeclosed"] |> parse_date())
+    |> Map.put(:dateOffered, loan["dateOffered"] |> parse_date())
+    |> Map.put(:dateRepaid, loan["dateRepaid"] |> parse_date())
+    |> Map.put(:dateTaken, loan["dateTaken"] |> parse_date())
+    |> Map.put(:forecloseTxId, loan["forecloseTxId"])
+    |> Map.put(:offerTxId, loan["offerTxId"])
+    |> Map.put(:repayTxId, loan["repayTxId"])
+    |> Map.put(:takeTxId, loan["takeTxId"])
+    |> Map.put(:inserted_at, NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
+    |> Map.put(:updated_at, NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
   end
 
-  defp get_earnings(%{"amountRepaidLamports" => nil}), do: 0
+  def parse_date(nil), do: nil
+
+  def parse_date(date) do
+    date
+    |> Timex.parse!("{ISO:Extended:Z}")
+    |> Timex.to_naive_datetime()
+    |> NaiveDateTime.truncate(:second)
+  end
+
+  defp get_earnings(%{"amountRepaidLamports" => nil}), do: 0.0
 
   defp get_earnings(%{
          "amountRepaidLamports" => repaid,

@@ -55,6 +55,13 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
+  def get_all_loans("citrus") do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
+
+    Map.get(res, "loanData", [])
+    |> Enum.filter(&(&1["state"] == "active"))
+  end
+
   def get_loan(%{loanAddress: nil}) do
     {:error, "Loan not found"}
   end
@@ -214,7 +221,7 @@ defmodule SharkAttack.SharkyApi do
 
   def get_recent_history(lender, "borrow") do
     case SharkAttack.Helpers.do_get_request(
-           "https://sharky.fi/api/loan/my-loans?borrow=#{lender}&network=mainnet&deployEnvironment=production"
+           "https://sharky.fi/api/loan/my-loans?borrower=#{lender}&network=mainnet&deployEnvironment=production"
          ) do
       {:error, body} ->
         {:error, body}
