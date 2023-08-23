@@ -151,8 +151,6 @@ defmodule SharkAttack.Tensor do
         post_data
       )
 
-    Process.sleep(500)
-
     Finch.request(request, SharkAttackWeb.Finch) |> parse_tensor_response(mint) |> parse_mint_response(mint, seller)
   end
 
@@ -205,8 +203,6 @@ defmodule SharkAttack.Tensor do
         ],
         post_data
       )
-
-    Process.sleep(500)
 
     Finch.request(request, SharkAttackWeb.Finch) |> parse_tensor_response(best_tensor_order) |> parse_tx_response
   end
@@ -263,8 +259,6 @@ defmodule SharkAttack.Tensor do
         ],
         post_data
       )
-
-    Process.sleep(500)
 
     Finch.request(request, SharkAttackWeb.Finch) |> parse_tensor_response(best_hswap_order) |> parse_tx_response
   end
