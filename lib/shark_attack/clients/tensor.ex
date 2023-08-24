@@ -278,8 +278,6 @@ defmodule SharkAttack.Tensor do
             )
             Logger.debug("best Hade order: #{inspect(best_hade_order)}")
             Logger.debug("best Tensor order: #{inspect(best_tswap_order)}")
-            Logger.debug("#{best_tswap_order[:final_price]}")
-            Logger.debug("#{best_hade_order[:final_price]}")
             cond do
               (best_tswap_order[:final_price] == 0 && best_hade_order[:final_price] == 0) -> {:error, "No offers found"}
               best_hade_order[:final_price] > best_tswap_order[:final_price] -> get_hswap_sell_tx(mint, seller, best_hade_order)
@@ -430,40 +428,46 @@ defmodule SharkAttack.Tensor do
     Logger.debug("Calculating next spot price for #{spot_price} #{delta} #{bonding_curve_type} #{counter}")
     spot_price = spot_price |> String.to_integer
     delta = delta |> String.to_integer
+    calc_for_bonding_curve_type(bonding_curve_type, order_type, spot_price, delta, counter)
+  end
 
-    cond do
-      bonding_curve_type == "LINEAR" ->
-        Logger.debug("Calculating next spot price for linear bonding curve")
-        current_price = spot_price
-        target_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
-        if target_counter >= 0 do
-          for _ <- 0..(abs(target_counter) - 1) do
-            current_price = current_price + delta
-          end
-        else
-          for _ <- 0..(abs(target_counter) - 1) do
-            current_price = current_price - delta
-          end
-        end
-        current_price
-      bonding_curve_type == "EXPONENTIAL" ->
-        Logger.debug("Calculating next spot price for exponential bonding curve")
-        new_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
-        new_delta = if new_counter > 0, do: (delta + 1.0e4) / 1.0e4, else: 1 / ((delta + 1.0e4) / 1.0e4)
-        spot_price * :math.pow(new_delta, abs(new_counter)) |> floor
-      bonding_curve_type == "XYK"  ->
-        nft_tokens_balance = delta * spot_price
-        counter_updated = if order_type == "Buy", do: counter, else: counter - 1
-        current_delta = delta + 1 - counter_updated
-        diff_amount = (counter_updated * nft_tokens_balance) / current_delta
-        new_nft_tokens_balance = nft_tokens_balance + diff_amount
-        if order_type == "Buy" do
-          new_nft_tokens_balance / (current_delta - 1)
-        else
-          new_nft_tokens_balance / (current_delta + 1)
-        end
-      true -> 0
+  defp calc_for_bonding_curve_type("LINEAR", order_type, spot_price, delta, counter) do
+    current_price = spot_price
+    target_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
+    if target_counter >= 0 do
+      for _ <- 0..(abs(target_counter) - 1) do
+        current_price = current_price + delta
+      end
+    else
+      for _ <- 0..(abs(target_counter) - 1) do
+        current_price = current_price - delta
+      end
     end
+    current_price
+  end
+
+  defp calc_for_bonding_curve_type("EXPONENTIAL", order_type, spot_price, delta, counter) do
+    new_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
+    new_delta = if new_counter > 0, do: (delta + 1.0e4) / 1.0e4, else: 1 / ((delta + 1.0e4) / 1.0e4)
+    spot_price * :math.pow(new_delta, abs(new_counter)) |> floor
+  end
+
+  defp calc_for_bonding_curve_type("XYK", order_type, spot_price, delta, counter) do
+    nft_tokens_balance = delta * spot_price
+    counter_updated = if order_type == "Buy", do: counter, else: counter - 1
+    current_delta = delta + 1 - counter_updated
+    diff_amount = (counter_updated * nft_tokens_balance) / current_delta
+    new_nft_tokens_balance = nft_tokens_balance + diff_amount
+    if order_type == "Buy" do
+      new_nft_tokens_balance / (current_delta - 1)
+    else
+      new_nft_tokens_balance / (current_delta + 1)
+    end
+  end
+
+  defp calc_for_bonding_curve_type(curve_type, _order_type, _spot_price, _delta, _counter) do
+    Logger.debug("Unkown bonding curve type: #{curve_type}")
+    0
   end
 end
 # To test in interactive shell run:
