@@ -61,6 +61,7 @@ defmodule SharkAttack.MixProject do
       {:gen_stage, "~> 1.1.2"},
       {:quantum, "~> 3.5.0"},
       {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
+      {:ecto_mysql_extras, "~> 0.3"},
       {:gun, "== 2.0.1",
        [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},
       {:cowlib, "~> 2.11.1",

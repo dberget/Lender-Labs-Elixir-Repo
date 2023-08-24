@@ -125,7 +125,10 @@ defmodule SharkAttackWeb.Router do
     scope "/" do
       pipe_through(:browser)
 
-      live_dashboard("/dashboard", metrics: SharkAttackWeb.Telemetry)
+      live_dashboard("/dashboard",
+        metrics: SharkAttackWeb.Telemetry,
+        ecto_repos: [SharkAttack.Repo]
+      )
     end
   end
 
