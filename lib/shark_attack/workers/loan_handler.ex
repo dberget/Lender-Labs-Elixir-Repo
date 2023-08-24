@@ -42,7 +42,7 @@ defmodule SharkAttack.Workers.LoanHandler do
 
     SharkAttack.LoansWorker.delete_loan(loanAddress)
 
-    lender = Map.get(loan, :lender, Map.get(loan, "lender"))
+    # lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 
     # Task.async(fn ->
     #   SharkAttack.Stats.update_history_safe(lender)

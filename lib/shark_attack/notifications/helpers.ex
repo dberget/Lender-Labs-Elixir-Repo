@@ -368,11 +368,11 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   def parse_earnings(%{earnings: profit}) do
-    profit + profit * 0.16
+    profit
   end
 
   def parse_earnings(%{"earnings" => profit}) do
-    profit + profit * 0.16
+    profit
   end
 
   def parse_earnings(_) do

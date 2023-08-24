@@ -114,7 +114,7 @@ defmodule SharkAttack.Loans do
     Repo.all(query)
   end
 
-  def get_loans_history!(address, "borrower") do
+  def get_loans_history(address, "borrower") do
     query =
       from(l in Loan,
         where: l.borrower == ^address,
@@ -124,6 +124,15 @@ defmodule SharkAttack.Loans do
       )
 
     Repo.all(query)
+  end
+
+  def get_loans_history!(address, "borrower") do
+    case SharkAttack.SimpleCache.get(__MODULE__, :get_loans_history, [address, "borrower"],
+           ttl: 60 * 60
+         ) do
+      nil -> []
+      loans -> loans
+    end
   end
 
   def get_loans_history!(address, limit) do
@@ -152,16 +161,25 @@ defmodule SharkAttack.Loans do
   def create_active_loan(attrs) do
     loan =
       attrs
-      |> Map.drop(["earnings"])
       |> Map.put("platform", String.upcase(attrs["platform"]))
+      |> Map.put("earnings", 0.0)
       |> Map.put("status", "ACTIVE")
       |> Map.put("length", attrs["duration"])
       |> Map.put("loan", attrs["pubkey"])
-      |> Map.put("dateTaken", Timex.from_unix(attrs["start"]))
+      |> Map.put("dateOffered", build_date_taken(attrs["offerTime"]))
+      |> Map.put("dateTaken", build_date_taken(attrs["start"]))
 
     %Loan{}
     |> Loan.changeset(loan)
-    |> Repo.insert(on_conflict: :nothing)
+    |> Repo.insert(on_conflict: {:replace_all_except, [:id, :inserted_at]})
+  end
+
+  def build_date_taken(nil) do
+    NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+  end
+
+  def build_date_taken(start) do
+    Timex.from_unix(start)
   end
 
   def create_loan(attrs \\ %{}) do
@@ -174,18 +192,6 @@ defmodule SharkAttack.Loans do
     loan
     |> Loan.changeset(attrs)
     |> Repo.update()
-  end
-
-  def create_if_not_exists_loan(attrs \\ %{}) do
-    case Repo.get_by(Loan, loan: attrs["loan"]) do
-      nil ->
-        %Loan{loan: attrs["loan"]}
-        |> Loan.changeset(attrs)
-        |> Repo.insert(on_conflict: :nothing)
-
-      _ ->
-        :ok
-    end
   end
 
   def update_or_insert_repaid_loan(attrs, sig) do
@@ -201,9 +207,20 @@ defmodule SharkAttack.Loans do
     current_timestamp = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     attrs
+    |> Map.drop([:earnings])
     |> Map.put(:forecloseTxId, signature)
     |> Map.put(:dateForeclosed, current_timestamp)
     |> update_or_insert_completed_loan()
+  end
+
+  def update_or_insert_completed_loans(loans) do
+    chunks = Enum.chunk_every(loans, 2000)
+
+    Enum.map(chunks, fn chunk ->
+      Repo.insert_all(Loan, chunk,
+        on_conflict: {:replace_all_except, [:id, :inserted_at, :earnings]}
+      )
+    end)
   end
 
   def update_or_insert_completed_loan(attrs \\ %{}) do
@@ -245,7 +262,7 @@ defmodule SharkAttack.Loans do
         |> Repo.update()
 
       true ->
-        Logger.info(loan)
+        nil
     end
   end
 
@@ -279,9 +296,6 @@ defmodule SharkAttack.Loans do
           end
 
         Map.put(loan, :loan, loan.pubkey)
-
-      _ ->
-        %{}
     end
   end
 
