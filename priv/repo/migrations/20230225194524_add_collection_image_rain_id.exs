@@ -1,4 +1,4 @@
-defmodule SharkAttack.Repo.Migrations.AddCollectionVerifiedAddresses do
+defmodule SharkAttack.Repo.Migrations.AddCollectionImageRainId do
   use Ecto.Migration
 
   def change do
