@@ -139,10 +139,11 @@ defmodule SharkAttack.LoansWorker do
       # SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
     rescue
       e ->
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Error Flushing loans: #{inspect(e)}"
-        )
+        Logger.warn("Error Flushing loans: #{inspect(e)}")
+        # SharkAttack.DiscordConsumer.send_to_webhook(
+        #   "me",
+        #   "Error Flushing loans: #{inspect(e)}"
+        # )
     end
   end
 

@@ -17,7 +17,7 @@ defmodule SharkAttack.Helpers do
       headers
     )
     |> Finch.request(SharkAttackWeb.Finch,
-      receive_timeout: 50_000
+      receive_timeout: 75_000
     )
     |> parse_response()
   end

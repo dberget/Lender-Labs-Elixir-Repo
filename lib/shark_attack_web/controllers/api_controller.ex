@@ -8,10 +8,16 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def bundle(conn, params) do
-    res = SharkyApi.send_bundle(params)
+    case SharkyApi.send_bundle(params) do
+      res ->
+        conn
+        |> json(res)
 
-    conn
-    |> json(res)
+      {:error, res} ->
+        conn
+        |> put_status(400)
+        |> json("error")
+    end
   end
 
   def get_recent_loans(conn, params) do
@@ -710,8 +716,8 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{
       unique_borrowers: borrowerGroup |> length(),
       unique_lenders: lenderGroup |> length(),
-      borrowerGroup: borrowerGroup |> Enum.take(1000),
-      lenderGroup: lenderGroup |> Enum.take(1000)
+      borrowerGroup: borrowerGroup |> Enum.take(500),
+      lenderGroup: lenderGroup |> Enum.take(500)
     })
   end
 
@@ -858,12 +864,14 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def add_auto_foreclose(conn, params) do
-    res = SharkAttack.AutoForeclose.insert_auto_foreclose(
-      params["user_address"],
-      params["loan_id"],
-      params["nonce_account"],
-      params["transaction"]
-    )
+    res =
+      SharkAttack.AutoForeclose.insert_auto_foreclose(
+        params["user_address"],
+        params["loan_id"],
+        params["nonce_account"],
+        params["transaction"]
+      )
+
     conn |> json(res)
   end
 

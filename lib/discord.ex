@@ -64,8 +64,8 @@ defmodule SharkAttack.DiscordConsumer do
 
     # LenderLabs
     Api.execute_webhook(
-      "1079515258529521725",
-      "x_7FSTVA4q4iNUJ6OAgj_i5lAK-dCxzUzP_sUS40W8QCZC28p7hZLgAVapJfssXxN7zu",
+      "1146109336813314088",
+      "RmDt4sle17f50_v6YsV_YCy799pH_Tjlj-wmoL7dP9qaLHbxVYZK2IMXuKbo34zpA7r9",
       %{embeds: [embed]}
     )
   end
