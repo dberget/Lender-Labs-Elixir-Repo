@@ -710,8 +710,8 @@ defmodule SharkAttackWeb.ApiController do
     |> json(%{
       unique_borrowers: borrowerGroup |> length(),
       unique_lenders: lenderGroup |> length(),
-      borrowerGroup: borrowerGroup |> Enum.take(1000),
-      lenderGroup: lenderGroup |> Enum.take(1000)
+      borrowerGroup: borrowerGroup |> Enum.take(500),
+      lenderGroup: lenderGroup |> Enum.take(500)
     })
   end
 
