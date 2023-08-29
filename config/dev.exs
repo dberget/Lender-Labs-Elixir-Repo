@@ -13,9 +13,9 @@ config :shark_attack, SharkAttack.Scheduler,
   timeout: 500_000,
   jobs: [
     # {"5 5 * * 4", {SharkAttack.Notifications, :send_weekly_summary, []}},
-    {"*/30 * * * *", {SharkAttack.LoansWorker, :flush, []}}
+    {"*/30 * * * *", {SharkAttack.LoansWorker, :flush, []}},
     # {"*/60 * * * *", {SharkAttack.Stats, :update_loans, []}},
-    # {"*/8 * * * *", {SharkAttack.Notifications, :foreclosures, []}}
+    # {"*/8 * * * *", {SharkAttack.Notifications, :foreclosures, []}},
     # {"*/3 * * * *", {SharkAttack.AutoForeclose, :get_and_foreclose_loans, []}}
   ]
 

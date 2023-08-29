@@ -36,7 +36,7 @@ config :shark_attack, SharkAttack.Scheduler,
     {"*/20 * * * *", {SharkAttack.LoansWorker, :flush, []}},
     # {"*/30 * * * *", {SharkAttack.Stats, :update_loans, []}},
     {"@daily", {SharkAttack.Stats, :pull_all_citrus_loans, []}},
-    {"*/5 * * * *", {SharkAttack.Notifications, :foreclosures, []}}
+    {"*/5 * * * *", {SharkAttack.Notifications, :foreclosures, []}},
     {"*/3 * * * *", {SharkAttack.AutoForeclose, :get_and_foreclose_loans, []}}
   ]
 

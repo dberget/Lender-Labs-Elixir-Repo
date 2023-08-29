@@ -23,10 +23,11 @@ defmodule SharkAttack.AutoForeclose do
       status: "ACTIVE"
     })
     |> Repo.insert()
+    :ok
   end
 
-  defp update_foreclose_status(loan_id, new_status) do
-    post = SharkAttack.Repo.get_by(SharkAttack.Loans.AutoForeclose, loan_id: loan_id)
+  defp update_foreclose_status(nonce_account, new_status) do
+    post = SharkAttack.Repo.get_by(SharkAttack.Loans.AutoForeclose, nonce_account: nonce_account)
 
     if post.status == "ACTIVE" do
       post =
@@ -39,13 +40,25 @@ defmodule SharkAttack.AutoForeclose do
         {:error, changeset} -> :error
       end
     else
-      Logger.info("Loan #{loan_id} is not ACTIVE, not updating status")
+      Logger.info("Loan with nonce #{nonce_account} is not ACTIVE, not updating status")
       :error
     end
   end
 
-  def get_auto_foreclose_info(loan_id) do
-    SharkAttack.Repo.get_by(SharkAttack.Loans.AutoForeclose, loan_id: loan_id)
+  def get_auto_foreclose_info(nonce_account) do
+    SharkAttack.Repo.get_by(SharkAttack.Loans.AutoForeclose, nonce_account: nonce_account)
+  end
+
+  def get_nonce_accounts(user_address) do
+    query =
+      from l in SharkAttack.Loans.AutoForeclose,
+        where:
+          l.status == "ACTIVE" and l.user_address == ^user_address,
+        select: l
+
+    SharkAttack.Repo.all(query)
+    # map each loan to its nonce account
+    |> Enum.map(fn loan -> %{"loan_id" => loan.loan_id, "nonce_account" => loan.nonce_account} end)
   end
 
   def get_loans_to_foreclose(user_address) do
@@ -85,15 +98,15 @@ defmodule SharkAttack.AutoForeclose do
     end
   end
 
-  def close_nonce_account(loans) do
-    for loan <- loans do
-      Logger.info("Closing nonce account for loan #{loan.loan_id}")
+  def close_nonce_accounts(accounts) do
+    for account <- accounts do
+      Logger.info("Closing nonce account #{account}")
 
       SharkAttack.Helpers.do_post_request(
         "http://localhost:5001/close_nonce",
-        %{nonceAccount: loan.nonce_account}
+        %{nonceAccount: account}
       )
-      |> parse_close_response(loan)
+      |> parse_close_response(account)
     end
   end
 
@@ -103,8 +116,14 @@ defmodule SharkAttack.AutoForeclose do
        ) do
     Logger.info("loan #{loan.loan_id} with tx #{txHash} and close nonce tx #{close_nonce_hash}")
 
-    update_foreclose_status(loan.loan_id, "FORECLOSED")
+    update_foreclose_status(loan.nonce_account, "FORECLOSED")
 
+    :ok
+  end
+
+  defp parse_foreclose_response(%{"resp" => %{"error" => reason}}, loan
+       ) do
+    Logger.info("Unable to foreclose loan #{loan.loan_id} because #{reason}")
     :ok
   end
 
@@ -114,10 +133,10 @@ defmodule SharkAttack.AutoForeclose do
     :error
   end
 
-  defp parse_close_response(%{"resp" => %{"closeNonceHash" => close_nonce_hash}}, loan) do
-    Logger.info("Nonce account closed for, #{loan.loan_id} with tx #{close_nonce_hash}")
+  defp parse_close_response(%{"resp" => %{"closeNonceHash" => close_nonce_hash}}, nonce_account) do
+    Logger.info("Nonce account #{nonce_account} closed with tx #{close_nonce_hash}")
 
-    update_foreclose_status(loan.loan_id, "CANCELLED")
+    update_foreclose_status(nonce_account, "CANCELLED")
 
     :ok
   end

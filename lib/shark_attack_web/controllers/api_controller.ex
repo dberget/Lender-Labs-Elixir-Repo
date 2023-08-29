@@ -856,4 +856,24 @@ defmodule SharkAttackWeb.ApiController do
   defp calculate_ltv_value(loan, _collection) do
     loan
   end
+
+  def add_auto_foreclose(conn, params) do
+    res = SharkAttack.AutoForeclose.insert_auto_foreclose(
+      params["user_address"],
+      params["loan_id"],
+      params["nonce_account"],
+      params["transaction"]
+    )
+    conn |> json(res)
+  end
+
+  def cancel_auto_foreclose(conn, params) do
+    res = SharkAttack.AutoForeclose.close_nonce_accounts([params["nonce_account"]])
+    conn |> json(res)
+  end
+
+  def get_user_nonces(conn, %{"lender" => lender}) do
+    res = SharkAttack.AutoForeclose.get_nonce_accounts(lender)
+    conn |> json(res)
+  end
 end
