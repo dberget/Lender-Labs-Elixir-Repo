@@ -23,6 +23,7 @@ defmodule SharkAttack.AutoForeclose do
       status: "ACTIVE"
     })
     |> Repo.insert()
+
     :ok
   end
 
@@ -51,10 +52,10 @@ defmodule SharkAttack.AutoForeclose do
 
   def get_nonce_accounts(user_address) do
     query =
-      from l in SharkAttack.Loans.AutoForeclose,
-        where:
-          l.status == "ACTIVE" and l.user_address == ^user_address,
+      from(l in SharkAttack.Loans.AutoForeclose,
+        where: l.status == "ACTIVE" and l.user_address == ^user_address,
         select: l
+      )
 
     SharkAttack.Repo.all(query)
     # map each loan to its nonce account
@@ -64,11 +65,12 @@ defmodule SharkAttack.AutoForeclose do
   def get_loans_to_foreclose(user_address) do
     # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
     query =
-      from l in SharkAttack.Loans.AutoForeclose,
+      from(l in SharkAttack.Loans.AutoForeclose,
         where:
           l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now() and
             l.user_address == ^user_address,
         select: l
+      )
 
     SharkAttack.Repo.all(query)
   end
@@ -76,9 +78,10 @@ defmodule SharkAttack.AutoForeclose do
   def get_loans_to_foreclose() do
     # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
     query =
-      from l in SharkAttack.Loans.AutoForeclose,
+      from(l in SharkAttack.Loans.AutoForeclose,
         where: l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now(),
         select: l
+      )
 
     SharkAttack.Repo.all(query)
   end
@@ -88,18 +91,23 @@ defmodule SharkAttack.AutoForeclose do
   def foreclose_loans(loans) do
     # for each loan, get the nonce account and send the transaction
     for loan <- loans do
-      date_repaid = SharkAttack.Loans.get_loan(loan.loan_id).dateRepaid
-      if date_repaid != nil do
-        Logger.info("Loan #{loan.loan_id} has already been repaid, pocketing the fees")
-        close_nonce_accounts([loan.nonce_account], "REPAID")
-      else
-        Logger.info("Foreclosing loan #{loan.loan_id}")
+      fetched_loan = SharkAttack.Loans.get_loan(loan.loan_id)
 
-        SharkAttack.Helpers.do_post_request(
-          "http://localhost:5001/foreclose_loan",
-          %{encodedTx: loan.encoded_transaction, nonceAccount: loan.nonce_account}
-        )
-        |> parse_foreclose_response(loan)
+      cond do
+        !is_nil(Map.get(fetched_loan, :dateRepaid)) ->
+          close_nonce_accounts([loan.nonce_account], "REPAID")
+
+        !is_nil(Map.get(fetched_loan, :dateForeclosed)) ->
+          close_nonce_accounts([loan.nonce_account], "FORECLOSED")
+
+        true ->
+          Logger.info("Foreclosing loan #{loan.loan_id}")
+
+          SharkAttack.Helpers.do_post_request(
+            "http://localhost:5001/foreclose_loan",
+            %{encodedTx: loan.encoded_transaction, nonceAccount: loan.nonce_account}
+          )
+          |> parse_foreclose_response(loan)
       end
     end
   end
@@ -127,8 +135,7 @@ defmodule SharkAttack.AutoForeclose do
     :ok
   end
 
-  defp parse_foreclose_response(%{"resp" => %{"error" => reason}}, loan
-       ) do
+  defp parse_foreclose_response(%{"resp" => %{"error" => reason}}, loan) do
     Logger.info("Unable to foreclose loan #{loan.loan_id} because #{reason}")
     :ok
   end
@@ -139,7 +146,11 @@ defmodule SharkAttack.AutoForeclose do
     :error
   end
 
-  defp parse_close_response(%{"resp" => %{"closeNonceHash" => close_nonce_hash}}, nonce_account, new_status) do
+  defp parse_close_response(
+         %{"resp" => %{"closeNonceHash" => close_nonce_hash}},
+         nonce_account,
+         new_status
+       ) do
     Logger.info("Nonce account #{nonce_account} closed with tx #{close_nonce_hash}")
 
     update_foreclose_status(nonce_account, new_status)
