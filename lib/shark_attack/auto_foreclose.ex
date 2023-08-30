@@ -88,17 +88,23 @@ defmodule SharkAttack.AutoForeclose do
   def foreclose_loans(loans) do
     # for each loan, get the nonce account and send the transaction
     for loan <- loans do
-      Logger.info("Foreclosing loan #{loan.loan_id}")
+      date_repaid = SharkAttack.Loans.get_loan(loan.loan_id).dateRepaid
+      if date_repaid != nil do
+        Logger.info("Loan #{loan.loan_id} has already been repaid, pocketing the fees")
+        close_nonce_accounts([loan.nonce_account], "REPAID")
+      else
+        Logger.info("Foreclosing loan #{loan.loan_id}")
 
-      SharkAttack.Helpers.do_post_request(
-        "http://localhost:5001/foreclose_loan",
-        %{encodedTx: loan.encoded_transaction, nonceAccount: loan.nonce_account}
-      )
-      |> parse_foreclose_response(loan)
+        SharkAttack.Helpers.do_post_request(
+          "http://localhost:5001/foreclose_loan",
+          %{encodedTx: loan.encoded_transaction, nonceAccount: loan.nonce_account}
+        )
+        |> parse_foreclose_response(loan)
+      end
     end
   end
 
-  def close_nonce_accounts(accounts) do
+  def close_nonce_accounts(accounts, new_status \\ "CANCELLED") do
     for account <- accounts do
       Logger.info("Closing nonce account #{account}")
 
@@ -106,7 +112,7 @@ defmodule SharkAttack.AutoForeclose do
         "http://localhost:5001/close_nonce",
         %{nonceAccount: account}
       )
-      |> parse_close_response(account)
+      |> parse_close_response(account, new_status)
     end
   end
 
@@ -133,15 +139,15 @@ defmodule SharkAttack.AutoForeclose do
     :error
   end
 
-  defp parse_close_response(%{"resp" => %{"closeNonceHash" => close_nonce_hash}}, nonce_account) do
+  defp parse_close_response(%{"resp" => %{"closeNonceHash" => close_nonce_hash}}, nonce_account, new_status) do
     Logger.info("Nonce account #{nonce_account} closed with tx #{close_nonce_hash}")
 
-    update_foreclose_status(nonce_account, "CANCELLED")
+    update_foreclose_status(nonce_account, new_status)
 
     :ok
   end
 
-  defp parse_close_response({:error, reason}, _) do
+  defp parse_close_response({:error, reason}, _, _) do
     Logger.warn("Error calling the node backend to close the nonce account, #{reason}")
 
     :error
