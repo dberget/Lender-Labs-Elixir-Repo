@@ -40,6 +40,12 @@ defmodule SharkAttackWeb.Router do
     get("/get_sell_tx", BorrowController, :get_sell_tx)
   end
 
+  scope "/rewards", SharkAttackWeb do
+    pipe_through(:api)
+
+    get("/list", RewardController, :list)
+  end
+
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 

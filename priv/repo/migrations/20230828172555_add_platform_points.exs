@@ -4,16 +4,17 @@ defmodule SharkAttack.Repo.Migrations.AddPlatformPoints do
   def change do
     create_if_not_exists table(:point_entries) do
       add(:address, :string)
-      add(:amount, :integer)
-
+      add(:amount, :float)
+      add(:source, :string)
       add(:event_type, :string)
 
       timestamps()
     end
 
     create_if_not_exists table(:boosted_offers) do
-      add(:offer_id, references(:offers))
+      add(:address, :string)
       add(:multiple, :integer)
+      add(:payer, :string)
 
       timestamps()
     end

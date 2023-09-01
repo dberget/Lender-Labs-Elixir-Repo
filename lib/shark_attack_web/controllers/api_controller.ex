@@ -788,6 +788,9 @@ defmodule SharkAttackWeb.ApiController do
   def save_loan_taken(conn, params) do
     res = SharkAttack.Loans.insert_taken_loan(params)
 
+    Map.update(params, "amount", 0, &(&1 / 1_000_000_000))
+    |> SharkAttack.Rewards.create_borrow_entry()
+
     conn |> json(res)
   end
 

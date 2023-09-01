@@ -3,7 +3,8 @@ defmodule SharkAttack.Loans.BoostedOffer do
   import Ecto.Changeset
 
   schema "boosted_offers" do
-    field(:offer_id, :string)
+    field(:address, :string)
+    field(:payer, :string)
     field(:multiple, :integer)
 
     timestamps()
@@ -13,12 +14,9 @@ defmodule SharkAttack.Loans.BoostedOffer do
   def changeset(offer, attrs) do
     offer
     |> cast(attrs, [
-      :taken,
-      :rescinded,
-      :amount,
-      :collection_id,
-      :lender,
-      :loan_address
+      :address,
+      :multiple,
+      :payer
     ])
     |> validate_required([])
   end

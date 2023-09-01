@@ -4,8 +4,9 @@ defmodule SharkAttack.Points.PointEntry do
 
   schema "point_entries" do
     field(:address, :string)
-    field(:amount, :integer)
+    field(:amount, :float)
     field(:event_type, :string)
+    field(:source, :string)
 
     timestamps()
   end
@@ -16,7 +17,8 @@ defmodule SharkAttack.Points.PointEntry do
     |> cast(attrs, [
       :address,
       :amount,
-      :event_type
+      :event_type,
+      :source
     ])
     |> validate_required([])
   end
