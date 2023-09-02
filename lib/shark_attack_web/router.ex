@@ -40,6 +40,12 @@ defmodule SharkAttackWeb.Router do
     get("/get_sell_tx", BorrowController, :get_sell_tx)
   end
 
+  scope "/rewards", SharkAttackWeb do
+    pipe_through(:api)
+
+    get("/list", RewardController, :list)
+  end
+
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 
@@ -51,6 +57,7 @@ defmodule SharkAttackWeb.Router do
     get("/get_collection_offers", ApiController, :get_collection_offers)
 
     get("/get_orderbooks", ApiController, :get_orderbooks)
+    get("/get_ll_volume", ApiController, :get_ll_volume)
     post("/update_loan_earnings", ApiController, :update_loan_earnings)
     get("/get_recent_loans", ApiController, :get_recent_loans)
     get("/get_borrower_summary", ApiController, :get_borrower_summary)

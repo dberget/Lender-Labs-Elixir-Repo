@@ -83,7 +83,10 @@ defmodule SharkAttack.LoansWorker do
   def insert_loan(loan) do
     loanAddress = Map.get(loan, "pubkey")
 
+    loan = Map.put(loan, "is_ll_offer", SharkAttack.Rewards.is_ll_offer(loanAddress))
+
     :ets.insert(:loans, {loanAddress, loan})
+
     :ets.delete(:offers, loanAddress)
 
     :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
@@ -95,8 +98,13 @@ defmodule SharkAttack.LoansWorker do
 
     try do
       SharkAttack.Events.send_event("TAKE_LOAN", loan)
+
       SharkAttackWeb.OffersChannel.delete(loan["pubkey"])
+
       SharkAttackWeb.LoansChannel.push(loan)
+
+      SharkAttack.Rewards.create_entry(loan)
+
       SharkAttack.Loans.create_active_loan(loan)
     rescue
       e ->
@@ -134,6 +142,7 @@ defmodule SharkAttack.LoansWorker do
         |> Enum.map(&{&1["pubkey"], &1})
 
       :ets.delete_all_objects(:offers)
+
       :ets.insert(:offers, offers)
 
       # SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")

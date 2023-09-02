@@ -290,6 +290,24 @@ defmodule SharkAttackWeb.ApiController do
     |> json(data)
   end
 
+  def get_ll_volume(conn, _params) do
+    offers =
+      SharkAttack.Offers.last_two_weeks()
+      |> Enum.map(& &1.loan_address)
+      |> MapSet.new()
+
+    loans = SharkAttack.LoansWorker.get_all_loans()
+    ll_loans = loans |> Enum.filter(&MapSet.member?(offers, &1["pubkey"]))
+
+    data = %{
+      activeLoans: Enum.count(ll_loans),
+      ll_tvl: ll_loans |> Enum.map(& &1["amountSol"]) |> Enum.sum()
+    }
+
+    conn
+    |> json(data)
+  end
+
   def get_lender_loans(conn, %{"cache" => "1"} = params) do
     loans =
       SharkAttack.LoansWorker.get_lender_loans(params["lender"])
@@ -793,6 +811,9 @@ defmodule SharkAttackWeb.ApiController do
 
   def save_loan_taken(conn, params) do
     res = SharkAttack.Loans.insert_taken_loan(params)
+
+    Map.update(params, "amount", 0, &(&1 / 1_000_000_000))
+    |> SharkAttack.Rewards.create_borrow_entry()
 
     conn |> json(res)
   end

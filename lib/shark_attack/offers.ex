@@ -63,6 +63,10 @@ defmodule SharkAttack.Offers do
     Repo.get_by(Offer, loan_address: loan_address)
   end
 
+  def get_boosted_offer(loan_address) do
+    Repo.get_by(SharkAttack.Loans.BoostedOffer, loan_address: loan_address)
+  end
+
   def get_loan_offers_by_lender(lender) do
     Repo.all(Offer, lender: lender)
   end
