@@ -6,5 +6,7 @@ defmodule SharkAttack.Points.UserPoints do
   schema "points" do
     field(:address, :string)
     field(:total_amount, :float)
+    field(:borrow_total, :float)
+    field(:lend_total, :float)
   end
 end
