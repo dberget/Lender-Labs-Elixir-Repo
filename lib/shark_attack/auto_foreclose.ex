@@ -130,7 +130,7 @@ defmodule SharkAttack.AutoForeclose do
        ) do
     Logger.info("loan #{loan.loan_id} with tx #{txHash} and close nonce tx #{close_nonce_hash}")
 
-    update_foreclose_status(loan.nonce_account, "FORECLOSED")
+    update_foreclose_status(loan.nonce_account, "AUTO_FORECLOSED")
 
     :ok
   end

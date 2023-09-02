@@ -82,6 +82,8 @@ defmodule SharkAttackWeb.Router do
     post("/save_nft_image", ApiController, :save_nft_image)
 
     post("/update_offer", ApiController, :update_offer)
+    post("/add_auto_rescind", ApiController, :add_auto_rescind)
+    post("/cancel_auto_rescind", ApiController, :cancel_auto_rescind)
     post("/add_auto_foreclose", ApiController, :add_auto_foreclose)
     post("/cancel_auto_foreclose", ApiController, :cancel_auto_foreclose)
     get("/get_user_nonces", ApiController, :get_user_nonces)
