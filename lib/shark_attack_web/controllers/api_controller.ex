@@ -9,14 +9,14 @@ defmodule SharkAttackWeb.ApiController do
 
   def bundle(conn, params) do
     case SharkyApi.send_bundle(params) do
-      res ->
-        conn
-        |> json(res)
-
-      {:error, res} ->
+      {:error, _res} ->
         conn
         |> put_status(400)
         |> json("error")
+
+      res ->
+        conn
+        |> json(res)
     end
   end
 
@@ -182,6 +182,7 @@ defmodule SharkAttackWeb.ApiController do
              historical_loans
              |> Enum.filter(&is_nil(&1.dateForeclosed))
              |> Enum.map(&Timex.diff(&1.dateRepaid, &1.dateTaken, :seconds))
+             |> Enum.reject(&is_tuple/1)
              |> Enum.sum()
              |> get_avg_repayment(historical_loan_count)
            ), 0}
