@@ -59,6 +59,22 @@ defmodule SharkAttackWeb.UserController do
     end
   end
 
+  def is_holder(conn, %{"pk" => address}) do
+    case SharkAttack.Users.get_user_from_address!(address) do
+      nil ->
+        turtles_count = SharkAttack.Clients.Helius.has_turtles(address, 0)
+
+        conn
+        |> json(%{is_holder: turtles_count > 0})
+
+      user ->
+        turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address, 0)
+
+        conn
+        |> json(%{is_holder: turtles_count > 0})
+    end
+  end
+
   def get_user_summary(conn, params) do
     user = SharkAttack.Users.get_user_from_address!(params["address"])
     last_called = SharkAttack.RateLimiter.get(params["address"])

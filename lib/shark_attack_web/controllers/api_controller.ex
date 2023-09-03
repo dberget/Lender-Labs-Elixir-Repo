@@ -408,11 +408,7 @@ defmodule SharkAttackWeb.ApiController do
 
         offers =
           loans_and_offers
-          |> Enum.filter(
-            &(&1["state"] == "offered" ||
-                (&1["state"] == "waitingForBorrower" &&
-                   &1["borrower"] == "11111111111111111111111111111111"))
-          )
+          |> Enum.filter(&(&1["state"] in ["offered", "waitingForBorrower", "waitingForLender"]))
           |> Enum.sort_by(& &1["amountSol"], :desc)
 
         loans =

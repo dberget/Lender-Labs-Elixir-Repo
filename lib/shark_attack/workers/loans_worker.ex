@@ -121,9 +121,15 @@ defmodule SharkAttack.LoansWorker do
 
       loanData = [sharkyLoans, citrusLoans] |> List.flatten()
 
+      labs_offers =
+        SharkAttack.Offers.get_active_offers() |> Enum.map(& &1.loan_address) |> MapSet.new()
+
       collection_loans =
         loanData
-        |> Enum.map(&{&1["orderBook"], &1["pubkey"], &1["lender"], &1})
+        |> Enum.map(
+          &{&1["orderBook"], &1["pubkey"], &1["lender"],
+           Map.put(&1, "is_ll_offer", MapSet.member?(labs_offers, &1["pubkey"]))}
+        )
 
       :ets.delete_all_objects(:collection_loans)
       :ets.insert(:collection_loans, collection_loans)
@@ -142,13 +148,13 @@ defmodule SharkAttack.LoansWorker do
         |> Enum.map(&{&1["pubkey"], &1})
 
       :ets.delete_all_objects(:offers)
-
       :ets.insert(:offers, offers)
 
       # SharkAttack.DiscordConsumer.send_to_webhook("me", "Done Flushing loans")
     rescue
       e ->
         Logger.warn("Error Flushing loans: #{inspect(e)}")
+
         # SharkAttack.DiscordConsumer.send_to_webhook(
         #   "me",
         #   "Error Flushing loans: #{inspect(e)}"
@@ -285,15 +291,18 @@ defmodule SharkAttack.LoansWorker do
         handle_retry(loanData, attempts, :add_new_offer)
 
       data ->
-        :ets.insert(:offers, {loanData.loanAddress, data})
+        offer =
+          Map.put(data, "is_ll_offer", SharkAttack.Clients.Helius.has_turtles(data["lender"], 0))
+
+        :ets.insert(:offers, {loanData.loanAddress, offer})
 
         :ets.insert(
           :collection_loans,
-          {data["orderBook"], loanData.loanAddress, data["lender"], data}
+          {data["orderBook"], loanData.loanAddress, data["lender"], offer}
         )
 
         try do
-          SharkAttackWeb.OffersChannel.push(data)
+          # SharkAttackWeb.OffersChannel.push(offer)
         rescue
           e ->
             Logger.error("Error pushing to offers channel: #{inspect(e)}")
