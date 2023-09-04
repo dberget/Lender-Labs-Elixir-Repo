@@ -408,7 +408,11 @@ defmodule SharkAttackWeb.ApiController do
 
         offers =
           loans_and_offers
-          |> Enum.filter(&(&1["state"] in ["offered", "waitingForBorrower", "waitingForLender"]))
+          |> Enum.filter(
+            &(&1["state"] == "offered" ||
+                (&1["state"] == "waitingForBorrower" &&
+                   &1["borrower"] == "11111111111111111111111111111111"))
+          )
           |> Enum.sort_by(& &1["amountSol"], :desc)
 
         loans =
@@ -807,12 +811,21 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def save_loan_taken(conn, params) do
-    res = SharkAttack.Loans.insert_taken_loan(params)
+    res =
+      try do
+        Map.update(params, "amount", 0, &(&1 / 1_000_000_000))
+        |> SharkAttack.Rewards.create_borrow_entry()
 
-    Map.update(params, "amount", 0, &(&1 / 1_000_000_000))
-    |> SharkAttack.Rewards.create_borrow_entry()
+        SharkAttack.Loans.insert_taken_loan(params)
+      rescue
+        error ->
+          SharkAttack.DiscordConsumer.send_to_webhook(
+            "me",
+            "Unable to save rewards: #{inspect(error)} \n #{inspect(params)}"
+          )
+      end
 
-    conn |> json(res)
+    json(conn, res)
   end
 
   def get_nft(conn, params) do

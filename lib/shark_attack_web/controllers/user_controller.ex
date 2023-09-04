@@ -32,7 +32,7 @@ defmodule SharkAttackWeb.UserController do
 
     turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address)
 
-    points = SharkAttack.Points.get_user_points(user.address)
+    points = SharkAttack.Points.get_user_points(address)
 
     conn
     |> json(%{

@@ -7,6 +7,7 @@ defmodule SharkAttack.Points.PointEntry do
     field(:amount, :float)
     field(:event_type, :string)
     field(:source, :string)
+    field(:platform, :string)
 
     timestamps()
   end
@@ -18,6 +19,7 @@ defmodule SharkAttack.Points.PointEntry do
       :address,
       :amount,
       :event_type,
+      :platform,
       :source
     ])
     |> validate_required([])

@@ -34,6 +34,6 @@ defmodule SharkAttack.Loans.TakenLoan do
       :is_extension,
       :collection_id
     ])
-    |> validate_required([:borrower, :platform, :amount, :is_extension, :collection_id])
+    |> validate_required([:borrower, :platform, :amount, :is_extension])
   end
 end
