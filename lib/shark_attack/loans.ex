@@ -159,6 +159,8 @@ defmodule SharkAttack.Loans do
   end
 
   def create_active_loan(attrs) do
+    offerTime = (attrs["offerTime"] / 1000) |> ceil
+
     loan =
       attrs
       |> Map.put("platform", String.upcase(attrs["platform"]))
@@ -166,7 +168,7 @@ defmodule SharkAttack.Loans do
       |> Map.put("status", "ACTIVE")
       |> Map.put("length", attrs["duration"])
       |> Map.put("loan", attrs["pubkey"])
-      |> Map.put("dateOffered", build_date_taken(attrs["offerTime"]))
+      |> Map.put("dateOffered", build_date_taken(offerTime))
       |> Map.put("dateTaken", build_date_taken(attrs["start"]))
 
     %Loan{}
@@ -231,7 +233,16 @@ defmodule SharkAttack.Loans do
         Map.get(attrs, "pubKey", Map.get(attrs, "pubkey", Map.get(attrs, "loan")))
       )
 
-    loan = Repo.get_by(Loan, loan: loanAddress)
+    loan =
+      case loanAddress do
+        nil ->
+          Logger.warn("No loan address found")
+
+          nil
+
+        loanAddress ->
+          Repo.get_by(Loan, loan: loanAddress)
+      end
 
     cond do
       is_nil(loan) ->

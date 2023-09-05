@@ -41,46 +41,76 @@ defmodule SharkAttack.Workers.LoanHandler do
     SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
 
     SharkAttack.LoansWorker.delete_loan(loanAddress)
-
-    # lender = Map.get(loan, :lender, Map.get(loan, "lender"))
-
-    # Task.async(fn ->
-    #   SharkAttack.Stats.update_history_safe(lender)
-    # end)
-
-    :ok
   end
 
-  def update_loan(%{"type" => "UNKNOWN", "source" => "SHARKY_FI"} = event) do
-    closed_loan =
+  def update_loan(%{"type" => "CLAIM_NFT"} = event) do
+    loanAddress =
       event
       |> Map.get("instructions")
-      |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+      |> Enum.filter(&(&1["programId"] == "JCFRaPv7852ESRwJJGRy2mysUMydXZgVVhrMLmExvmVp"))
       |> List.first()
       |> Map.get("accounts", [])
       |> List.first()
+
+    loan = SharkAttack.Loans.get_loan(loanAddress)
+
+    SharkAttack.Loans.update_or_insert_foreclosed_loan(loan, event["signature"])
+
+    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
+
+    SharkAttack.LoansWorker.delete_loan(loanAddress)
+  end
+
+  def update_loan(%{"type" => "REBORROW_SOL_FOR_NFT"} = event) do
+    accounts =
+      event
+      |> Map.get("instructions")
+      |> Enum.filter(&(&1["programId"] == "JCFRaPv7852ESRwJJGRy2mysUMydXZgVVhrMLmExvmVp"))
+      |> List.first()
+      |> Map.get("accounts", [])
+
+    closed_loan = accounts |> List.first()
 
     case closed_loan do
       nil ->
         Logger.info("Unknown loan")
 
       _ ->
+        # Handle Repaid Loan
         loan = SharkAttack.Loans.get_loan(closed_loan)
-
         SharkAttack.Events.send_event("REPAY_LOAN", loan)
-
         SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
-
         SharkAttack.LoansWorker.delete_loan(closed_loan)
 
-        address =
-          event
-          |> Map.get("instructions")
-          |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
-          |> List.first()
-          |> Map.get("accounts", [])
-          |> Enum.at(1)
+        # Add new loan
+        address = accounts |> Enum.at(4)
+        SharkAttack.LoansWorker.add_loan(%{loanAddress: address, source: event["source"]})
+    end
+  end
 
+  def update_loan(%{"type" => "UNKNOWN", "source" => "SHARKY_FI"} = event) do
+    accounts =
+      event
+      |> Map.get("instructions")
+      |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+      |> List.first()
+      |> Map.get("accounts", [])
+
+    closed_loan = accounts |> List.first()
+
+    case closed_loan do
+      nil ->
+        Logger.info("Unknown loan")
+
+      _ ->
+        # Handle Repaid Loan
+        loan = SharkAttack.Loans.get_loan(closed_loan)
+        SharkAttack.Events.send_event("REPAY_LOAN", loan)
+        SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
+        SharkAttack.LoansWorker.delete_loan(closed_loan)
+
+        # Add New Loan
+        address = accounts |> Enum.at(1)
         SharkAttack.LoansWorker.add_loan(%{loanAddress: address, source: event["source"]})
     end
   end

@@ -241,13 +241,8 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lending_summary(conn, _params) do
-    offers =
-      SharkAttack.Offers.last_two_weeks()
-      |> Enum.map(& &1.loan_address)
-      |> MapSet.new()
-
     loans = SharkAttack.LoansWorker.get_all_loans()
-    ll_loans = loans |> Enum.filter(&MapSet.member?(offers, &1["pubkey"]))
+    ll_loans = loans |> Enum.filter(& &1["is_ll_offer"])
 
     count_uw =
       loans
@@ -866,7 +861,8 @@ defmodule SharkAttackWeb.ApiController do
 
   defp calculate_ltv_value(%{"amountSol" => 0, "state" => "waitingForBorrower"} = loan) do
     collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])
-    floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
+
+    floor_price = SharkAttack.FloorWorker.get_floor_price(Map.get(collection, :id))
 
     calculate_ltv_value(loan, floor_price)
   end
