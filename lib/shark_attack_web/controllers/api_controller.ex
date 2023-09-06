@@ -907,8 +907,31 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(res)
   end
 
-  def get_user_nonces(conn, %{"lender" => lender}) do
+  def get_user_nonces(conn, %{"lender" => lender, "type" => "foreclose"}) do
     res = SharkAttack.AutoForeclose.get_nonce_accounts(lender)
+    conn |> json(res)
+  end
+
+  def get_user_nonces(conn, %{"lender" => lender, "type" => "rescind"}) do
+    res = SharkAttack.AutoRescind.get_nonce_accounts(lender)
+    conn |> json(res)
+  end
+
+  def add_auto_rescind(conn, params) do
+    res =
+      SharkAttack.AutoRescind.insert_auto_rescind(
+        params["user_address"],
+        params["loan_id"],
+        params["nonce_account"],
+        params["transaction"],
+        String.to_integer(params["duration"])
+      )
+
+    conn |> json(res)
+  end
+
+  def cancel_auto_rescind(conn, params) do
+    res = SharkAttack.AutoRescind.close_nonce_accounts([params["nonce_account"]])
     conn |> json(res)
   end
 end
