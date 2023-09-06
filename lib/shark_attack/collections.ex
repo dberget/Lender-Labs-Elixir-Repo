@@ -461,7 +461,11 @@ defmodule SharkAttack.Collections do
         }
       )
 
-    Repo.insert_all(Nft, nfts)
+    chunks = Enum.chunk_every(nfts, 2000)
+
+    Enum.map(chunks, fn chunk ->
+      Repo.insert_all(Nft, chunk)
+    end)
   end
 
   def get_collection_from_loan(orderbook) when is_binary(orderbook) do

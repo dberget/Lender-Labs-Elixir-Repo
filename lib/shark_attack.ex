@@ -80,7 +80,7 @@ defmodule SharkAttack do
         nil ->
           Logger.info("No new mints for #{c.name}")
 
-        {_, _} ->
+        _ ->
           SharkAttack.Nfts.save_nft_names(c.id)
       end
     end)

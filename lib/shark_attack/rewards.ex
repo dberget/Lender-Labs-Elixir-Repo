@@ -57,25 +57,25 @@ defmodule SharkAttack.Rewards do
   end
 
   def calculate_points(%{"amountSol" => amountSol}, multiplier) do
-    points = (amountSol * 10) |> Float.round(2)
+    points = (amountSol * 10) |> round()
 
     points * multiplier
   end
 
   def calculate_points(%{amountSol: amountSol}, multiplier) do
-    points = (amountSol * 10) |> Float.round(2)
+    points = (amountSol * 10) |> round()
 
     points * multiplier
   end
 
   def calculate_points(%{"amount" => amountSol}, multiplier) do
-    points = (amountSol * 10) |> Float.round(2)
+    points = (amountSol * 10) |> round()
 
     points * multiplier
   end
 
   def calculate_points(%{amount: amountSol}, multiplier) do
-    points = (amountSol * 10) |> Float.round(2)
+    points = (amountSol * 10) |> round()
 
     points * multiplier
   end

@@ -50,11 +50,11 @@ defmodule SharkAttack.LoansWorker do
 
   def get_offer(offer_address) do
     case :ets.lookup(:offers, offer_address) |> List.first() do
-      {address, offer} ->
+      {_address, offer} ->
         offer
 
       _ ->
-        nil
+        %{}
     end
   end
 
@@ -93,12 +93,20 @@ defmodule SharkAttack.LoansWorker do
   def insert_loan(loan) do
     loanAddress = Map.get(loan, "pubkey")
 
+    offer = get_offer(loanAddress)
+
+    offerTime =
+      case Map.get(loan, "offerTime") do
+        nil -> Map.get(offer, "offerTime", Timex.to_unix(Timex.now()) * 1000)
+        offerTime -> offerTime
+      end
+
     loan =
       loan
       |> Map.put("is_ll_offer", SharkAttack.Rewards.is_ll_offer(loanAddress))
       |> Map.put(
         "offerTime",
-        Map.get(loan, "offerTime", Map.get(get_offer(loanAddress), "offerTime", 0))
+        offerTime
       )
 
     :ets.insert(:loans, {loanAddress, loan})
@@ -190,17 +198,19 @@ defmodule SharkAttack.LoansWorker do
 
     generate_tables()
 
-    {:ok, [], {:continue, :post_init}}
-  end
-
-  @impl true
-  def handle_continue(:post_init, state) do
-    IO.puts("Loans Worker Started, now flushing")
-
     flush()
 
-    {:noreply, state}
+    {:ok, []}
   end
+
+  # @impl true
+  # def handle_continue(:post_init, state) do
+  #   IO.puts("Loans Worker Started, now flushing")
+
+  #   flush()
+
+  #   {:noreply, state}
+  # end
 
   @impl true
   def terminate(reason, _state) do

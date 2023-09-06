@@ -159,7 +159,7 @@ defmodule SharkAttack.Loans do
   end
 
   def create_active_loan(attrs) do
-    offerTime = (attrs["offerTime"] / 1000) |> ceil
+    offerTime = Map.get(attrs, "offerTime", Timex.to_unix(Timex.now()) * 1000)
 
     loan =
       attrs
@@ -168,7 +168,7 @@ defmodule SharkAttack.Loans do
       |> Map.put("status", "ACTIVE")
       |> Map.put("length", attrs["duration"])
       |> Map.put("loan", attrs["pubkey"])
-      |> Map.put("dateOffered", build_date_taken(offerTime))
+      |> Map.put("dateOffered", build_date_taken((offerTime / 1000) |> ceil))
       |> Map.put("dateTaken", build_date_taken(attrs["start"]))
 
     %Loan{}
