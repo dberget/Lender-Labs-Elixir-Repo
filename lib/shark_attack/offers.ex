@@ -27,8 +27,8 @@ defmodule SharkAttack.Offers do
     |> Repo.insert()
   end
 
-  def update_offer(offer, "taken") do
-    taken_offer(offer)
+  def update_offer(offerAddress, "taken") do
+    taken_offer(offerAddress)
   end
 
   def update_offer(offer, "rescind") do
@@ -41,10 +41,16 @@ defmodule SharkAttack.Offers do
     |> Repo.update()
   end
 
-  def taken_offer(offer) do
-    offer
-    |> Offer.changeset(%{taken: 1})
-    |> Repo.update()
+  def taken_offer(loanAddress) do
+    case SharkAttack.Offers.get_offer(loanAddress) do
+      nil ->
+        :not_found
+
+      offer ->
+        offer
+        |> Offer.changeset(%{taken: 1})
+        |> Repo.update()
+    end
   end
 
   def rescind_offer(loanAddress) do

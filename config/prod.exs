@@ -19,6 +19,8 @@ config :shark_attack, SharkAttackWeb.Endpoint,
     "//localhost:3000"
   ]
 
+config :shark_attack, :environment, :prod
+
 # Do not print debug messages in production
 config :logger, level: :info, backends: [:console, Sentry.LoggerBackend]
 

@@ -120,23 +120,27 @@ defmodule SharkAttack.LoansWorker do
       {loan["orderBook"], loanAddress, loan["lender"], loan}
     )
 
-    try do
-      SharkAttack.Events.send_event("TAKE_LOAN", loan)
+    # try do
+    SharkAttack.Events.send_event("TAKE_LOAN", loan)
 
-      SharkAttackWeb.LoansChannel.push(loan)
+    SharkAttackWeb.LoansChannel.push(loan)
 
-      SharkAttack.Rewards.create_entry(loan)
+    SharkAttack.Rewards.create_entry(loan)
 
-      SharkAttack.Loans.create_active_loan(loan)
-    rescue
-      e ->
-        Logger.error("Error inserting new loan: #{inspect(e)}")
-
-        SharkAttack.DiscordConsumer.send_to_webhook(
-          "me",
-          "Error inserting new loan: #{inspect(e)} - #{inspect(loan)}"
-        )
+    if loan["is_ll_offer"] do
+      SharkAttack.Offers.update_offer(loan["pubkey"], "taken")
     end
+
+    SharkAttack.Loans.create_active_loan(loan)
+    # rescue
+    #   e ->
+    #     Logger.error("Error inserting new loan: #{inspect(e)}")
+
+    #     SharkAttack.DiscordConsumer.send_to_webhook(
+    #       "me",
+    #       "Error inserting new loan: #{inspect(e)} - #{inspect(loan)}"
+    #     )
+    # end
   end
 
   def flush() do
@@ -301,7 +305,13 @@ defmodule SharkAttack.LoansWorker do
       loan ->
         Logger.info("Inserting #{loanData.loanAddress} after #{attempts} attempts.")
 
-        insert_loan(loan)
+        if loan["state"] in ["taken", "active"] do
+          insert_loan(loan)
+        else
+          IO.inspect(loanData)
+
+          handle_retry(loanData, attempts, :add_new_loan)
+        end
     end
   end
 
@@ -335,7 +345,7 @@ defmodule SharkAttack.LoansWorker do
   end
 
   defp handle_retry(loanData, attempts, function) do
-    if attempts < 1 do
+    if attempts < 3 do
       Logger.info(
         "Not found: #{loanData.loanAddress} - #{attempts} - retrying #{function} in 3 seconds"
       )

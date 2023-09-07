@@ -6,6 +6,8 @@ defmodule SharkAttack.DiscordConsumer do
 
   require Logger
 
+  @env Application.get_env(:shark_attack, :environment)
+
   @gibbers [
     451_888_759_865_081_866,
     186_591_084_728_549_377,
@@ -59,7 +61,7 @@ defmodule SharkAttack.DiscordConsumer do
   def send_to_webhook("me", message) do
     embed =
       %Nostrum.Struct.Embed{}
-      |> put_title("Logging")
+      |> put_title("Logging - #{@env |> Atom.to_string()}")
       |> put_description(message)
 
     # LenderLabs

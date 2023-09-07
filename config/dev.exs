@@ -39,6 +39,8 @@ config :shark_attack, SharkAttackWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
+config :shark_attack, :environment, :dev
+
 config :cors_plug,
   origin: ["*"],
   max_age: 86400,

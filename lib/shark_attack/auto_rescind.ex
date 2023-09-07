@@ -11,8 +11,10 @@ defmodule SharkAttack.AutoRescind do
   end
 
   defp try_overwrite_auto_rescind(loan_id) do
-    post = SharkAttack.Repo.get_by(SharkAttack.Loans.AutoRescind, [loan_id: loan_id, status: "ACTIVE"])
+    post = Repo.get_by(AutoRescind, loan_id: loan_id, status: "ACTIVE")
+
     Logger.info("Offer #{inspect(post)} already exists, overwriting")
+
     cond do
       is_nil(post) -> :ok
       true -> close_nonce_accounts([post.nonce_account], "UPDATED")
@@ -22,8 +24,9 @@ defmodule SharkAttack.AutoRescind do
   def insert_auto_rescind(user_address, loan_id, nonce_account, transaction, duration) do
     try_overwrite_auto_rescind(loan_id)
     end_time = DateTime.utc_now() |> DateTime.add(duration, :minute)
-    %SharkAttack.Loans.AutoRescind{}
-    |> SharkAttack.Loans.AutoRescind.changeset(%{
+
+    %AutoRescind{}
+    |> AutoRescind.changeset(%{
       user_address: user_address,
       loan_id: loan_id,
       nonce_account: nonce_account,
@@ -37,7 +40,7 @@ defmodule SharkAttack.AutoRescind do
   end
 
   defp update_nonce_status(nonce_account, new_status) do
-    post = SharkAttack.Repo.get_by(SharkAttack.Loans.AutoRescind, nonce_account: nonce_account)
+    post = Repo.get_by(AutoRescind, nonce_account: nonce_account)
 
     if post.status == "ACTIVE" do
       post =
@@ -45,30 +48,32 @@ defmodule SharkAttack.AutoRescind do
         |> Changeset.change(%{status: new_status})
         |> Changeset.optimistic_lock(:version)
 
-      case SharkAttack.Repo.update(post) do
-        {:ok, struct} -> :ok
-        {:error, changeset} -> :error
+      case Repo.update(post) do
+        {:ok, _struct} -> :ok
+        {:error, _changeset} -> :error
       end
     else
       Logger.info("Offer with nonce #{nonce_account} is not ACTIVE, not updating status")
+
       :error
     end
   end
 
   def get_auto_rescind_info(nonce_account) do
-    SharkAttack.Repo.get_by(SharkAttack.Loans.AutoRescind, nonce_account: nonce_account)
+    Repo.get_by(AutoRescind, nonce_account: nonce_account)
   end
 
   def get_nonce_accounts(user_address) do
     query =
-      from(l in SharkAttack.Loans.AutoRescind,
+      from(l in AutoRescind,
         where: l.status == "ACTIVE" and l.user_address == ^user_address,
         select: l
       )
 
-    SharkAttack.Repo.all(query)
+    Repo.all(query)
     # map each loan to its nonce account
-    |> Enum.map(fn offer -> %{
+    |> Enum.map(fn offer ->
+      %{
         "loan_id" => offer.loan_id,
         "nonce_account" => offer.nonce_account,
         "remaining" => DateTime.diff(offer.end_time, DateTime.utc_now(), :minute)
@@ -79,25 +84,27 @@ defmodule SharkAttack.AutoRescind do
   def get_offers_to_rescind(user_address) do
     # get all the offers in AutoRescind that are ACTIVE and have a end_time in the past
     query =
-      from(l in SharkAttack.Loans.AutoRescind,
+      from(
+        l in AutoRescind,
         where:
           l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now() and
             l.user_address == ^user_address,
         select: l
       )
 
-    SharkAttack.Repo.all(query)
+    Repo.all(query)
   end
 
   def get_offers_to_rescind() do
     # get all the offers in AutoRescind that are ACTIVE and have a end_time in the past
     query =
-      from(l in SharkAttack.Loans.AutoRescind,
+      from(
+        l in AutoRescind,
         where: l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now(),
         select: l
       )
 
-    SharkAttack.Repo.all(query)
+    Repo.all(query)
   end
 
   def rescind_offers([]), do: :ok
@@ -105,7 +112,7 @@ defmodule SharkAttack.AutoRescind do
   def rescind_offers(offers) do
     # for each offer, get the nonce account and send the transaction
     for offer <- offers do
-      fetched_offer = SharkAttack.Offers.get_offer(offer.loan_id)
+      fetched_offer = Offers.get_offer(offer.loan_id)
 
       cond do
         Map.get(fetched_offer, :rescinded) == 1 ->
@@ -142,7 +149,9 @@ defmodule SharkAttack.AutoRescind do
          %{"resp" => %{"txHash" => txHash, "closeNonceHash" => close_nonce_hash}},
          offer
        ) do
-    Logger.info("Offer #{offer.loan_id} revoked with tx #{txHash} and close nonce tx #{close_nonce_hash}")
+    Logger.info(
+      "Offer #{offer.loan_id} revoked with tx #{txHash} and close nonce tx #{close_nonce_hash}"
+    )
 
     update_nonce_status(offer.nonce_account, "AUTO_REVOKED")
 
@@ -155,7 +164,7 @@ defmodule SharkAttack.AutoRescind do
   end
 
   defp parse_rescind_response({:error, reason}, _) do
-    Logger.warn("Error calling the node backend to rescind offer, #{reason}")
+    Logger.warn("Error calling the node backend to rescind offer, #{inspect(reason)}")
 
     :error
   end
@@ -173,7 +182,7 @@ defmodule SharkAttack.AutoRescind do
   end
 
   defp parse_close_response({:error, reason}, _, _) do
-    Logger.warn("Error calling the node backend to close the nonce account, #{reason}")
+    Logger.warn("Error calling the node backend to close the nonce account, #{inspect(reason)}")
 
     :error
   end
