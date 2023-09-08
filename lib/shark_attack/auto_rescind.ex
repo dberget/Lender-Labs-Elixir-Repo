@@ -12,19 +12,15 @@ defmodule SharkAttack.AutoRescind do
 
   defp try_overwrite_auto_rescind(loan_id) do
     post = Repo.get_by(AutoRescind, loan_id: loan_id, status: "ACTIVE")
-
-    Logger.info("Offer #{inspect(post)} already exists, overwriting")
-
     cond do
       is_nil(post) -> :ok
       true -> close_nonce_accounts([post.nonce_account], "UPDATED")
     end
   end
 
-  def insert_auto_rescind(user_address, loan_id, nonce_account, transaction, duration) do
+  def insert_auto_rescind(user_address, loan_id, nonce_account, transaction, duration, max_ltf) do
     try_overwrite_auto_rescind(loan_id)
-    end_time = DateTime.utc_now() |> DateTime.add(duration, :minute)
-
+    end_time = if(is_nil(duration), do: nil, else: DateTime.utc_now() |> DateTime.add(duration, :minute))
     %AutoRescind{}
     |> AutoRescind.changeset(%{
       user_address: user_address,
@@ -32,6 +28,7 @@ defmodule SharkAttack.AutoRescind do
       nonce_account: nonce_account,
       encoded_transaction: transaction,
       end_time: end_time,
+      max_ltf: max_ltf,
       status: "ACTIVE"
     })
     |> Repo.insert()
@@ -73,10 +70,12 @@ defmodule SharkAttack.AutoRescind do
     Repo.all(query)
     # map each loan to its nonce account
     |> Enum.map(fn offer ->
+      remaining = if(is_nil(offer.end_time), do: nil, else: DateTime.diff(offer.end_time, DateTime.utc_now(), :minute))
       %{
         "loan_id" => offer.loan_id,
         "nonce_account" => offer.nonce_account,
-        "remaining" => DateTime.diff(offer.end_time, DateTime.utc_now(), :minute)
+        "remaining" => remaining,
+        "max_ltf" => offer.max_ltf
       }
     end)
   end
@@ -87,12 +86,11 @@ defmodule SharkAttack.AutoRescind do
       from(
         l in AutoRescind,
         where:
-          l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now() and
-            l.user_address == ^user_address,
+          l.status == "ACTIVE" and l.user_address == ^user_address
+          and (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
         select: l
       )
-
-    Repo.all(query)
+      |> _get_offers_to_rescind
   end
 
   def get_offers_to_rescind() do
@@ -100,11 +98,28 @@ defmodule SharkAttack.AutoRescind do
     query =
       from(
         l in AutoRescind,
-        where: l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now(),
+        where:
+          l.status == "ACTIVE"
+          and (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
         select: l
       )
+      |> _get_offers_to_rescind
+  end
 
+  defp _get_offers_to_rescind(query) do
     Repo.all(query)
+    |> Enum.filter(fn offer ->
+      if is_nil(offer.max_ltf) do
+        true
+      else
+        loan = SharkAttack.Offers.get_offer(offer.loan_id) |> Repo.preload(:collection)
+        # Beware that floor price is in SOL while that loan.amount is in Lamports
+        fp = SharkAttack.FloorWorker.get_floor_price(loan.collection)
+        current_ltf = ((loan.amount/ 1_000_000_000) / fp) * 100
+        Logger.debug("Floor price #{inspect(fp)} with LTF #{inspect(current_ltf)}")
+        current_ltf > offer.max_ltf
+      end
+    end)
   end
 
   def rescind_offers([]), do: :ok

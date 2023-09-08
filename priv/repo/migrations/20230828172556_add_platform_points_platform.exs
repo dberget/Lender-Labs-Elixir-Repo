@@ -1,4 +1,4 @@
-defmodule SharkAttack.Repo.Migrations.AddPlatformPoints do
+defmodule SharkAttack.Repo.Migrations.AddPlatformPointsPlatform do
   use Ecto.Migration
 
   def change do

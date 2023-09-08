@@ -17,6 +17,7 @@ defmodule SharkAttack.Loans.AutoRescind do
     field(:nonce_account, :string)
     field(:encoded_transaction, :string)
     field(:end_time, :utc_datetime)
+    field(:max_ltf, :float)
     field(:status, :string)
 
     timestamps()
@@ -25,7 +26,7 @@ defmodule SharkAttack.Loans.AutoRescind do
   @doc false
   def changeset(params, attrs) do
     params
-    |> cast(attrs, [:user_address, :loan_id, :nonce_account, :encoded_transaction, :end_time, :status])
+    |> cast(attrs, [:user_address, :loan_id, :nonce_account, :encoded_transaction, :end_time, :max_ltf, :status])
     |> validate_required([])
     |> unique_constraint(:nonce_account)
   end
