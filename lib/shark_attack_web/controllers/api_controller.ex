@@ -287,13 +287,8 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_ll_volume(conn, _params) do
-    offers =
-      SharkAttack.Offers.last_two_weeks()
-      |> Enum.map(& &1.loan_address)
-      |> MapSet.new()
-
     loans = SharkAttack.LoansWorker.get_all_loans()
-    ll_loans = loans |> Enum.filter(&MapSet.member?(offers, &1["pubkey"]))
+    ll_loans = loans |> Enum.filter(& &1["is_ll_offer"])
 
     data = %{
       activeLoans: Enum.count(ll_loans),
