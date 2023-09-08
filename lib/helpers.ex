@@ -41,4 +41,14 @@ defmodule SharkAttack.Helpers do
   def parse_response(res) do
     res
   end
+
+  def safe_string_to_integer(nil), do: nil
+
+  def safe_string_to_integer(value) when is_integer(value) do
+    value
+  end
+
+  def safe_string_to_integer(str) when is_binary(str) do
+    String.to_integer(str)
+  end
 end

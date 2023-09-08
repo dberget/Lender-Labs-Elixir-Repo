@@ -919,7 +919,8 @@ defmodule SharkAttackWeb.ApiController do
         params["loan_id"],
         params["nonce_account"],
         params["transaction"],
-        String.to_integer(params["duration"])
+        SharkAttack.Helpers.safe_string_to_integer(params["duration"]),
+        SharkAttack.Helpers.safe_string_to_integer(params["max_ltf"])
       )
 
     conn |> json(res)
