@@ -1,6 +1,5 @@
 defmodule SharkAttackWeb.ApiController do
   alias SharkAttack.SharkyApi
-  alias SharkAttack.Helpers
   use SharkAttackWeb, :controller
 
   def index(conn, _params) do
