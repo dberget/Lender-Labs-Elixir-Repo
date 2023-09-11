@@ -39,6 +39,7 @@ defmodule SharkAttack.Tensor do
           slugDisplay # What's displayed in the URL on tensor.trade
           statsV2 { # TensorSwap + HadeSwap + Elixir
             buyNowPrice
+            buyNowPriceNetFees
             sellNowPrice
             sellNowPriceNetFees
             floor1h
