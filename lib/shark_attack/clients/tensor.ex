@@ -38,13 +38,11 @@ defmodule SharkAttack.Tensor do
           slugMe # MagicEden's symbol
           slugDisplay # What's displayed in the URL on tensor.trade
           statsV2 { # TensorSwap + HadeSwap + Elixir
+            buyNowPrice
             sellNowPrice
             sellNowPriceNetFees
-          }
-          statsOverall { # Across pools & marketplace listings
             floor1h
             floor7d
-            floorPrice
             numListed
             sales1h
             sales24h
@@ -337,24 +335,26 @@ defmodule SharkAttack.Tensor do
       end
 
     project_stats
-    |> Enum.map(fn %{
-                     "slugMe" => slugMe,
-                     "slug" => tensorSlug,
-                     "statsOverall" => stats,
-                     "statsV2" => prices
-                   } ->
-      case stats do
-        nil ->
-          {slugMe, %{stats: %{}, slug: tensorSlug}}
+    |> Enum.map(
+      #  "statsOverall" => stats,
+      fn %{
+           "slugMe" => slugMe,
+           "slug" => tensorSlug,
+           "statsV2" => stats
+         } ->
+        case stats do
+          nil ->
+            {slugMe, %{stats: %{}, slug: tensorSlug}}
 
-        _ ->
-          {slugMe,
-           %{
-             stats: stats |> Map.put("sellPrice", prices["sellNowPriceNetFees"]),
-             slug: tensorSlug
-           }}
+          _ ->
+            {slugMe,
+             %{
+               stats: stats |> Map.put("floorPrice", stats["buyNowPrice"]),
+               slug: tensorSlug
+             }}
+        end
       end
-    end)
+    )
     |> Map.new()
   end
 

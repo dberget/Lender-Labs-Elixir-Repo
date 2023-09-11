@@ -12,6 +12,7 @@ defmodule SharkAttack.AutoRescind do
 
   defp try_overwrite_auto_rescind(loan_id) do
     post = Repo.get_by(AutoRescind, loan_id: loan_id, status: "ACTIVE")
+
     cond do
       is_nil(post) -> :ok
       true -> close_nonce_accounts([post.nonce_account], "UPDATED")
@@ -20,7 +21,10 @@ defmodule SharkAttack.AutoRescind do
 
   def insert_auto_rescind(user_address, loan_id, nonce_account, transaction, duration, max_ltf) do
     try_overwrite_auto_rescind(loan_id)
-    end_time = if(is_nil(duration), do: nil, else: DateTime.utc_now() |> DateTime.add(duration, :minute))
+
+    end_time =
+      if(is_nil(duration), do: nil, else: DateTime.utc_now() |> DateTime.add(duration, :minute))
+
     %AutoRescind{}
     |> AutoRescind.changeset(%{
       user_address: user_address,
@@ -70,7 +74,12 @@ defmodule SharkAttack.AutoRescind do
     Repo.all(query)
     # map each loan to its nonce account
     |> Enum.map(fn offer ->
-      remaining = if(is_nil(offer.end_time), do: nil, else: DateTime.diff(offer.end_time, DateTime.utc_now(), :minute))
+      remaining =
+        if(is_nil(offer.end_time),
+          do: nil,
+          else: DateTime.diff(offer.end_time, DateTime.utc_now(), :minute)
+        )
+
       %{
         "loan_id" => offer.loan_id,
         "nonce_account" => offer.nonce_account,
@@ -82,28 +91,26 @@ defmodule SharkAttack.AutoRescind do
 
   def get_offers_to_rescind(user_address) do
     # get all the offers in AutoRescind that are ACTIVE and have a end_time in the past
-    query =
-      from(
-        l in AutoRescind,
-        where:
-          l.status == "ACTIVE" and l.user_address == ^user_address
-          and (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
-        select: l
-      )
-      |> _get_offers_to_rescind
+    from(
+      l in AutoRescind,
+      where:
+        l.status == "ACTIVE" and l.user_address == ^user_address and
+          (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
+      select: l
+    )
+    |> _get_offers_to_rescind
   end
 
   def get_offers_to_rescind() do
     # get all the offers in AutoRescind that are ACTIVE and have a end_time in the past
-    query =
-      from(
-        l in AutoRescind,
-        where:
-          l.status == "ACTIVE"
-          and (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
-        select: l
-      )
-      |> _get_offers_to_rescind
+    from(
+      l in AutoRescind,
+      where:
+        l.status == "ACTIVE" and
+          (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
+      select: l
+    )
+    |> _get_offers_to_rescind
   end
 
   defp _get_offers_to_rescind(query) do
@@ -115,7 +122,7 @@ defmodule SharkAttack.AutoRescind do
         loan = SharkAttack.Offers.get_offer(offer.loan_id)
         # Beware that floor price is in SOL while that loan.amount is in Lamports
         fp = SharkAttack.FloorWorker.get_floor_price(loan.collection_id)
-        current_ltf = ((loan.amount/ 1_000_000_000) / fp) * 100
+        current_ltf = loan.amount / 1_000_000_000 / fp * 100
         Logger.debug("Floor price #{inspect(fp)} with LTF #{inspect(current_ltf)}")
         current_ltf > offer.max_ltf
       end
@@ -139,11 +146,18 @@ defmodule SharkAttack.AutoRescind do
         true ->
           Logger.info("Revoking offer #{offer.loan_id}")
 
-          SharkAttack.Helpers.do_post_request(
-            "http://localhost:5001/revoke_offer",
-            %{encodedTx: offer.encoded_transaction, nonceAccount: offer.nonce_account}
-          )
-          |> parse_rescind_response(offer)
+          case SharkAttack.Helpers.do_post_request(
+                 "http://localhost:5001/revoke_offer",
+                 %{encodedTx: offer.encoded_transaction, nonceAccount: offer.nonce_account}
+               )
+               |> parse_rescind_response(offer) do
+            :ok ->
+              SharkAttack.Events.send_offer_rescinded_event(fetched_offer)
+              SharkAttack.LoansWorker.delete_loan(offer.loan_id)
+
+            :error ->
+              :error
+          end
       end
     end
   end
@@ -175,7 +189,8 @@ defmodule SharkAttack.AutoRescind do
 
   defp parse_rescind_response(%{"resp" => %{"error" => reason}}, offer) do
     Logger.info("Unable to revoke offer #{offer.loan_id} because #{reason}")
-    :ok
+
+    :error
   end
 
   defp parse_rescind_response({:error, reason}, _) do

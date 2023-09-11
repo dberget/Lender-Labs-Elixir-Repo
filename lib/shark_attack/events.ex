@@ -11,6 +11,18 @@ defmodule SharkAttack.Events do
     end
   end
 
+  def send_offer_rescinded_event(offer) do
+    message =
+      SharkAttack.Notifications.NotificationHelpers.build_message(
+        "OFFER_RESCINDED",
+        offer
+      )
+
+    if message do
+      SharkAttack.Notifications.NotificationHelpers.send_message(message)
+    end
+  end
+
   def insert_loan_event(type, platform, data) do
     SharkAttack.Repo.insert(%SharkAttack.Events.LoanEvents{
       type: type,

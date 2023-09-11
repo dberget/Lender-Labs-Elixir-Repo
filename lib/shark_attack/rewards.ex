@@ -20,16 +20,7 @@ defmodule SharkAttack.Rewards do
   def create_borrow_entry(data) do
     is_ll_offer = SharkAttack.Clients.Helius.has_turtles(data["lender"], 0) > 0
 
-    base_multiplier = 1
-
-    platform_borrow = base_multiplier * 2
-
-    multiplier =
-      if is_ll_offer do
-        platform_borrow * 2
-      else
-        platform_borrow
-      end
+    multiplier = if is_ll_offer, do: 2, else: 1
 
     points = calculate_points(data, multiplier)
 

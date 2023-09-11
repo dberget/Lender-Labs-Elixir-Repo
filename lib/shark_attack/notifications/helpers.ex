@@ -32,6 +32,14 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       _ ->
         :ok
     end
+
+    case check_is_user_and_subscribed?(lender, :loan_repaid) do
+      {:user, discordId} ->
+        send_message({:user, discordId, embed})
+
+      _ ->
+        :ok
+    end
   end
 
   def send_message({:dao, address, embed}) do
@@ -91,8 +99,27 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     end
   end
 
+  def build_message("OFFER_RESCINDED", offer) do
+    lender = Map.get(offer, :lender, Map.get(offer, "lender"))
+
+    case check_is_user_and_subscribed?(
+           lender,
+           :loan_repaid
+         ) do
+      false ->
+        nil
+
+      {:dao, address} ->
+        {:dao, address, build_revoked_offer_embed(offer)}
+
+      {:user, discordId} ->
+        {:user, discordId, build_revoked_offer_embed(offer)}
+    end
+  end
+
   def build_message("UNKNOWN", loan) do
     Logger.warn("Unknown loan: #{inspect(loan)}")
+
     # repaid_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(3)
     # new_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(4)
 
@@ -149,6 +176,24 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
       {:user, discordId} ->
         {:user, discordId, build_take_loan_embed(loan)}
+    end
+  end
+
+  def build_message("AUTO_RESCINDED", offer) do
+    lender = Map.get(offer, :lender, Map.get(offer, "lender"))
+
+    case check_is_user_and_subscribed?(
+           lender,
+           :loan_taken
+         ) do
+      false ->
+        nil
+
+      {:dao, address} ->
+        {:dao, address, build_take_loan_embed(offer)}
+
+      {:user, discordId} ->
+        {:user, discordId, build_take_loan_embed(offer)}
     end
   end
 
@@ -311,6 +356,49 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           value:
             Timex.Duration.from_erl({0, round(duration), 0})
             |> Timex.format_duration(:humanized)
+        }
+      ]
+    }
+  end
+
+  def build_revoked_offer_embed(offer) do
+    c =
+      case SharkAttack.Collections.get_collection(offer.collection_id) do
+        nil ->
+          %Collections.Collection{
+            id: nil,
+            name: "Unknown",
+            logo: nil
+          }
+
+        c ->
+          c
+      end
+
+    offer_amount = offer.amount / 1_000_000_000
+
+    fp = SharkAttack.FloorWorker.get_floor_price(c)
+
+    %Nostrum.Struct.Embed{
+      author: %Nostrum.Struct.Embed.Author{
+        name: "Lender Labs",
+        url: "https://lenderlabs.xyz"
+      },
+      thumbnail: %Nostrum.Struct.Embed.Thumbnail{
+        url: get_thumbnail_url(c)
+      },
+      color: 5_815_448,
+      title: "**#{c.name}** Offer Auto-Rescinded",
+      fields: [
+        %Nostrum.Struct.Embed.Field{
+          name: "Offer Value",
+          value: "#{Number.Delimit.number_to_delimited(offer_amount)} ◎",
+          inline: true
+        },
+        %Nostrum.Struct.Embed.Field{
+          name: "LTF",
+          inline: true,
+          value: (offer_amount / fp * 100) |> Number.Percentage.number_to_percentage(precision: 0)
         }
       ]
     }
