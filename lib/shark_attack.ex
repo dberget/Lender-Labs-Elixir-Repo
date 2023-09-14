@@ -22,16 +22,20 @@ defmodule SharkAttack do
         buyNowPrice:
           Map.get(SharkAttack.FloorWorker.get_volume(c), "buyNowPriceNetFees", 0)
           |> SharkAttack.Helpers.safe_string_to_integer()
+          |> divide_lamports(),
+        sellNowPrice:
+          Map.get(SharkAttack.FloorWorker.get_volume(c), "sellNowPriceNetFees", 0)
+          |> SharkAttack.Helpers.safe_string_to_integer()
           |> divide_lamports()
       }
     end)
-    |> Enum.reject(fn c -> is_nil(c.bestOffer) or is_nil(c.buyNowPrice) end)
-    |> Enum.filter(fn c -> c.bestOffer > c.buyNowPrice end)
   end
 
   def get_best_offer(c, loans) do
     {_ob, collection_loans} =
-      Enum.find(loans, {nil, []}, fn l -> elem(l, 0) == c.sharky_address end)
+      Enum.find(loans, {nil, []}, fn l ->
+        elem(l, 0) == c.sharky_address or elem(l, 0) == c.foxy_address
+      end)
 
     offers =
       collection_loans
