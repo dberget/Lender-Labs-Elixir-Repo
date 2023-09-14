@@ -16,19 +16,30 @@ defmodule SharkAttack do
     collections = SharkAttack.Collections.list_collections()
 
     Enum.map(collections, fn c ->
+      floor_price =
+        Map.get(SharkAttack.FloorWorker.get_volume(c), "buyNowPriceNetFees", 0)
+        |> SharkAttack.Helpers.safe_string_to_integer()
+        |> divide_lamports()
+
+      sell_now_price =
+        Map.get(SharkAttack.FloorWorker.get_volume(c), "sellNowPriceNetFees", 0)
+        |> SharkAttack.Helpers.safe_string_to_integer()
+        |> divide_lamports()
+
+      best_offer = get_best_offer(c, loans)
+
       %{
         name: c.name,
-        bestOffer: get_best_offer(c, loans),
-        buyNowPrice:
-          Map.get(SharkAttack.FloorWorker.get_volume(c), "buyNowPriceNetFees", 0)
-          |> SharkAttack.Helpers.safe_string_to_integer()
-          |> divide_lamports(),
-        sellNowPrice:
-          Map.get(SharkAttack.FloorWorker.get_volume(c), "sellNowPriceNetFees", 0)
-          |> SharkAttack.Helpers.safe_string_to_integer()
-          |> divide_lamports()
+        best_offer: best_offer,
+        floor_price: floor_price,
+        sell_now_price: sell_now_price,
+        ltf: calculate_current_ltf(best_offer, floor_price),
+        arb_amount: best_offer - sell_now_price,
+        volume: Map.get(SharkAttack.FloorWorker.get_volume(c), "sales24h", 0)
       }
     end)
+    |> Enum.filter(fn c -> c.floor_price > 1 and c.best_offer - c.sell_now_price > 0.01 end)
+    |> Enum.sort(fn c1, c2 -> c1.arb_amount > c2.arb_amount end)
   end
 
   def get_best_offer(c, loans) do
@@ -51,7 +62,7 @@ defmodule SharkAttack do
   end
 
   def divide_lamports(nil) do
-    nil
+    0
   end
 
   def divide_lamports(0) do
@@ -110,8 +121,12 @@ defmodule SharkAttack do
     0
   end
 
+  defp calculate_current_ltf(_, nil) do
+    0
+  end
+
   defp calculate_current_ltf(loan_amount, floor_price) do
-    (loan_amount / floor_price * 100) |> Number.Percentage.number_to_percentage(precision: 0)
+    (loan_amount / floor_price * 100) |> round
   end
 
   def get_solana_balance() do
