@@ -268,6 +268,116 @@ defmodule SharkAttack.Tensor do
     |> parse_tx_response
   end
 
+  def get_edit_pool_tx(price, pool) do
+    url = "https://api.tensor.so/graphql"
+
+    query = """
+    query TswapEditPool($pool: String!, $attachDetachMargin: AttachDetachAction, $newConfig: PoolConfig) {
+      tswapEditPoolTx(pool: $pool, attachDetachMargin: $attachDetachMargin, newConfig: $newConfig) {
+       txs {
+         lastValidBlockHeight
+         tx
+         txV0 # If this is present, use this!
+       }
+      }
+    }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          owner: "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+          attachDetachMargin: "ATTACH",
+          pool: pool,
+          newConfig: %{
+            curveType: "EXPONENTIAL",
+            delta: "0",
+            mmFeeBps: nil,
+            mmCompoundFees: nil,
+            poolType: "NFT",
+            startingPrice: price
+          }
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    Finch.request(request, SharkAttackWeb.Finch)
+    |> parse_tensor_response(nil)
+    |> parse_tx_response
+  end
+
+  def get_collection_bids() do
+    url = "https://api.tensor.so/graphql"
+
+    query = """
+    query UserTensorBidsV2($owner: String!) {
+      tswapMarginAccounts(owner: $owner) {
+        balance
+        currentActive
+        address
+        name
+        poolsAttached
+      }
+
+      userTswapOrders(owner: $owner) {
+        collName
+        slug
+        floorPrice
+        pool {
+          buyNowPrice
+          address
+          sellNowPrice
+          mmFeeBps
+          orderType
+          delta
+          poolType
+          startingPrice
+          curveType
+        }
+      }
+    }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          owner: "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm"
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    Finch.request(request, SharkAttackWeb.Finch)
+    |> parse_tensor_response(nil)
+  end
+
   defp parse_mint_response(response, mint, seller) do
     if response == :error do
       {:error, "Error fetching mint #{mint} from Tensor"}
@@ -320,6 +430,15 @@ defmodule SharkAttack.Tensor do
           %{"hswapSellNftTx" => hswap_sell_nft_tx} ->
             hswap_sell_nft_tx
 
+          %{"tcompBidTx" => tcomp_bid_tx} ->
+            tcomp_bid_tx
+
+          %{"tswapEditPoolTx" => tswapEditPoolTx} ->
+            tswapEditPoolTx
+
+          %{"userTcompBids" => bids} ->
+            bids
+
           _ ->
             {:error, "Unkown order type"}
         end
@@ -336,26 +455,23 @@ defmodule SharkAttack.Tensor do
       end
 
     project_stats
-    |> Enum.map(
-      #  "statsOverall" => stats,
-      fn %{
-           "slugMe" => slugMe,
-           "slug" => tensorSlug,
-           "statsV2" => stats
-         } ->
-        case stats do
-          nil ->
-            {slugMe, %{stats: %{}, slug: tensorSlug}}
+    |> Enum.map(fn %{
+                     "slugMe" => slugMe,
+                     "slug" => tensorSlug,
+                     "statsV2" => stats
+                   } ->
+      case stats do
+        nil ->
+          {slugMe, %{stats: %{}, slug: tensorSlug}}
 
-          _ ->
-            {slugMe,
-             %{
-               stats: stats |> Map.put("floorPrice", stats["buyNowPrice"]),
-               slug: tensorSlug
-             }}
-        end
+        _ ->
+          {slugMe,
+           %{
+             stats: stats |> Map.put("floorPrice", stats["buyNowPrice"]),
+             slug: tensorSlug
+           }}
       end
-    )
+    end)
     |> Map.new()
   end
 
