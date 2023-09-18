@@ -5,7 +5,11 @@ defmodule SharkAttackWeb.PlanController do
   def index(conn, params) do
     user = SharkAttack.Users.get_user_from_address!(params["user_address"])
 
-    plans = SharkAttack.Loans.get_user_loan_plans(user.address)
+    plans =
+      SharkAttack.Loans.get_user_loan_plans(
+        user.address,
+        Map.get(params, "all", false) === "true"
+      )
 
     conn
     |> json(plans)
@@ -28,9 +32,7 @@ defmodule SharkAttackWeb.PlanController do
         conn
         |> json(plan)
 
-      res ->
-        IO.inspect(res)
-
+      _res ->
         conn
         |> json(%{"error" => "Invalid signature"})
     end
@@ -47,8 +49,6 @@ defmodule SharkAttackWeb.PlanController do
         |> json(plan)
 
       res ->
-        IO.inspect(res)
-
         conn
         |> json(%{"error" => "Invalid signature"})
     end

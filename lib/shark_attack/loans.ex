@@ -38,10 +38,21 @@ defmodule SharkAttack.Loans do
 
   def get_loan!(address), do: Repo.get_by(Loan, loan: address)
 
-  def get_user_loan_plans(user_address) do
+  def get_user_loan_plans(user_address, true) do
     query =
       from(p in PlanSettings,
         where: p.user_address == ^user_address,
+        select: p
+      )
+
+    Repo.all(query)
+  end
+
+  def get_user_loan_plans(user_address, _) do
+    query =
+      from(p in PlanSettings,
+        where: p.user_address == ^user_address,
+        where: p.active == true,
         select: p
       )
 
