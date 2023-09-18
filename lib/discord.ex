@@ -311,6 +311,7 @@ defmodule SharkAttack.DiscordConsumer do
     case SharkAttack.Users.get_user_from_address!(account) do
       %SharkAttack.Accounts.User{} = user ->
         SharkAttack.Users.update_user(user, %{discordId: discordId})
+
         Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})
 
       nil ->

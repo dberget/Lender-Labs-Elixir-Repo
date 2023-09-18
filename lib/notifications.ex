@@ -2,10 +2,6 @@ defmodule SharkAttack.Notifications do
   require Logger
 
   def foreclosures() do
-    Logger.info("Checking for foreclosures")
-
-    # SharkAttack.DiscordConsumer.send_to_webhook("me", "Checking for foreclosures")
-
     users =
       SharkAttack.Users.get_users_with_discord_id!()
       |> Enum.filter(fn user -> Map.fetch!(user.user_settings, :loan_foreclosure) end)
@@ -23,11 +19,6 @@ defmodule SharkAttack.Notifications do
           minutesFromDefault < 10 and
             minutesFromDefault > -10
         ) do
-          # SharkAttack.DiscordConsumer.send_to_webhook(
-          #   "me",
-          #   "Sendng Foreclosure Alert to #{user.discordId} - #{minutesFromDefault} - #{loan["pubkey"]}"
-          # )
-
           SharkAttack.DiscordConsumer.create_dm_channel(user.discordId)
           |> SharkAttack.DiscordConsumer.send_foreclosure_msg(minutesFromDefault)
         end

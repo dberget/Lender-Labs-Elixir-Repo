@@ -120,27 +120,27 @@ defmodule SharkAttack.LoansWorker do
       {loan["orderBook"], loanAddress, loan["lender"], loan}
     )
 
-    # try do
-    SharkAttack.Events.send_event("TAKE_LOAN", loan)
+    try do
+      SharkAttack.Events.send_event("TAKE_LOAN", loan)
 
-    SharkAttackWeb.LoansChannel.push(loan)
+      SharkAttackWeb.LoansChannel.push(loan)
 
-    SharkAttack.Rewards.create_entry(loan)
+      SharkAttack.Rewards.create_entry(loan)
 
-    if loan["is_ll_offer"] do
-      SharkAttack.Offers.update_offer(loan["pubkey"], "taken")
+      if loan["is_ll_offer"] do
+        SharkAttack.Offers.update_offer(loan["pubkey"], "taken")
+      end
+
+      SharkAttack.Loans.create_active_loan(loan)
+    rescue
+      e ->
+        Logger.error("Error inserting new loan: #{inspect(e)}")
+
+        SharkAttack.DiscordConsumer.send_to_webhook(
+          "me",
+          "Error inserting new loan: #{inspect(e)} - #{inspect(loan)}"
+        )
     end
-
-    SharkAttack.Loans.create_active_loan(loan)
-    # rescue
-    #   e ->
-    #     Logger.error("Error inserting new loan: #{inspect(e)}")
-
-    #     SharkAttack.DiscordConsumer.send_to_webhook(
-    #       "me",
-    #       "Error inserting new loan: #{inspect(e)} - #{inspect(loan)}"
-    #     )
-    # end
   end
 
   def flush() do

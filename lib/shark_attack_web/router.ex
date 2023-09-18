@@ -21,6 +21,8 @@ defmodule SharkAttackWeb.Router do
     get("/sign", UserController, :sign)
     get("/update_purchases", UserController, :update_purchases)
     get("/user_wallets", UserController, :user_wallets)
+    get("/reset", UserController, :reset_user_cache)
+
     post("/update_user_wallet", UserController, :update_user_wallet)
     post("/save_settings", UserController, :save_settings)
     post("/remove_user_wallet", UserController, :remove_user_wallet)
@@ -28,6 +30,7 @@ defmodule SharkAttackWeb.Router do
     get("/get_user_summary", UserController, :get_user_summary)
     get("/is_holder", UserController, :is_holder)
     get("/get_user_saved_searches", UserController, :get_user_saved_searches)
+
     post("/save_user_search", UserController, :save_user_search)
     post("/create", UserController, :create)
     post("/delete_user_saved_search", UserController, :delete_user_saved_search)

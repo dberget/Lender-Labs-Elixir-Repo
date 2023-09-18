@@ -161,8 +161,6 @@ defmodule SharkAttack.FloorWorker do
     all_collections
     |> SharkAttack.Tensor.get_floor_prices()
     |> Enum.each(fn {collection, %{stats: stats, slug: tslug}} ->
-      IO.inspect(tslug)
-
       all_collections
       |> Enum.filter(&(&1.me_slug == collection))
       |> Enum.each(fn collection ->

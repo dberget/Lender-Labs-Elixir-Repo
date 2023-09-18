@@ -271,7 +271,7 @@ defmodule SharkAttack.Collections do
   def search_collection_by_name(name) do
     query =
       from(c in Collection,
-        select: map(c, [:name, :sharky_address, :id, :foxy_address, :rain_fi_id]),
+        select: map(c, [:name, :sharky_address, :id, :foxy_address, :rain_fi_id, :logo]),
         where: like(c.name, ^"%#{name}%")
       )
 

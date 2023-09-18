@@ -1,12 +1,18 @@
 defmodule SharkAttack.Rewards do
   alias SharkAttack.Offers
 
+  @double_collections [18, 215, 56, 945, 940]
+
   # This is called for all new loan events, so we need to check if its an LL offer.
   def create_entry(%{"is_ll_offer" => false}) do
     nil
   end
 
   def create_entry(loan) do
+    collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])
+
+    multiplier = if Map.get(collection, :id) in @double_collections, do: 2, else: 1
+
     SharkAttack.Points.create(%{
       event_type: "LEND",
       address: loan["lender"],

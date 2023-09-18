@@ -2,12 +2,17 @@ defmodule SharkAttack.AutoRescind do
   alias SharkAttack.{Offers, Repo}
   alias SharkAttack.Loans.AutoRescind
   alias Ecto.Changeset
+  alias SharkAttack.Loans.Offer
 
   import Ecto.Query
   require Logger
 
   def get_and_rescind_loans() do
     get_offers_to_rescind() |> rescind_offers()
+  end
+
+  def cleanup() do
+    get_taken_and_cancelled_offers() |> rescind_offers()
   end
 
   defp try_overwrite_auto_rescind(loan_id) do
@@ -113,6 +118,20 @@ defmodule SharkAttack.AutoRescind do
     |> _get_offers_to_rescind
   end
 
+  def get_taken_and_cancelled_offers do
+    from(
+      l in AutoRescind,
+      where:
+        l.status == "ACTIVE" and
+          (is_nil(l.end_time) or l.end_time < ^DateTime.utc_now()),
+      select: l,
+      join: o in Offer,
+      on: o.loan_address == l.loan_id,
+      where: o.rescinded == 1 or o.taken == 1
+    )
+    |> Repo.all()
+  end
+
   defp _get_offers_to_rescind(query) do
     Repo.all(query)
     |> Enum.filter(fn offer ->
@@ -122,8 +141,11 @@ defmodule SharkAttack.AutoRescind do
         loan = SharkAttack.Offers.get_offer(offer.loan_id)
         # Beware that floor price is in SOL while that loan.amount is in Lamports
         fp = SharkAttack.FloorWorker.get_floor_price(loan.collection_id)
+
         current_ltf = loan.amount / 1_000_000_000 / fp * 100
+
         Logger.debug("Floor price #{inspect(fp)} with LTF #{inspect(current_ltf)}")
+
         current_ltf > offer.max_ltf
       end
     end)

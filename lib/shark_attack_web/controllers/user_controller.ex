@@ -75,6 +75,13 @@ defmodule SharkAttackWeb.UserController do
     end
   end
 
+  def reset_user_cache(conn, %{"pk" => address}) do
+    SharkAttack.Clients.Helius.clear_cache(address)
+
+    conn
+    |> json("ok")
+  end
+
   def get_user_summary(conn, params) do
     user = SharkAttack.Users.get_user_from_address!(params["address"])
     last_called = SharkAttack.RateLimiter.get(params["address"])

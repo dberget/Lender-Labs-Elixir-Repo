@@ -19,12 +19,18 @@ defmodule SharkAttackWeb.PlanController do
           |> Map.put("max_ltf", params["max_ltf"])
           |> Map.put("max_amount", params["max_amount"])
           |> Map.put("collection_id", params["collection_id"])
+          |> Map.put("style", params["style"])
+          |> Map.put("min_amount", params["min_amount"])
+          |> Map.put("max_loans", params["max_loans"])
+          |> Map.put("active", params["active"])
           |> SharkAttack.Loans.create_plan_settings()
 
         conn
         |> json(plan)
 
-      _res ->
+      res ->
+        IO.inspect(res)
+
         conn
         |> json(%{"error" => "Invalid signature"})
     end
@@ -40,7 +46,9 @@ defmodule SharkAttackWeb.PlanController do
         conn
         |> json(plan)
 
-      _res ->
+      res ->
+        IO.inspect(res)
+
         conn
         |> json(%{"error" => "Invalid signature"})
     end
