@@ -288,6 +288,7 @@ defmodule SharkAttackWeb.ApiController do
 
   def get_ll_volume(conn, _params) do
     loans = SharkAttack.LoansWorker.get_all_loans()
+
     ll_loans = loans |> Enum.filter(& &1["is_ll_offer"])
 
     data = %{
@@ -774,6 +775,11 @@ defmodule SharkAttackWeb.ApiController do
   def get_daily_volume(conn, _params) do
     conn
     |> json(%{data: SharkAttack.Stats.get_daily_volume()})
+  end
+
+  def get_foreclosure_summary(conn, _params) do
+    conn
+    |> json(%{data: SharkAttack.Stats.get_foreclosure_summary()})
   end
 
   def get_sharky_indexes(conn, params) do

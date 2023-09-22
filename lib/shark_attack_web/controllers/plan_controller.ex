@@ -18,8 +18,10 @@ defmodule SharkAttackWeb.PlanController do
   def save(conn, params) do
     case SharkAttack.SharkyApi.verify(params["msg"], params["user_address"]) do
       %{"verify" => true} ->
+        user = SharkAttack.Users.get_user_from_address!(params["user_address"])
+
         {:ok, plan} =
-          %{"user_address" => params["user_address"]}
+          %{"user_address" => user.address}
           |> Map.put("max_ltf", params["max_ltf"])
           |> Map.put("max_amount", params["max_amount"])
           |> Map.put("collection_id", params["collection_id"])
@@ -41,6 +43,8 @@ defmodule SharkAttackWeb.PlanController do
   def update(conn, params) do
     case SharkAttack.SharkyApi.verify(params["msg"], params["user_address"]) do
       %{"verify" => true} ->
+        params = Map.drop(params, ["user_address"])
+
         {:ok, plan} =
           SharkAttack.Loans.get_plan_settings!(params["id"])
           |> SharkAttack.Loans.update_plan_settings(params)

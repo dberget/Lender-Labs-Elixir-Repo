@@ -1,7 +1,7 @@
 defmodule SharkAttack.Rewards do
   alias SharkAttack.Offers
 
-  @double_collections [18, 215, 56, 945, 940]
+  @double_collections [215, 18, 371, 367, 276, 19, 73, 678]
 
   # This is called for all new loan events, so we need to check if its an LL offer.
   def create_entry(%{"is_ll_offer" => false}) do
@@ -10,13 +10,12 @@ defmodule SharkAttack.Rewards do
 
   def create_entry(loan) do
     collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])
-
     multiplier = if Map.get(collection, :id) in @double_collections, do: 2, else: 1
 
     SharkAttack.Points.create(%{
       event_type: "LEND",
       address: loan["lender"],
-      amount: calculate_points(loan, 1),
+      amount: calculate_points(loan, multiplier),
       source: loan["pubkey"],
       platform: loan["platform"]
     })
@@ -27,6 +26,9 @@ defmodule SharkAttack.Rewards do
     is_ll_offer = SharkAttack.Clients.Helius.has_turtles(data["lender"], 0) > 0
 
     multiplier = if is_ll_offer, do: 2, else: 1
+
+    multiplier =
+      if data["collection_id"] in @double_collections, do: multiplier * 2, else: multiplier
 
     points = calculate_points(data, multiplier)
 

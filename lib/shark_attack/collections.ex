@@ -158,6 +158,8 @@ defmodule SharkAttack.Collections do
       nil ->
         case Integer.parse(address) do
           {id, ""} ->
+            Logger.warn(id, label: "GETTING COLLECTION BY ID")
+
             get_collection(id)
 
           :error ->
@@ -196,14 +198,6 @@ defmodule SharkAttack.Collections do
 
   def get_collection(id, _platform) do
     get_collection(id)
-  end
-
-  def insert_new_collection(%{sharky_address: pubkey} = attrs) do
-    collection = get_collection(pubkey)
-
-    if is_nil(collection) do
-      create_collection(attrs)
-    end
   end
 
   def get_and_update_collection(%{sharky_address: pubkey} = attrs) do
@@ -252,6 +246,22 @@ defmodule SharkAttack.Collections do
     end
   end
 
+  def get_and_update_collection(%{me_slug: slug} = attrs) do
+    collection = get_collection_by_me_slug(slug)
+
+    if is_nil(collection) do
+      IO.inspect("No matching collection found - #{slug}")
+
+      attrs
+    else
+      collection = %Collection{id: collection.id}
+
+      update_collection(collection, attrs)
+
+      nil
+    end
+  end
+
   def get_and_update_collection(%{name: name} = attrs) do
     collection = get_collection_by_name(name)
 
@@ -284,6 +294,14 @@ defmodule SharkAttack.Collections do
 
   def get_collection_by_name(name) do
     Repo.get_by(Collection, name: name)
+  end
+
+  def get_collection_by_me_slug(nil) do
+    nil
+  end
+
+  def get_collection_by_me_slug(slug) do
+    Repo.get_by(Collection, me_slug: slug)
   end
 
   def update_collection_mint_list(sharky_address) do
@@ -380,6 +398,59 @@ defmodule SharkAttack.Collections do
             sharky_address: collection["pubkey"],
             duration: collection["duration"],
             apy: collection["apy"]
+          }
+
+          SharkAttack.Collections.get_and_update_collection(data)
+        end
+      end
+    end)
+  end
+
+  def validate_rain_fi_collections(insert \\ false) do
+    rain_collections = SharkAttack.Helpers.do_get_request("https://api.rain.fi/collections/all")
+
+    collections = list_collections()
+
+    Enum.map(rain_collections, fn collection ->
+      existing_collection =
+        Enum.find(collections, fn c -> c.rain_fi_id == collection["collection_id"] end)
+
+      if is_nil(existing_collection) do
+        Logger.error(
+          "Collection not found or needs update - #{collection["collection_name"]} - #{collection["collection_id"]}"
+        )
+
+        if insert do
+          data = %{
+            name: collection["collection_name"],
+            rain_fi_id: collection["collection_id"],
+            me_slug: collection["collection_name_me"]
+          }
+
+          SharkAttack.Collections.get_and_update_collection(data)
+        end
+      end
+    end)
+  end
+
+  def validate_frakt_collections(insert \\ false) do
+    frakt_collections = SharkAttack.Frakt.get_bonds_preview()
+
+    collections = list_collections()
+
+    Enum.map(frakt_collections, fn collection ->
+      existing_collection =
+        Enum.find(collections, fn c -> c.frakt_address == collection["marketPubkey"] end)
+
+      if is_nil(existing_collection) do
+        Logger.error(
+          "Collection not found or needs update - #{collection["collectionName"]} - #{collection["marketPubkey"]}"
+        )
+
+        if insert do
+          data = %{
+            name: collection["collectionName"],
+            frakt_address: collection["marketPubkey"]
           }
 
           SharkAttack.Collections.get_and_update_collection(data)

@@ -236,6 +236,12 @@ defmodule SharkAttack.Loans do
     end)
   end
 
+  def update_or_insert_completed_loan(%Loan{} = attrs) do
+    attrs
+    |> Map.from_struct()
+    |> update_or_insert_completed_loan()
+  end
+
   def update_or_insert_completed_loan(attrs \\ %{}) do
     loanAddress =
       Map.get(

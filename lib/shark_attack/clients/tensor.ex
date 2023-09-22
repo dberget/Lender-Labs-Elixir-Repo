@@ -43,6 +43,7 @@ defmodule SharkAttack.Tensor do
             sellNowPrice
             sellNowPriceNetFees
             floor1h
+            floor24h
             floor7d
             numListed
             sales1h

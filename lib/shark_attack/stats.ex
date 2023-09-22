@@ -184,6 +184,10 @@ defmodule SharkAttack.Stats do
     Repo.all(SharkAttack.Stats.PlatformVolume)
   end
 
+  def get_foreclosure_summary() do
+    Repo.all(SharkAttack.Stats.ForecloseSummaryView)
+  end
+
   def format_historical_loan(loan, "CITRUS") do
     foreclosed_date =
       if loan["state"] == "defaulted" do

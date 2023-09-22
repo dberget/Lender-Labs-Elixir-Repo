@@ -122,7 +122,15 @@ defmodule SharkAttack.LoansWorker do
 
     try do
       SharkAttack.Events.send_event("TAKE_LOAN", loan)
+    rescue
+      e ->
+        SharkAttack.DiscordConsumer.send_to_webhook(
+          "me",
+          "Error sending event: #{inspect(e)} - #{inspect(loan)}"
+        )
+    end
 
+    try do
       SharkAttackWeb.LoansChannel.push(loan)
 
       SharkAttack.Rewards.create_entry(loan)
@@ -308,8 +316,6 @@ defmodule SharkAttack.LoansWorker do
         if loan["state"] in ["taken", "active"] do
           insert_loan(loan)
         else
-          IO.inspect(loanData)
-
           handle_retry(loanData, attempts, :add_new_loan)
         end
     end
