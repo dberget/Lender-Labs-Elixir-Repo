@@ -158,7 +158,7 @@ defmodule SharkAttack.Collections do
       nil ->
         case Integer.parse(address) do
           {id, ""} ->
-            Logger.warn(id, label: "GETTING COLLECTION BY ID")
+            Logger.warn("GETTING #{id} COLLECTION BY ID")
 
             get_collection(id)
 

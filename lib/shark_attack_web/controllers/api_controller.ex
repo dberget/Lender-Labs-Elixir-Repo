@@ -226,6 +226,15 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(%{loans: loans, summary: summary})
   end
 
+  def get_collection_trading_history(conn, params) do
+    collection = SharkAttack.Collections.get_collection(params["collection_id"])
+
+    history = SharkAttack.Tensor.get_trading_history(collection.me_slug)
+
+    conn
+    |> json(history)
+  end
+
   def get_all_loans(conn, _params) do
     loans = SharkAttack.LoansWorker.get_all_loan_data()
 
@@ -880,10 +889,17 @@ defmodule SharkAttackWeb.ApiController do
          %{"amountSol" => 0, "state" => "waitingForBorrower"} = loan,
          fp
        ) do
+    ltv_amount = get_in(loan, ["rawData", "ltvTerms", "ltvBps"]) / 10000 * fp
+    max_offer = get_in(loan, ["rawData", "ltvTerms", "maxOffer"]) / 1_000_000_000
+
     Map.put(
       loan,
       "amountSol",
-      get_in(loan, ["rawData", "ltvTerms", "ltvBps"]) / 10000 * fp
+      if ltv_amount > max_offer do
+        max_offer
+      else
+        ltv_amount
+      end
     )
   end
 
