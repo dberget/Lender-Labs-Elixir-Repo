@@ -14,12 +14,12 @@ defmodule SharkAttack.Stats.ForecloseSummaryView do
            ]}
   schema "foreclose_summary_view" do
     field(:orderBook, :string)
-    field(:foreclose_count_7_days, :string)
-    field(:foreclose_count_14_days, :string)
-    field(:foreclose_count_30_days, :string)
+    field(:foreclose_count_7_days, :integer)
+    field(:foreclose_count_14_days, :integer)
+    field(:foreclose_count_30_days, :integer)
 
-    field(:total_count_7_days, :string)
-    field(:total_count_14_days, :string)
-    field(:total_count_30_days, :string)
+    field(:total_count_7_days, :integer)
+    field(:total_count_14_days, :integer)
+    field(:total_count_30_days, :integer)
   end
 end

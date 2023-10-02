@@ -628,14 +628,14 @@ defmodule SharkAttack.Tensor do
     unix_now = :os.system_time(:seconds)
 
     url =
-      "https://api-tradingview.tensor.so/tv/history?symbol=#{slug}/SOL&resolution=1D&from=1&to=#{unix_now}&countback=45"
+      "https://api-tradingview.tensor.so/tv/history?symbol=#{slug}/SOL&resolution=1D&from=1&to=#{unix_now}&countback=60"
 
     SharkAttack.Helpers.do_get_request(url, [
       {"content-type", "application/json"},
       {"X-TENSOR-API-KEY", "e7b23445-cb60-4faa-8939-d3c571cd2fd7"}
     ])
+    |> Map.drop(["s"])
 
-    # |> Map.drop(["s"])
     # |> Map.values()
     # |> Enum.zip()
     # {0.8528, 0.9, 0.79, 0.9, 1695254400, 27.792762273},

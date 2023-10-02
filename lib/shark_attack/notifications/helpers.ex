@@ -17,7 +17,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     "9XNM15JpPsrWEJY5khpkZVPpm5efV8xwP5dKJK1Kizng",
     "DaoSLP3h2ubiXqt7XS64E9xp4XrVjH3DXfr3TMjcL964",
     "6uvQA5YweWbKJ9RFvY4wLzVgoqwKj1LFuAvEZbExroHs",
-    "6bdFUQnmu247AjBt8HKWfxyCmsQd749VXQPES7jFfAp3"
+    "6bdFUQnmu247AjBt8HKWfxyCmsQd749VXQPES7jFfAp3",
+    "HKpSv1PwstmFNFCawL77eijJcPPCFcoYdeMLJ9CEDZJt"
   ]
 
   def send_message({:foreclosure, lender, embed}) do
