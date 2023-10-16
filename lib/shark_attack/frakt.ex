@@ -1,12 +1,14 @@
 defmodule SharkAttack.Frakt do
   def get_bonds_preview() do
-    SharkAttack.Helpers.do_get_request("http://api.frakt.xyz/bonds/preview")
+    SharkAttack.Helpers.do_get_request(
+      "https://api.banx.gg/bonds/preview?isPrivate=false&getAll=true"
+    )
   end
 
   def save_frakt_collections do
     pools = get_bonds_preview()
 
-    Enum.map(pools, fn pool ->
+    Enum.map(pools["data"], fn pool ->
       data = %{
         name: pool["collectionName"],
         frakt_address: pool["marketPubkey"]

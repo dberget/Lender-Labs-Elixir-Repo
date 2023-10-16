@@ -194,6 +194,18 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  # username: pipe
+  def send_to_webhook(
+        "FpMR2hZXhn56XLguxUMyuadNrzAnJSzFGfBSVka5yXbq",
+        embed
+      ) do
+    Api.execute_webhook(
+      "1159532033656233995",
+      "JUQG7WooSnGE0DHBWHQY6FwXX2I168MHevYalCK-btdEhWJGxhoKINvv5txn0Hm6zxqK",
+      %{embeds: [embed]}
+    )
+  end
+
   # Akhil
   def send_to_webhook(
         "HKpSv1PwstmFNFCawL77eijJcPPCFcoYdeMLJ9CEDZJt",

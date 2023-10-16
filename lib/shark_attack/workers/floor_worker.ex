@@ -156,7 +156,8 @@ defmodule SharkAttack.FloorWorker do
 
   def update_floor_prices() do
     all_collections = SharkAttack.Collections.list_collections()
-    advanced_stats = SharkAttack.Collections.get_collection_advanced_stats()
+    # advanced_stats = SharkAttack.Collections.get_collection_advanced_stats()
+    advanced_stats = []
 
     all_collections
     |> SharkAttack.Tensor.get_floor_prices()

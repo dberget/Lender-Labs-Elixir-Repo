@@ -9,8 +9,9 @@ defmodule SharkAttack.Rewards do
   end
 
   def create_entry(loan) do
-    collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])
-    multiplier = if Map.get(collection, :id) in @double_collections, do: 2, else: 1
+    # collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])
+
+    multiplier = 1
 
     SharkAttack.Points.create(%{
       event_type: "LEND",
