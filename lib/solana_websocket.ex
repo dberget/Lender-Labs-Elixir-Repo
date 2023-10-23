@@ -3,7 +3,7 @@ defmodule SharkAttack.SolanaWS do
 
   require Logger
 
-  def start_link(opts) do
+  def start_link(_opts) do
     # Logger.info("Starting SolanaWS")
 
     # start_result =

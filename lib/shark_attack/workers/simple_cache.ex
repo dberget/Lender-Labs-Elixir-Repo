@@ -21,9 +21,6 @@ defmodule SharkAttack.SimpleCache do
     end
   end
 
-  @doc """
-  Lookup a cached result and check the freshness
-  """
   defp lookup(mod, fun, args) do
     case :ets.lookup(:simple_cache, [mod, fun, args]) do
       [result | _] -> check_freshness(result)
@@ -31,9 +28,6 @@ defmodule SharkAttack.SimpleCache do
     end
   end
 
-  @doc """
-  Compare the result expiration against the current system time.
-  """
   defp check_freshness({_mfa, result, expiration}) do
     cond do
       expiration > :os.system_time(:seconds) -> result
@@ -41,9 +35,6 @@ defmodule SharkAttack.SimpleCache do
     end
   end
 
-  @doc """
-  Apply the function, calculate expiration, and cache the result.
-  """
   defp cache_apply(mod, fun, args, ttl) do
     result = apply(mod, fun, args)
     expiration = :os.system_time(:seconds) + ttl

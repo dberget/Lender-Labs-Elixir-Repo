@@ -223,7 +223,7 @@ defmodule SharkAttack.AutoRescind do
   end
 
   defp parse_rescind_response({:error, reason}, _) do
-    Logger.warn("Error calling the node backend to rescind offer, #{inspect(reason)}")
+    Logger.warning("Error calling the node backend to rescind offer, #{inspect(reason)}")
 
     :error
   end
@@ -241,7 +241,9 @@ defmodule SharkAttack.AutoRescind do
   end
 
   defp parse_close_response({:error, reason}, _, _) do
-    Logger.warn("Error calling the node backend to close the nonce account, #{inspect(reason)}")
+    Logger.warning(
+      "Error calling the node backend to close the nonce account, #{inspect(reason)}"
+    )
 
     :error
   end

@@ -253,7 +253,7 @@ defmodule SharkAttack.Loans do
     loan =
       case loanAddress do
         nil ->
-          Logger.warn("No loan address found")
+          Logger.warning("No loan address found")
 
           nil
 

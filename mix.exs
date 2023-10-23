@@ -4,8 +4,8 @@ defmodule SharkAttack.MixProject do
   def project do
     [
       app: :shark_attack,
-      version: "0.1.7",
-      elixir: "~> 1.14",
+      version: "0.1.8",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -53,7 +53,7 @@ defmodule SharkAttack.MixProject do
       {:finch, "~> 0.10"},
       {:number, "~> 1.0.3"},
       {:cloak_ecto, "~> 1.2.0"},
-      {:nostrum, "~> 0.8.0"},
+      {:nostrum, github: "Kraigie/nostrum"},
       {:sentry, "~> 8.0"},
       {:hackney, "~> 1.8"},
       {:cors_plug, "~> 3.0"},

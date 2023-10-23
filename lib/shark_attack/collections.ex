@@ -158,7 +158,7 @@ defmodule SharkAttack.Collections do
       nil ->
         case Integer.parse(address) do
           {id, ""} ->
-            Logger.warn("GETTING #{id} COLLECTION BY ID")
+            Logger.warning("GETTING #{id} COLLECTION BY ID")
 
             get_collection(id)
 
@@ -373,18 +373,18 @@ defmodule SharkAttack.Collections do
       if !is_nil(existing_collection) do
         if existing_collection.apy != collection["apy"],
           do:
-            Logger.warn(
+            Logger.warning(
               "Update #{collection["name"]} APY - #{existing_collection.apy} to #{collection["apy"]}"
             )
 
         if existing_collection.duration != collection["duration"],
           do:
-            Logger.warn(
+            Logger.warning(
               "Update #{collection["name"]} duration -  #{existing_collection.duration} to #{collection["duration"]}"
             )
 
         if existing_collection.name != collection["name"],
-          do: Logger.warn("Update Name #{existing_collection.name} to #{collection["name"]}")
+          do: Logger.warning("Update Name #{existing_collection.name} to #{collection["name"]}")
       end
 
       if is_nil(existing_collection) do
@@ -480,21 +480,6 @@ defmodule SharkAttack.Collections do
     %Collection{}
     |> Collection.changeset(attrs)
     |> Repo.insert(on_conflict: :nothing)
-  end
-
-  def update_hyperspace_ids do
-    collections =
-      SharkAttack.Collections.list_collections()
-      |> Enum.filter(&(&1.hyperspace_id == nil))
-
-    collections
-    |> Enum.each(fn c ->
-      format_name = String.replace(c.name, " ", "") |> String.downcase()
-
-      info = SharkAttack.Hyperspace.get_collection_info(format_name)
-
-      update_hyperspace_id(c, info)
-    end)
   end
 
   def update_hyperspace_id(c, []) do

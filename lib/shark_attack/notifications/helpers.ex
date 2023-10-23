@@ -18,7 +18,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     "DaoSLP3h2ubiXqt7XS64E9xp4XrVjH3DXfr3TMjcL964",
     "6uvQA5YweWbKJ9RFvY4wLzVgoqwKj1LFuAvEZbExroHs",
     "6bdFUQnmu247AjBt8HKWfxyCmsQd749VXQPES7jFfAp3",
-    "HKpSv1PwstmFNFCawL77eijJcPPCFcoYdeMLJ9CEDZJt"
+    "HKpSv1PwstmFNFCawL77eijJcPPCFcoYdeMLJ9CEDZJt",
+    "AGdxKwRXsjsT7M6ZJ8nqNutMDkGgnHxs6NHQDXo1LiUC"
   ]
 
   def send_message({:foreclosure, lender, embed}) do
@@ -120,7 +121,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   end
 
   def build_message("UNKNOWN", loan) do
-    Logger.warn("Unknown loan: #{inspect(loan)}")
+    Logger.warning("Unknown loan: #{inspect(loan)}")
 
     # repaid_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(3)
     # new_lender = event["instructions"] |> Enum.at(1) |> Map.get("accounts") |> Enum.at(4)

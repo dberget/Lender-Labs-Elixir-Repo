@@ -481,19 +481,19 @@ defmodule SharkAttack.Tensor do
   end
 
   defp parse_tensor_response({:ok, %{status: 503, body: _body}}, info) do
-    Logger.warn("Error calling Tensor: 503 Service Unavailable, #{info}")
+    Logger.warning("Error calling Tensor: 503 Service Unavailable, #{info}")
 
     :error
   end
 
   defp parse_tensor_response({:ok, %{status: 400, body: body}}, _info) do
-    Logger.warn("Error calling Tensor: 400 Service Unavailable, #{body}")
+    Logger.warning("Error calling Tensor: 400 Service Unavailable, #{body}")
 
     :error
   end
 
   defp parse_tensor_response({:ok, %{body: body}}, info) do
-    Logger.warn("Error calling Tensor - #{info}")
+    Logger.warning("Error calling Tensor - #{info}")
 
     IO.inspect(body)
 
@@ -501,13 +501,13 @@ defmodule SharkAttack.Tensor do
   end
 
   defp parse_tensor_response({:error, %Mint.TransportError{reason: reason}}, info) do
-    Logger.warn("Error calling Tensor: #{reason}, #{info}")
+    Logger.warning("Error calling Tensor: #{reason}, #{info}")
 
     :error
   end
 
   defp parse_tensor_response({:error, _}, _) do
-    Logger.warn("Error calling Tensor")
+    Logger.warning("Error calling Tensor")
 
     :error
   end

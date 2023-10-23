@@ -1,5 +1,5 @@
 defmodule SharkAttack.AutoForeclose do
-  alias SharkAttack.{Loans, Repo}
+  alias SharkAttack.Repo
   alias SharkAttack.Loans.AutoForeclose
   alias Ecto.Changeset
 
@@ -141,7 +141,7 @@ defmodule SharkAttack.AutoForeclose do
   end
 
   defp parse_foreclose_response({:error, reason}, _) do
-    Logger.warn("Error calling the node backend to foreclose loan, #{reason}")
+    Logger.warning("Error calling the node backend to foreclose loan, #{reason}")
 
     :error
   end
@@ -159,7 +159,7 @@ defmodule SharkAttack.AutoForeclose do
   end
 
   defp parse_close_response({:error, reason}, _, _) do
-    Logger.warn("Error calling the node backend to close the nonce account, #{reason}")
+    Logger.warning("Error calling the node backend to close the nonce account, #{reason}")
 
     :error
   end

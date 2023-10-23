@@ -1,5 +1,4 @@
 defmodule SharkAttackWeb.BorrowController do
-  alias SharkAttack.SharkyApi
   alias SharkAttack.Collections
   alias SharkAttack.Repo
 

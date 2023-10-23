@@ -52,7 +52,7 @@ defmodule SharkAttackWeb.PlanController do
         conn
         |> json(plan)
 
-      res ->
+      _res ->
         conn
         |> json(%{"error" => "Invalid signature"})
     end
