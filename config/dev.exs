@@ -17,6 +17,7 @@ config :shark_attack, SharkAttack.Scheduler,
     # {"*/60 * * * *", {SharkAttack.Stats, :update_loans, []}},
     # {"*/8 * * * *", {SharkAttack.Notifications, :foreclosures, []}},
     # {"*/3 * * * *", {SharkAttack.AutoForeclose, :get_and_foreclose_loans, []}}
+    # {"*/3 * * * *", {SharkAttack.LenderFee, :batch_refund_and_collect_fees, []}},
     {"*/3 * * * *", {SharkAttack.AutoRescind, :get_and_rescind_loans, []}}
   ]
 
