@@ -4,19 +4,20 @@ defmodule SharkAttack.SolanaWS do
   require Logger
 
   def start_link(_opts) do
-    # Logger.info("Starting SolanaWS")
+    Logger.info("Starting SolanaWS")
 
-    # start_result =
-    #   WebSockex.start_link(
-    #     "wss://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/",
-    #     __MODULE__,
-    #     [],
-    #     opts
-    #   )
+    # wss://atlas-mainnet.helius-rpc.com?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42
+    # wss://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/
+    start_result =
+      WebSockex.start_link(
+        "wss://atlas-mainnet.helius-rpc.com?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42",
+        __MODULE__,
+        []
+      )
 
     # subscribe_account(SharkAttack.SolanaWS, "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP")
 
-    # start_result
+    start_result
   end
 
   def terminate(reason, state) do
@@ -27,15 +28,33 @@ defmodule SharkAttack.SolanaWS do
   def subscribe_account(client, account) do
     Logger.info("Subscribing to acount: #{account}")
 
+    # request = %{
+    #   "jsonrpc" => "2.0",
+    #   "id" => 1,
+    #   "method" => "programSubscribe",
+    #   "params" => [
+    #     account,
+    #     %{
+    #       "encoding" => "jsonParsed",
+    #       "commitment" => "finalized"
+    #     }
+    #   ]
+    # }
+
     request = %{
       "jsonrpc" => "2.0",
-      "id" => 1,
-      "method" => "programSubscribe",
+      "id" => 420,
+      "method" => "transactionSubscribe",
       "params" => [
-        account,
         %{
-          "encoding" => "jsonParsed",
-          "commitment" => "finalized"
+          "accountInclude" => ["8uDncGPHZJtFnyCktVSbdWmgt7xAiHgwq8ZmxKaK5ZJ1"]
+        },
+        %{
+          "commitment" => "processed",
+          "encoding" => "base64",
+          "transactionDetails" => "full",
+          "showRewards" => true,
+          "maxSupportedTransactionVersion" => 0
         }
       ]
     }
@@ -54,7 +73,8 @@ defmodule SharkAttack.SolanaWS do
 
     IO.puts("Received Message - Type: #{inspect(type)} -- Message:")
 
-    msg_data = get_in(message, ["params", "result", "value", "data"])
+    IO.inspect(message)
+    # msg_data = get_in(message, ["params", "result", "value", "data"])
 
     {:ok, state}
   end

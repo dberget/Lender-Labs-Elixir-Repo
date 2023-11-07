@@ -16,6 +16,10 @@ defmodule SharkAttack.LoansWorker do
     :ets.match(:collection_loans, {:_, :_, :_, :"$1"}) |> List.flatten()
   end
 
+  def cache_has_loans() do
+    :ets.tab2list(:collection_loans) != []
+  end
+
   def get_all_loans() do
     :ets.match_object(:loans, {:_, :"$1"})
     |> Enum.map(fn {_key, value} -> value end)

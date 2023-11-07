@@ -1,4 +1,6 @@
 defmodule SharkAttackWeb.ApiController do
+  alias SharkAttack.DiscordConsumer
+  alias SharkAttack.Discord
   alias SharkAttack.SharkyApi
   use SharkAttackWeb, :controller
 

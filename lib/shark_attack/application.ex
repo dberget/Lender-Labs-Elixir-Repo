@@ -19,6 +19,7 @@ defmodule SharkAttack.Application do
       SharkAttackWeb.Endpoint,
       SharkAttack.Vault,
       SharkAttack.Discord,
+      # SharkAttack.SolanaWS,
       SharkAttack.LoansWorker,
       SharkAttack.FloorWorker,
       SharkAttack.Scheduler

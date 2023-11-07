@@ -72,6 +72,20 @@ defmodule SharkAttack.DiscordConsumer do
     )
   end
 
+  def send_to_webhook("db", message) do
+    embed =
+      %Nostrum.Struct.Embed{}
+      |> put_title("Alert - #{@env |> Atom.to_string()}")
+      |> put_description(message)
+
+    # David Server
+    Api.execute_webhook(
+      "991398728835551322",
+      "-FEblslkTu7sywVh8vkJ1BycqkVZv5pmXV5ONbCQJWtY7PeRM2b61n9FmQ8NRANGlwlA",
+      %{embeds: [embed]}
+    )
+  end
+
   # anthonypacheco
   def send_to_webhook(
         "4skxqydEdR5C1BMshJKmVW1D6sxvZPK9ABVFPuBSsWbK",

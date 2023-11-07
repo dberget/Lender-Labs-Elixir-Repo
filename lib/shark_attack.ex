@@ -1,4 +1,5 @@
 defmodule SharkAttack do
+  alias SharkAttack.DiscordConsumer
   require Logger
   # %{
   #   payer: "payer-pubkey",
@@ -15,31 +16,43 @@ defmodule SharkAttack do
     loans = SharkAttack.LoansWorker.get_all_collection_loans()
     collections = SharkAttack.Collections.list_collections()
 
-    Enum.map(collections, fn c ->
-      floor_price =
-        Map.get(SharkAttack.FloorWorker.get_volume(c), "buyNowPriceNetFees", 0)
-        |> SharkAttack.Helpers.safe_string_to_integer()
-        |> divide_lamports()
+    top_five =
+      Enum.map(collections, fn c ->
+        floor_price =
+          Map.get(SharkAttack.FloorWorker.get_volume(c), "buyNowPriceNetFees", 0)
+          |> SharkAttack.Helpers.safe_string_to_integer()
+          |> divide_lamports()
 
-      sell_now_price =
-        Map.get(SharkAttack.FloorWorker.get_volume(c), "sellNowPriceNetFees", 0)
-        |> SharkAttack.Helpers.safe_string_to_integer()
-        |> divide_lamports()
+        sell_now_price =
+          Map.get(SharkAttack.FloorWorker.get_volume(c), "sellNowPriceNetFees", 0)
+          |> SharkAttack.Helpers.safe_string_to_integer()
+          |> divide_lamports()
 
-      best_offer = get_best_offer(c, loans)
+        best_offer = get_best_offer(c, loans)
 
-      %{
-        name: c.name,
-        best_offer: best_offer,
-        floor_price: floor_price,
-        sell_now_price: sell_now_price,
-        ltf: calculate_current_ltf(best_offer, floor_price),
-        arb_amount: best_offer - sell_now_price,
-        volume: Map.get(SharkAttack.FloorWorker.get_volume(c), "sales24h", 0)
-      }
-    end)
-    |> Enum.filter(fn c -> c.floor_price > 1 and c.best_offer - c.sell_now_price > 0.01 end)
-    |> Enum.sort(fn c1, c2 -> c1.arb_amount > c2.arb_amount end)
+        %{
+          name: c.name,
+          best_offer: best_offer,
+          floor_price: floor_price,
+          sell_now_price: sell_now_price,
+          ltf: calculate_current_ltf(best_offer, floor_price),
+          arb_amount: best_offer - floor_price
+        }
+      end)
+      |> Enum.filter(fn c -> c.ltf > 99 end)
+      # |> Enum.sort(fn c1, c2 -> c1.arb_amount > c2.arb_amount end)
+      |> Enum.sort_by(& &1.ltf, :desc)
+
+    if top_five |> Enum.count() > 0 do
+      DiscordConsumer.send_to_webhook(
+        "db",
+        top_five
+        |> Enum.map(
+          &"#{&1.name} - #{&1.ltf}% #{if &1.arb_amount > 0, do: "+", else: "-"}#{abs(&1.arb_amount) |> Float.round(2)} SOL"
+        )
+        |> Enum.join("\n")
+      )
+    end
   end
 
   def get_best_offer(c, loans) do
