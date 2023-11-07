@@ -954,4 +954,15 @@ defmodule SharkAttackWeb.ApiController do
     res = SharkAttack.AutoRescind.close_nonce_accounts([params["nonce_account"]])
     conn |> json(res)
   end
+
+  def track_fee(conn, params) do
+    res =
+      SharkAttack.LenderFee.insert_lender_fee(
+        params["user_address"],
+        params["loan_id"],
+        params["nonce_account"]
+      )
+
+    conn |> json(res)
+  end
 end
