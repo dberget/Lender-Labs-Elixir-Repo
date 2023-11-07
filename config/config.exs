@@ -38,7 +38,8 @@ config :shark_attack, SharkAttack.Scheduler,
     {"@daily", {SharkAttack.Stats, :pull_all_citrus_loans, []}},
     {"*/5 * * * *", {SharkAttack.Notifications, :foreclosures, []}},
     {"*/1 * * * *", {SharkAttack.AutoForeclose, :get_and_foreclose_loans, []}},
-    {"*/3 * * * *", {SharkAttack.AutoRescind, :get_and_rescind_loans, []}}
+    {"*/3 * * * *", {SharkAttack.AutoRescind, :get_and_rescind_loans, []}},
+    {"*/3 * * * *", {SharkAttack.LenderFee, :batch_refund_and_collect_fees, []}}
   ]
 
 # Configures the mailer

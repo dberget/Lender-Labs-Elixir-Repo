@@ -6,6 +6,7 @@ defmodule SharkAttack.Offers do
   import Ecto.Query, warn: false
 
   alias SharkAttack.Loans.Offer
+  alias SharkAttack.LenderFee
   alias SharkAttack.Repo
 
   def update_or_create_offer(attrs) do
@@ -67,6 +68,7 @@ defmodule SharkAttack.Offers do
         offer
         |> Offer.changeset(%{rescinded: 1})
         |> Repo.update()
+        LenderFee.refund_rescinded_loan(loanAddress)
     end
   end
 

@@ -98,6 +98,7 @@ defmodule SharkAttackWeb.Router do
     post("/add_auto_rescind", ApiController, :add_auto_rescind)
     post("/cancel_auto_rescind", ApiController, :cancel_auto_rescind)
     post("/add_auto_foreclose", ApiController, :add_auto_foreclose)
+    post("/track_fee", ApiController, :track_fee)
     post("/cancel_auto_foreclose", ApiController, :cancel_auto_foreclose)
     get("/get_user_nonces", ApiController, :get_user_nonces)
   end
