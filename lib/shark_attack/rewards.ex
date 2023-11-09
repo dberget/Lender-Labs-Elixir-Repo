@@ -46,6 +46,10 @@ defmodule SharkAttack.Rewards do
   #   BoostedOffers.get_offer(offer_address)
   # end
 
+  def is_ll_offer(nil) do
+    false
+  end
+
   def is_ll_offer(offer_address) do
     case Offers.get_offer(offer_address) do
       nil ->

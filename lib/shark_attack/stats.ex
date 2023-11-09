@@ -20,6 +20,24 @@ defmodule SharkAttack.Stats do
     # )
   end
 
+  def update_ll_offers() do
+    offers = SharkAttack.Offers.get_active_offers()
+
+    offers
+    |> Enum.map(fn l ->
+      with %{} <- SharkAttack.Loans.get_loan(l.loan_address),
+           %{} <- SharkAttack.LoansWorker.get_offer(l.loan_address) do
+        SharkAttack.Offers.rescind_offer(l.loan_address)
+      else
+        _ ->
+          :active_offer
+
+        _ ->
+          :active
+      end
+    end)
+  end
+
   def update_active_loans() do
     loans = SharkAttack.Loans.get_active_loans()
 

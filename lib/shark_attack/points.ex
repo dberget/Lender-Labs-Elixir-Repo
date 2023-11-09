@@ -1,5 +1,4 @@
 defmodule SharkAttack.Points do
-  import Ecto.Changeset
   alias SharkAttack.Points.{PointEntry, UserPoints}
   alias SharkAttack.Repo
 

@@ -13,8 +13,8 @@ defmodule SharkAttack.AutoForeclose do
   def insert_auto_foreclose(user_address, loan_id, nonce_account, transaction) do
     loan = SharkAttack.Loans.get_loan(loan_id)
 
-    %SharkAttack.Loans.AutoForeclose{}
-    |> SharkAttack.Loans.AutoForeclose.changeset(%{
+    %AutoForeclose{}
+    |> AutoForeclose.changeset(%{
       user_address: user_address,
       loan_id: loan_id,
       nonce_account: nonce_account,
@@ -28,7 +28,7 @@ defmodule SharkAttack.AutoForeclose do
   end
 
   defp update_foreclose_status(nonce_account, new_status) do
-    post = SharkAttack.Repo.get_by(SharkAttack.Loans.AutoForeclose, nonce_account: nonce_account)
+    post = SharkAttack.Repo.get_by(AutoForeclose, nonce_account: nonce_account)
 
     if post.status == "ACTIVE" do
       post =
@@ -37,8 +37,8 @@ defmodule SharkAttack.AutoForeclose do
         |> Changeset.optimistic_lock(:version)
 
       case SharkAttack.Repo.update(post) do
-        {:ok, struct} -> :ok
-        {:error, changeset} -> :error
+        {:ok, _struct} -> :ok
+        {:error, _changeset} -> :error
       end
     else
       Logger.info("Loan with nonce #{nonce_account} is not ACTIVE, not updating status")
@@ -47,12 +47,12 @@ defmodule SharkAttack.AutoForeclose do
   end
 
   def get_auto_foreclose_info(nonce_account) do
-    SharkAttack.Repo.get_by(SharkAttack.Loans.AutoForeclose, nonce_account: nonce_account)
+    SharkAttack.Repo.get_by(AutoForeclose, nonce_account: nonce_account)
   end
 
   def get_nonce_accounts(user_address) do
     query =
-      from(l in SharkAttack.Loans.AutoForeclose,
+      from(l in AutoForeclose,
         where: l.status == "ACTIVE" and l.user_address == ^user_address,
         select: l
       )
@@ -65,7 +65,7 @@ defmodule SharkAttack.AutoForeclose do
   def get_loans_to_foreclose(user_address) do
     # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
     query =
-      from(l in SharkAttack.Loans.AutoForeclose,
+      from(l in AutoForeclose,
         where:
           l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now() and
             l.user_address == ^user_address,
@@ -78,7 +78,7 @@ defmodule SharkAttack.AutoForeclose do
   def get_loans_to_foreclose() do
     # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
     query =
-      from(l in SharkAttack.Loans.AutoForeclose,
+      from(l in AutoForeclose,
         where: l.status == "ACTIVE" and l.end_time < ^DateTime.utc_now(),
         select: l
       )

@@ -68,6 +68,7 @@ defmodule SharkAttack.Offers do
         offer
         |> Offer.changeset(%{rescinded: 1})
         |> Repo.update()
+
         LenderFee.refund_rescinded_loan(loanAddress)
     end
   end

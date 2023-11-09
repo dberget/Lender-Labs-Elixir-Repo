@@ -82,6 +82,13 @@ defmodule SharkAttackWeb.UserController do
     |> json("ok")
   end
 
+  def reset_turtle_cache(conn, _params) do
+    SharkAttack.SimpleCache.reset()
+
+    conn
+    |> json("ok")
+  end
+
   def get_user_summary(conn, params) do
     user = SharkAttack.Users.get_user_from_address!(params["address"])
     last_called = SharkAttack.RateLimiter.get(params["address"])

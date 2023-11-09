@@ -45,4 +45,8 @@ defmodule SharkAttack.SimpleCache do
   def delete(mod, fun, args) do
     :ets.delete(:simple_cache, [mod, fun, args])
   end
+
+  def reset() do
+    :ets.delete_all_objects(:simple_cache)
+  end
 end
