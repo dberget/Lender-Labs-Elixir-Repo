@@ -216,7 +216,6 @@ defmodule SharkAttack.LoansWorker do
     # SharkAttack.DiscordConsumer.send_to_webhook("me", "Initing Loans Worker")
 
     generate_tables()
-
     flush()
 
     {:ok, []}
