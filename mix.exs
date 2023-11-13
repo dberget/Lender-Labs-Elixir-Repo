@@ -19,7 +19,7 @@ defmodule SharkAttack.MixProject do
   def application do
     [
       mod: {SharkAttack.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :observer, :wx]
     ]
   end
 

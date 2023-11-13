@@ -79,15 +79,20 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def delete_loan(loanAddress) do
-    GenServer.cast(__MODULE__, {:delete, loanAddress})
+    :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
+
+    :ets.delete(:loans, loanAddress)
+    :ets.delete(:offers, loanAddress)
+
+    SharkAttackWeb.LoansChannel.delete(loanAddress)
   end
 
   def add_loan(loanData) do
-    GenServer.cast(__MODULE__, {:add_new_loan, loanData, 0})
+    add_new_loan(loanData, 0)
   end
 
   def add_offer(loanData) do
-    GenServer.cast(__MODULE__, {:add_new_offer, loanData, 0})
+    add_new_offer(loanData, 0)
   end
 
   def insert_loan(nil) do
@@ -297,22 +302,26 @@ defmodule SharkAttack.LoansWorker do
 
   defp add_new_loan(nil, _attempts), do: nil
 
+  defp add_new_loan(loanData, 4) do
+    Logger.info("Not found: #{loanData.loanAddress}")
+  end
+
   defp add_new_loan(loanData, attempts) do
     case SharkyApi.get_loan(loanData) do
       nil ->
-        handle_retry(loanData, attempts, :add_new_loan)
+        add_new_loan(loanData, attempts + 1)
 
       {:error, %BadMapError{term: {:error, "Connection refused"}}} ->
-        handle_retry(loanData, attempts, :add_new_loan)
+        add_new_loan(loanData, attempts + 1)
 
       {:error, %Mint.TransportError{reason: :closed}} ->
-        handle_retry(loanData, attempts, :add_new_loan)
+        add_new_loan(loanData, attempts + 1)
 
       {:error, _} ->
-        handle_retry(loanData, attempts, :add_new_loan)
+        add_new_loan(loanData, attempts + 1)
 
       :error ->
-        handle_retry(loanData, attempts, :add_new_loan)
+        add_new_loan(loanData, attempts + 1)
 
       loan ->
         Logger.info("Inserting #{loanData.loanAddress} after #{attempts} attempts.")
@@ -327,19 +336,23 @@ defmodule SharkAttack.LoansWorker do
 
   defp add_new_offer(nil, _attempts), do: nil
 
+  defp add_new_offer(loanData, 4) do
+    Logger.info("Not found: #{loanData.loanAddress} ")
+  end
+
   defp add_new_offer(loanData, attempts) do
     case SharkyApi.get_loan(loanData) do
       nil ->
-        handle_retry(loanData, attempts, :add_new_offer)
+        add_new_offer(loanData, attempts + 1)
 
       {:error, %Mint.TransportError{reason: :closed}} ->
-        handle_retry(loanData, attempts, :add_new_offer)
+        add_new_offer(loanData, attempts + 1)
 
       {:error, %BadMapError{term: {:error, "Connection refused"}}} ->
-        handle_retry(loanData, attempts, :add_new_offer)
+        add_new_offer(loanData, attempts + 1)
 
       {:error, _} ->
-        handle_retry(loanData, attempts, :add_new_offer)
+        add_new_offer(loanData, attempts + 1)
 
       data ->
         offer =

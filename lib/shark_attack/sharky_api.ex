@@ -183,6 +183,18 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
+  def get_borrow_tx(%{index: index, borrower: borrower, offer: offer, mint: mint}) do
+    case SharkAttack.Helpers.do_get_request(
+           "http://localhost:5001/offers/borrow/ix?wallet=#{borrower}&offerPubkey=#{offer}&mint=#{mint}&index=#{index}"
+         ) do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
+  end
+
   def submit_offer(_address, %{
         loan_amount: loan_amount,
         available_balance: available_balance

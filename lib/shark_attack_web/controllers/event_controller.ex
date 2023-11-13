@@ -14,13 +14,19 @@ defmodule SharkAttackWeb.EventController do
   def index(conn, params) do
     event = Map.get(params, "_json") |> List.first()
 
-    SharkAttack.Events.insert_loan_event(
-      event["type"],
-      event["source"],
-      event
-    )
+    # SharkAttack.Events.insert_loan_event(
+    #   event["type"],
+    #   event["source"],
+    #   event
+    # )
 
-    SharkAttack.Workers.LoanHandler.update_loan(event)
+    {time, :ok} =
+      :timer.tc(fn ->
+        SharkAttack.Workers.LoanHandler.update_loan(event)
+        :ok
+      end)
+
+    IO.puts("Update Loan Time: #{time / 1_000_000}")
 
     conn
     |> json(%{message: "ok"})
