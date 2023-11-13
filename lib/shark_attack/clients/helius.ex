@@ -8,8 +8,6 @@ defmodule SharkAttack.Clients.Helius do
   def has_turtles(nil), do: 0
 
   def has_turtles(address, fallback \\ 3) do
-    Logger.info("Checking if #{address} has turtles")
-
     try do
       case SharkAttack.SimpleCache.get(__MODULE__, :count_turtles, [1, [], 0, address, 1000],
              ttl: 60 * 60 * 24
@@ -46,8 +44,6 @@ defmodule SharkAttack.Clients.Helius do
   end
 
   def count_turtles(page, assets, total, address, _new_asset_count) do
-    Logger.info("Fetchin Assets")
-
     case Solana.fetch_assets(address, page) do
       {:ok, new_assets} ->
         new_asset_count = Enum.count(new_assets)
