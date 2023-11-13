@@ -107,7 +107,9 @@ defmodule SharkAttack.Workers.LoanHandler do
         loan = SharkAttack.Loans.get_loan(closed_loan)
 
         SharkAttack.Events.send_event("REPAY_LOAN", loan)
+
         SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
+
         SharkAttack.LoansWorker.delete_loan(closed_loan)
 
         # Add New Loan

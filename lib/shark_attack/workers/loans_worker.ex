@@ -161,8 +161,6 @@ defmodule SharkAttack.LoansWorker do
   end
 
   def flush() do
-    # SharkAttack.DiscordConsumer.send_to_webhook("me", "Flushing loans")
-
     try do
       citrusLoans = SharkyApi.get_all_loan_data("citrus")
       sharkyLoans = SharkyApi.get_all_loan_data()
@@ -329,7 +327,7 @@ defmodule SharkAttack.LoansWorker do
         if loan["state"] in ["taken", "active"] do
           insert_loan(loan)
         else
-          handle_retry(loanData, attempts, :add_new_loan)
+          add_new_loan(loanData, attempts + 1)
         end
     end
   end
@@ -364,18 +362,6 @@ defmodule SharkAttack.LoansWorker do
           :collection_loans,
           {data["orderBook"], loanData.loanAddress, data["lender"], offer}
         )
-    end
-  end
-
-  defp handle_retry(loanData, attempts, function) do
-    if attempts < 3 do
-      Logger.info(
-        "Not found: #{loanData.loanAddress} - #{attempts} - retrying #{function} in 3 seconds"
-      )
-
-      Process.send_after(self(), {function, loanData, attempts + 1}, 3000)
-    else
-      Logger.error("Not found: #{loanData.loanAddress}")
     end
   end
 
