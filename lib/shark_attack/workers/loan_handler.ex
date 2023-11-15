@@ -14,15 +14,22 @@ defmodule SharkAttack.Workers.LoanHandler do
   end
 
   def update_loan(%{"type" => "CANCEL_OFFER"} = event) do
-    event
-    |> get_loan_address()
-    |> SharkAttack.LoansWorker.delete_loan()
+    loanAddress =
+      event
+      |> get_loan_address()
+
+    SharkAttack.Offers.rescind_offer(loanAddress)
+    SharkAttack.LoansWorker.delete_loan(loanAddress)
   end
 
   def update_loan(%{"type" => "RESCIND_LOAN"} = event) do
-    event
-    |> get_loan_address()
-    |> SharkAttack.LoansWorker.delete_loan()
+    loanAddress =
+      event
+      |> get_loan_address()
+
+    SharkAttack.Offers.rescind_offer(loanAddress)
+
+    SharkAttack.LoansWorker.delete_loan(loanAddress)
   end
 
   def update_loan(%{"type" => "FORECLOSE_LOAN"} = event) do

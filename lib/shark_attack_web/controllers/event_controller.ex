@@ -20,13 +20,7 @@ defmodule SharkAttackWeb.EventController do
     #   event
     # )
 
-    {time, :ok} =
-      :timer.tc(fn ->
-        SharkAttack.Workers.LoanHandler.update_loan(event)
-        :ok
-      end)
-
-    IO.puts("Update Loan Time: #{time}")
+    SharkAttack.Workers.LoanHandler.update_loan(event)
 
     conn
     |> json(%{message: "ok"})
