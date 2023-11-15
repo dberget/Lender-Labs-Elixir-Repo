@@ -86,18 +86,18 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
-  def get_all_loan_data("citrus") do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
-
-    Map.get(res, "loanData", [])
-    |> Enum.reject(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
-  end
-
   def get_citrus_loan_history() do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
 
     Map.get(res, "loanData", [])
     |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
+  end
+
+  def get_all_loan_data("citrus") do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
+
+    Map.get(res, "loanData", [])
+    |> Enum.reject(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
   end
 
   def get_all_loan_data() do
