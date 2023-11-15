@@ -274,10 +274,6 @@ defmodule SharkAttack.Loans do
             Map.get(attrs, :length, Map.get(attrs, "length", Map.get(attrs, "duration")))
           )
         )
-        |> Changeset.put_change(
-          :platform,
-          Map.get(attrs, :platform, Map.get(attrs, "platform")) |> String.upcase()
-        )
         |> Repo.insert()
 
       loan.status == "COMPLETE" ->
@@ -313,7 +309,7 @@ defmodule SharkAttack.Loans do
     case LoansWorker.get_loan(loan) do
       {:ok, nil} ->
         case Repo.get_by(Loan, loan: loan) do
-          nil -> %{}
+          nil -> %{loan: loan}
           loan -> loan
         end
 

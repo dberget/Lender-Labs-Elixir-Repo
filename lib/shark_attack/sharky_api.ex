@@ -86,18 +86,18 @@ defmodule SharkAttack.SharkyApi do
     end
   end
 
-  def get_all_loan_data("citrus") do
-    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
-
-    Map.get(res, "loanData", [])
-    |> Enum.reject(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
-  end
-
   def get_citrus_loan_history() do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
 
     Map.get(res, "loanData", [])
     |> Enum.filter(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
+  end
+
+  def get_all_loan_data("citrus") do
+    res = SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/all/citrus")
+
+    Map.get(res, "loanData", [])
+    |> Enum.reject(&(&1["state"] == "defaulted" || &1["state"] == "repaid"))
   end
 
   def get_all_loan_data() do
@@ -175,6 +175,18 @@ defmodule SharkAttack.SharkyApi do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/frakt/#{address}")
 
     case res do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", [])
+    end
+  end
+
+  def get_borrow_tx(%{index: index, borrower: borrower, offer: offer, mint: mint}) do
+    case SharkAttack.Helpers.do_get_request(
+           "http://localhost:5001/offers/borrow/ix?wallet=#{borrower}&offerPubkey=#{offer}&mint=#{mint}&index=#{index}"
+         ) do
       {:error, body} ->
         {:error, body}
 

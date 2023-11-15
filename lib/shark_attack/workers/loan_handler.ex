@@ -107,7 +107,9 @@ defmodule SharkAttack.Workers.LoanHandler do
         loan = SharkAttack.Loans.get_loan(closed_loan)
 
         SharkAttack.Events.send_event("REPAY_LOAN", loan)
+
         SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
+
         SharkAttack.LoansWorker.delete_loan(closed_loan)
 
         # Add New Loan
@@ -141,27 +143,13 @@ defmodule SharkAttack.Workers.LoanHandler do
   end
 
   def update_loan(%{"type" => "OFFER_LOAN", "source" => "SHARKY_FI"} = event) do
-    transfers = Map.get(event, "nativeTransfers")
+    Map.get(event, "nativeTransfers")
+    |> Enum.filter(fn transaction -> transaction["amount"] == 3_243_360 end)
+    |> Enum.each(fn offer ->
+      %{"toUserAccount" => loanAddress} = offer
 
-    case Kernel.rem(transfers |> length(), 5) do
-      0 ->
-        transfers
-        |> Enum.chunk_every(5)
-        |> Enum.each(fn offer ->
-          %{"toUserAccount" => loanAddress} = Enum.at(offer, 1)
-
-          SharkAttack.LoansWorker.add_offer(%{loanAddress: loanAddress, source: event["source"]})
-        end)
-
-      _ ->
-        transfers
-        |> Enum.chunk_every(4)
-        |> Enum.each(fn offer ->
-          %{"toUserAccount" => loanAddress} = hd(offer)
-
-          SharkAttack.LoansWorker.add_offer(%{loanAddress: loanAddress, source: event["source"]})
-        end)
-    end
+      SharkAttack.LoansWorker.add_offer(%{loanAddress: loanAddress, source: event["source"]})
+    end)
   end
 
   def update_loan(%{"type" => "OFFER_LOAN", "source" => "CITRUS"} = event) do

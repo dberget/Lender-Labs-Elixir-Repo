@@ -10,6 +10,33 @@ defmodule SharkAttackWeb.BorrowController do
   end
 
   def get_index(conn, %{"mint" => mint}) do
+    index = get_nft_index(mint)
+
+    conn
+    |> json(%{index: index})
+  end
+
+  def get_borrow_tx(conn, %{"borrower" => borrower, "mint" => mint, "offer" => offer}) do
+    index = get_nft_index(mint)
+
+    res =
+      SharkAttack.SharkyApi.get_borrow_tx(%{
+        index: index,
+        borrower: borrower,
+        offer: offer,
+        mint: mint
+      })
+
+    conn |> json(res)
+  end
+
+  def get_sell_tx(conn, %{"seller" => seller, "mint" => mint}) do
+    res = SharkAttack.Tensor.get_sell_tx(seller, mint)
+
+    conn |> json(res)
+  end
+
+  def get_nft_index(mint) do
     collection = Collections.get_collection_from_mint(mint) |> Repo.preload(:nfts)
 
     {:found, index, _nft} =
@@ -19,13 +46,6 @@ defmodule SharkAttackWeb.BorrowController do
           else: {:cont, {:not_found, index + 1}}
       end)
 
-    conn
-    |> json(%{index: index})
-  end
-
-  def get_sell_tx(conn, %{"seller" => seller, "mint" => mint}) do
-    res = SharkAttack.Tensor.get_sell_tx(seller, mint)
-
-    conn |> json(res)
+    index
   end
 end
