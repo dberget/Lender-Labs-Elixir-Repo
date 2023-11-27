@@ -21,9 +21,8 @@ defmodule SharkAttack.Offers do
   def get_active_offers do
     query =
       from(o in Offer,
-        where: o.inserted_at > fragment("NOW() - INTERVAL 2 WEEK"),
-        where: is_nil(o.rescinded),
-        where: is_nil(o.taken)
+        where: o.inserted_at > fragment("NOW() - INTERVAL 3 WEEK"),
+        where: is_nil(o.rescinded)
       )
 
     Repo.all(query)

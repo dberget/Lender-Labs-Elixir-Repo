@@ -225,9 +225,9 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
     pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
 
-    lender = 
+    lender =
       Map.get(loan, :lender, Map.get(loan, "lender", "unknown"))
-      |> String.slice(0, 4) <> "..." <> String.slice(-4, 4)
+      |> truncate_address()
 
     embed = %Nostrum.Struct.Embed{
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
@@ -246,7 +246,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           name: "Floor Price",
           value: "#{fp} ◎",
           inline: true
-        }
+        },
         %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true}
       ]
     }
@@ -282,9 +282,9 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
     ltf = parse_ltf(loan, fp)
 
-    lender = 
+    lender =
       Map.get(loan, :lender, Map.get(loan, "lender", "unknown"))
-      |> String.slice(0, 4) <> "..." <> String.slice(-4, 4)
+      |> truncate_address()
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
@@ -314,7 +314,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           inline: true
         },
         %Nostrum.Struct.Embed.Field{name: "Platform", value: "#{platform}", inline: true},
-        %Nostrum.Struct.Embed.Field{name: "LTF", value: ltf, inline: true}
+        %Nostrum.Struct.Embed.Field{name: "LTF", value: ltf, inline: true},
         %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true}
       ]
     }
@@ -342,9 +342,9 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
     pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
 
-    lender = 
+    lender =
       Map.get(loan, :lender, Map.get(loan, "lender", "unknown"))
-      |> String.slice(0, 4) <> "..." <> String.slice(-4, 4)
+      |> truncate_address()
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
@@ -368,7 +368,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
           value: "#{Number.Delimit.number_to_delimited(parse_earnings(loan))} ◎",
           inline: true
         },
-        %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true}
+        %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true},
         %Nostrum.Struct.Embed.Field{
           name: "Duration",
           value:
@@ -510,4 +510,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
 
   def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
+
+  defp truncate_address(address) do
+    "#{String.slice(address, 0..4)}...#{String.slice(address, -4..-1)}"
+  end
 end
