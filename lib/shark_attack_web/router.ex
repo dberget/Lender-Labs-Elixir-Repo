@@ -29,6 +29,7 @@ defmodule SharkAttackWeb.Router do
 
     get("/get_user_summary", UserController, :get_user_summary)
     get("/is_holder", UserController, :is_holder)
+    get("/get_fee_tier", UserController, :get_fee_tier)
     get("/get_user_saved_searches", UserController, :get_user_saved_searches)
 
     post("/save_user_search", UserController, :save_user_search)

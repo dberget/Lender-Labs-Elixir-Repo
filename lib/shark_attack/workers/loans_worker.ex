@@ -142,7 +142,7 @@ defmodule SharkAttack.LoansWorker do
     try do
       SharkAttackWeb.LoansChannel.push(loan)
 
-      # SharkAttack.Rewards.create_entry(loan)
+      SharkAttack.Rewards.create_entry(loan)
 
       if loan["is_ll_offer"] do
         SharkAttack.Offers.update_offer(loan["pubkey"], "taken")

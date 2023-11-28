@@ -512,6 +512,6 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
 
   defp truncate_address(address) do
-    "#{String.slice(address, 0..4)}...#{String.slice(address, -4..-1)}"
+    "#{String.slice(address, 0..3)}...#{String.slice(address, -4..-1)}"
   end
 end
