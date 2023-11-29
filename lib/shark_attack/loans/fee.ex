@@ -3,15 +3,24 @@ defmodule SharkAttack.Loans.LenderFee do
   import Ecto.Changeset
 
   @derive {Jason.Encoder,
-         only: [
-           :user_address,
-           :loan_id,
-           :nonce_account,
-           :status
-         ]}
+           only: [
+             :user_address,
+             :loan_id,
+             :nonce_account,
+             :status,
+             :offer
+           ]}
   schema "lender_fee" do
     field(:user_address, :string)
-    field(:loan_id, :string)
+
+    belongs_to(
+      :offer,
+      SharkAttack.Loans.Offer,
+      foreign_key: :loan_id,
+      references: :loan_address,
+      type: :string
+    )
+
     field(:nonce_account, :string)
     field(:status, :string)
 

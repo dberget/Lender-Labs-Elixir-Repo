@@ -841,6 +841,12 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(res)
   end
 
+  def get_fee_history(conn, params) do
+    res = SharkAttack.LenderFee.get_fees_for_user(params["address"])
+
+    conn |> json(res)
+  end
+
   def search_collections(conn, params) do
     collections = SharkAttack.Collections.search_collection_by_name(params["name"])
 

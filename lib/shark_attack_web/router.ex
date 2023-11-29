@@ -56,6 +56,7 @@ defmodule SharkAttackWeb.Router do
 
     get("/", ApiController, :index)
     get("/get_history", ApiController, :get_history)
+    get("/get_fee_history", ApiController, :get_fee_history)
     get("/get_daily_volume", ApiController, :get_daily_volume)
     get("/get_foreclosure_summary", ApiController, :get_foreclosure_summary)
     get("/get_collection_trading_history", ApiController, :get_collection_trading_history)

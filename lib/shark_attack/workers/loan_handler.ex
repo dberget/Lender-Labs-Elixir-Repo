@@ -28,7 +28,6 @@ defmodule SharkAttack.Workers.LoanHandler do
       |> get_loan_address()
 
     SharkAttack.Offers.rescind_offer(loanAddress)
-
     SharkAttack.LoansWorker.delete_loan(loanAddress)
   end
 
@@ -196,7 +195,12 @@ defmodule SharkAttack.Workers.LoanHandler do
   end
 
   def get_loan_address(%{"source" => "SHARKY_FI", "type" => "RESCIND_LOAN"} = event) do
-    event |> Map.get("instructions") |> List.first() |> Map.get("accounts", []) |> List.first()
+    event
+    |> Map.get("instructions")
+    |> Enum.filter(&(&1["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"))
+    |> List.first()
+    |> Map.get("accounts", [])
+    |> List.first()
   end
 
   def get_loan_address(%{"source" => "CITRUS", "type" => "CANCEL_OFFER"} = event) do

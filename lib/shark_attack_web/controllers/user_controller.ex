@@ -44,30 +44,32 @@ defmodule SharkAttackWeb.UserController do
   end
 
   def get_fee_tier(conn, %{"pk" => address}) do
-    turtles_count = SharkAttack.Clients.Helius.has_turtles(address)
+    user_address =
+      case SharkAttack.Users.get_user_from_address!(address) do
+        nil ->
+          address
 
-    # 0 - 4 turtles: 0.3%
-    # 5 - 10 turtles 0.25%
-    # 11-20 turtles: 0.2%
-    # 21-35 turtles: 0.15%
-    # 36-49 turtles: 0.1%
-    # 50+ turtles 0.05%
+        user ->
+          user.address
+      end
+
+    turtles_count = SharkAttack.Clients.Helius.has_turtles(user_address)
 
     fee_tier =
       case turtles_count do
-        0..4 ->
+        count when count in 0..4 ->
           0.003
 
-        5..10 ->
+        count when count in 5..10 ->
           0.0025
 
-        11..20 ->
+        count when count in 11..20 ->
           0.002
 
-        21..35 ->
+        count when count in 21..35 ->
           0.0015
 
-        36..49 ->
+        count when count in 36..49 ->
           0.001
 
         _ ->
@@ -77,7 +79,7 @@ defmodule SharkAttackWeb.UserController do
     conn
     |> json(%{
       count: turtles_count,
-      tier: fee_tier
+      fee: fee_tier
     })
   end
 

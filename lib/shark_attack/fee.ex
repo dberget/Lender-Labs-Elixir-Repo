@@ -121,4 +121,10 @@ defmodule SharkAttack.LenderFee do
 
     :error
   end
+
+  def get_fees_for_user(user_address) do
+    query = from fee in LenderFee, where: fee.user_address == ^user_address
+
+    SharkAttack.Repo.all(query) |> Repo.preload(:offer)
+  end
 end

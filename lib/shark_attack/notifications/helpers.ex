@@ -202,7 +202,6 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
   def build_message("FORECLOSE_LOAN", loan) do
     orderBook = Map.get(loan, :orderBook, Map.get(loan, "orderBook"))
-    lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 
     c =
       case SharkAttack.Collections.get_collection(orderBook) do
