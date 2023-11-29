@@ -6,7 +6,7 @@ defmodule SharkAttackWeb.UserController do
   def index(conn, %{"pk" => address}) do
     user =
       case SharkAttack.Users.get_user_from_address!(address) do
-        nil ->
+        %{} ->
           turtles_count = SharkAttack.Clients.Helius.has_turtles(address)
 
           if turtles_count > 0 do
@@ -44,42 +44,12 @@ defmodule SharkAttackWeb.UserController do
   end
 
   def get_fee_tier(conn, %{"pk" => address}) do
-    user_address =
-      case SharkAttack.Users.get_user_from_address!(address) do
-        nil ->
-          address
-
-        user ->
-          user.address
-      end
-
-    turtles_count = SharkAttack.Clients.Helius.has_turtles(user_address)
-
-    fee_tier =
-      case turtles_count do
-        count when count in 0..4 ->
-          0.003
-
-        count when count in 5..10 ->
-          0.0025
-
-        count when count in 11..20 ->
-          0.002
-
-        count when count in 21..35 ->
-          0.0015
-
-        count when count in 36..49 ->
-          0.001
-
-        _ ->
-          0
-      end
+    [turtle_count, fee_tier] = SharkAttack.Users.get_fee_amount(address)
 
     conn
     |> json(%{
-      count: turtles_count,
-      fee: fee_tier
+      fee: fee_tier,
+      turtle_count: turtle_count
     })
   end
 
@@ -101,7 +71,7 @@ defmodule SharkAttackWeb.UserController do
 
   def is_holder(conn, %{"pk" => address}) do
     case SharkAttack.Users.get_user_from_address!(address) do
-      nil ->
+      %{} ->
         turtles_count = SharkAttack.Clients.Helius.has_turtles(address, 0)
 
         conn

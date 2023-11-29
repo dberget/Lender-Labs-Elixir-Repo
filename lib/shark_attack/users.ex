@@ -19,7 +19,7 @@ defmodule SharkAttack.Users do
     unless is_nil(user) do
       user |> Repo.preload(preloads)
     else
-      nil
+      %{}
     end
   end
 
@@ -81,10 +81,49 @@ defmodule SharkAttack.Users do
 
   def delete_favorite(collection, address) do
     favorite =
-      Repo.get_by(SharkAttack.Accounts.Favorites, collection_id: collection, user_address: address)
+      Repo.get_by(SharkAttack.Accounts.Favorites,
+        collection_id: collection,
+        user_address: address
+      )
 
     favorite
     |> Repo.delete()
+  end
+
+  def get_fee_amount(address) do
+    user_address =
+      case SharkAttack.Users.get_user_from_address!(address) do
+        %{} ->
+          address
+
+        user ->
+          user.address
+      end
+
+    turtles_count = SharkAttack.Clients.Helius.has_turtles(user_address)
+
+    fee =
+      case turtles_count do
+        count when count in 0..4 ->
+          0.003
+
+        count when count in 5..10 ->
+          0.0025
+
+        count when count in 11..20 ->
+          0.002
+
+        count when count in 21..35 ->
+          0.0015
+
+        count when count in 36..49 ->
+          0.001
+
+        _ ->
+          0
+      end
+
+    [turtles_count, fee]
   end
 
   def update_user(%User{} = user, attrs) do

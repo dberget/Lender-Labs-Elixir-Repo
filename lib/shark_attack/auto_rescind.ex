@@ -143,9 +143,11 @@ defmodule SharkAttack.AutoRescind do
           # Beware that floor price is in SOL while that loan.amount is in Lamports
           fp = SharkAttack.FloorWorker.get_floor_price(loan.collection_id)
 
-          current_ltf = loan.amount / 1_000_000_000 / fp * 100
+          Logger.info(
+            "#{inspect(loan.collection_id)} - Floor price #{inspect(fp)} - loan amount #{inspect(loan.amount)}"
+          )
 
-          Logger.debug("Floor price #{inspect(fp)} with LTF #{inspect(current_ltf)}")
+          current_ltf = loan.amount / 1_000_000_000 / fp * 100
 
           current_ltf > offer.max_ltf
         catch

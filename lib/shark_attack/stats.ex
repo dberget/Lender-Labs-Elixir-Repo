@@ -303,4 +303,50 @@ defmodule SharkAttack.Stats do
     |> Enum.uniq()
     |> Enum.map(fn x -> SharkAttack.Stats.update_history_safe(x) end)
   end
+
+  def get_holder_distribution(addresses) do
+    loans =
+      SharkAttack.LoansWorker.get_all_loan_data()
+      |> Enum.map(fn l ->
+        %{
+          borrower: l["borrower"],
+          lender: l["lender"],
+          collection: l["orderBook"],
+          amount: l["amountSol"],
+          mint: l["nftCollateralMint"],
+          interest: l["earnings"],
+          platform: l["platform"],
+          start: l["start"],
+          end: l["end"]
+        }
+      end)
+
+    history =
+      SharkAttack.Loans.get_loans_history_for_addresses(addresses, :month)
+      |> Enum.reject(fn l -> is_nil(l.dateRepaid) end)
+
+    addresses
+    |> Enum.map(fn add ->
+      main = Map.get(SharkAttack.Users.get_user_from_address!(add), :address, add)
+      lender_history = history |> Enum.filter(fn l -> l.lender == add end)
+
+      repaid = Enum.map(lender_history, fn l -> l.amountSol end) |> Enum.sum()
+      [turtle_count, fee_tier] = SharkAttack.Users.get_fee_amount(main)
+
+      %{
+        main: main,
+        lender: add,
+        turtles: turtle_count,
+        month_repaid: repaid,
+        month_earnings: Enum.map(lender_history, &Map.get(&1, :earnings, 0.0)) |> Enum.sum(),
+        fee_estimate: repaid * fee_tier,
+        active_volume:
+          loans
+          |> Enum.filter(fn l -> l.lender == add end)
+          |> Enum.map(& &1.amount)
+          |> Enum.sum()
+      }
+    end)
+    |> Enum.sort_by(fn v -> v.active_volume end, :desc)
+  end
 end

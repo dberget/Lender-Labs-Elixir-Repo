@@ -376,10 +376,10 @@ defmodule SharkAttack.DiscordConsumer do
 
         Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Subscribed!"}})
 
-      nil ->
+      %{} ->
         Api.create_interaction_response(interaction, %{
           type: 4,
-          data: %{content: "Error subscribing"}
+          data: %{content: "User Not found, visit lenderlabs.xyz and/or purchase a turtle"}
         })
     end
   end

@@ -742,6 +742,29 @@ defmodule SharkAttackWeb.ApiController do
     })
   end
 
+  def get_holder_distribution(conn, _params) do
+    lenders =
+      SharkAttack.Offers.last_month_offers() |> Enum.map(& &1.lender) |> Enum.uniq()
+
+    lenderGroup =
+      SharkAttack.Stats.get_holder_distribution(lenders)
+
+    fee_total = lenderGroup |> Enum.map(& &1.fee_estimate) |> Enum.sum()
+    tvl = lenderGroup |> Enum.map(& &1.month_repaid) |> Enum.sum()
+    earnings = lenderGroup |> Enum.map(& &1.month_earnings) |> Enum.sum()
+    lender_count = lenderGroup |> Enum.count()
+
+    conn
+    |> json(%{
+      holders: lenderGroup,
+      lender_count: lender_count,
+      total_repaid: tvl,
+      holder_earnings: earnings,
+      estimated_fees_sol: fee_total,
+      estimated_fees_usdc: fee_total * 55
+    })
+  end
+
   defp get_most_borrowed(values, collections) do
     favorite =
       Enum.frequencies(Enum.map(values, & &1.collection))

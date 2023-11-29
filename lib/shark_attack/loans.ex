@@ -125,6 +125,18 @@ defmodule SharkAttack.Loans do
     Repo.all(query)
   end
 
+  def get_loans_history_for_addresses(addresses, :month) do
+    query =
+      from(l in Loan,
+        where: l.lender in ^addresses,
+        select: l,
+        where: l.status == "COMPLETE",
+        where: coalesce(l.dateRepaid, l.dateForeclosed) > fragment("NOW() - INTERVAL 1 MONTH")
+      )
+
+    Repo.all(query)
+  end
+
   def get_loans_history(address, "borrower") do
     query =
       from(l in Loan,

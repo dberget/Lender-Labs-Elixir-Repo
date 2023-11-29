@@ -44,6 +44,8 @@ defmodule SharkAttack.Clients.Helius do
   end
 
   def count_turtles(page, assets, total, address, _new_asset_count) do
+    Logger.info("Fetching assets for #{address} page #{page}")
+
     case Solana.fetch_assets(address, page) do
       {:ok, new_assets} ->
         new_asset_count = Enum.count(new_assets)

@@ -34,11 +34,12 @@ config :shark_attack, SharkAttackWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "ECbwwDrJjFD/CHAsa5SF+ZHoLgg1EA1cuarmOxKP6pCtFZf0XPtQK+G9jN+W/k/u",
-  watchers: [
-    node: ["build.js", "--watch", cd: Path.expand("../assets", __DIR__)],
-    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
-  ]
+  secret_key_base: "ECbwwDrJjFD/CHAsa5SF+ZHoLgg1EA1cuarmOxKP6pCtFZf0XPtQK+G9jN+W/k/u"
+
+# watchers: [
+#   node: ["build.js", "--watch", cd: Path.expand("../assets", __DIR__)],
+#   tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+# ]
 
 config :shark_attack, :environment, :dev
 
