@@ -25,6 +25,15 @@ defmodule SharkAttack.Solana do
     res["result"]
   end
 
+  def fetch_native_balance(address) do
+    res =
+      do_get_request(
+        "https://api.helius.xyz/v0/addresses/#{address}/balances?api-key=879fb544-7947-4257-b907-3d94c9e29613"
+      )
+
+    res["nativeBalance"]
+  end
+
   def sign_and_send_transaction(instructions, client) do
     {:ok, signer} = SharkAttack.getWallet()
 

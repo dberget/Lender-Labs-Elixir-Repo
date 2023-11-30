@@ -8,7 +8,8 @@ defmodule SharkAttack.Loans.LenderFee do
              :loan_id,
              :nonce_account,
              :status,
-             :offer
+             :offer,
+             :amount
            ]}
   schema "lender_fee" do
     field(:user_address, :string)
@@ -22,6 +23,7 @@ defmodule SharkAttack.Loans.LenderFee do
     )
 
     field(:nonce_account, :string)
+    field(:amount, :integer)
     field(:status, :string)
 
     timestamps()
@@ -30,7 +32,7 @@ defmodule SharkAttack.Loans.LenderFee do
   @doc false
   def changeset(params, attrs) do
     params
-    |> cast(attrs, [:user_address, :loan_id, :nonce_account, :status])
+    |> cast(attrs, [:user_address, :loan_id, :nonce_account, :status, :amount])
     |> validate_required([])
     |> unique_constraint(:nonce_account)
   end

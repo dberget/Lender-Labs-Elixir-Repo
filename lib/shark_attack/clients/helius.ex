@@ -70,4 +70,31 @@ defmodule SharkAttack.Clients.Helius do
       Map.get(first_creator, "address") == @coll
     end)
   end
+
+  def get_native_balance(address) do
+    case SharkAttack.SimpleCache.get(__MODULE__, :native_balance, [address], ttl: 60 * 60 * 24) do
+      0 ->
+        0
+
+      :error ->
+        Logger.info("Error fetching native balance for #{address}")
+
+        0
+
+      balance ->
+        balance
+    end
+  end
+
+  def native_balance(address) do
+    Logger.info("Fetching native balance for #{address}")
+
+    case Solana.fetch_native_balance(address) do
+      {:error, _} ->
+        :error
+
+      balance ->
+        balance
+    end
+  end
 end

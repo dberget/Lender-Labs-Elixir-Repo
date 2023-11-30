@@ -11,13 +11,14 @@ defmodule SharkAttack.LenderFee do
     collect_fees()
   end
 
-  def insert_lender_fee(user_address, loan_id, nonce_account) do
+  def insert_lender_fee(user_address, loan_id, nonce_account, amount) do
     %LenderFee{}
     |> LenderFee.changeset(%{
       user_address: user_address,
       loan_id: loan_id,
       nonce_account: nonce_account,
-      status: "ACTIVE"
+      status: "ACTIVE",
+      amount: amount
     })
     |> Repo.insert()
 
@@ -126,5 +127,11 @@ defmodule SharkAttack.LenderFee do
     query = from fee in LenderFee, where: fee.user_address == ^user_address
 
     SharkAttack.Repo.all(query) |> Repo.preload(:offer)
+  end
+
+  def get_active_fees() do
+    query = from fee in LenderFee, where: fee.status == "ACTIVE"
+
+    SharkAttack.Repo.all(query)
   end
 end

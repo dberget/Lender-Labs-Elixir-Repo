@@ -349,4 +349,15 @@ defmodule SharkAttack.Stats do
     end)
     |> Enum.sort_by(fn v -> v.active_volume end, :desc)
   end
+
+  def get_active_fees_balance() do
+    accounts = SharkAttack.LenderFee.get_active_fees()
+
+    total =
+      Enum.map(accounts, & &1.nonce_account)
+      |> Enum.map(&SharkAttack.Clients.Helius.get_native_balance/1)
+      |> Enum.sum()
+
+    total / 1_000_000_000
+  end
 end

@@ -33,8 +33,16 @@ defmodule SharkAttack.Users do
     end
   end
 
+  def get_all_user_addresses!(address) do
+    sub_wallets = get_sub_wallets_for_address!(address) |> Enum.map(& &1.address)
+
+    [address | sub_wallets]
+  end
+
   def get_sub_wallets_for_address!(address) do
-    Repo.get_by(SharkAttack.Accounts.UserWallet, user_address: address)
+    query = from(uw in SharkAttack.Accounts.UserWallet, where: uw.user_address == ^address)
+
+    Repo.all(query)
   end
 
   def list!(), do: Repo.all(User)
@@ -93,14 +101,17 @@ defmodule SharkAttack.Users do
   def get_fee_amount(address) do
     user_address =
       case SharkAttack.Users.get_user_from_address!(address) do
+        %SharkAttack.Accounts.User{} = user ->
+          user.address
+
         %{} ->
           address
-
-        user ->
-          user.address
       end
 
-    turtles_count = SharkAttack.Clients.Helius.has_turtles(user_address)
+    all_user_wallets = get_all_user_addresses!(user_address)
+
+    turtles_count =
+      Enum.map(all_user_wallets, &SharkAttack.Clients.Helius.has_turtles/1) |> Enum.sum()
 
     fee =
       case turtles_count do

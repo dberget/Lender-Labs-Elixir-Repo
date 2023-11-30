@@ -989,7 +989,8 @@ defmodule SharkAttackWeb.ApiController do
       SharkAttack.LenderFee.insert_lender_fee(
         params["user_address"],
         params["loan_id"],
-        params["nonce_account"]
+        params["nonce_account"],
+        params["amount"]
       )
 
     conn |> json(res)

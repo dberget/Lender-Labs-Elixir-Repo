@@ -6,6 +6,10 @@ defmodule SharkAttackWeb.UserController do
   def index(conn, %{"pk" => address}) do
     user =
       case SharkAttack.Users.get_user_from_address!(address) do
+        %SharkAttack.Accounts.User{} = user ->
+          user
+          |> Repo.preload(:user_settings)
+
         %{} ->
           turtles_count = SharkAttack.Clients.Helius.has_turtles(address)
 
@@ -24,10 +28,6 @@ defmodule SharkAttackWeb.UserController do
               frakt_raffles: false
             }
           }
-
-        user ->
-          user
-          |> Repo.preload(:user_settings)
       end
 
     turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address)
@@ -71,14 +71,15 @@ defmodule SharkAttackWeb.UserController do
 
   def is_holder(conn, %{"pk" => address}) do
     case SharkAttack.Users.get_user_from_address!(address) do
-      %{} ->
-        turtles_count = SharkAttack.Clients.Helius.has_turtles(address, 0)
+      %SharkAttack.Accounts.User{} = user ->
+        turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address, 0)
 
         conn
         |> json(%{is_holder: turtles_count > 0})
 
-      user ->
-        turtles_count = SharkAttack.Clients.Helius.has_turtles(user.address, 0)
+      %{} ->
+        IO.inspect("User not found")
+        turtles_count = SharkAttack.Clients.Helius.has_turtles(address, 0)
 
         conn
         |> json(%{is_holder: turtles_count > 0})
