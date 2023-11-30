@@ -350,14 +350,32 @@ defmodule SharkAttack.Stats do
     |> Enum.sort_by(fn v -> v.active_volume end, :desc)
   end
 
-  def get_active_fees_balance() do
-    accounts = SharkAttack.LenderFee.get_active_fees()
+  def get_fee_overview() do
+    all_active_fees =
+      SharkAttack.LenderFee.get_active_fees()
+      |> Repo.preload(:offer)
 
-    total =
-      Enum.map(accounts, & &1.nonce_account)
-      |> Enum.map(&SharkAttack.Clients.Helius.get_native_balance/1)
+    active_loan_fees =
+      all_active_fees
+      |> Enum.filter(& &1.offer.taken)
+      |> Enum.map(&Map.get(&1, :amount, 0))
       |> Enum.sum()
 
-    total / 1_000_000_000
+    active_total =
+      all_active_fees
+      |> Enum.map(&Map.get(&1, :amount, 0))
+      |> Enum.sum()
+
+    collected_total =
+      SharkAttack.LenderFee.get_collected_fees()
+      |> Enum.map(&Map.fetch(&1, :amount, 0))
+      |> Enum.sum()
+
+    %{
+      active_total: active_total / 1_000_000_000,
+      active_offers: (active_total - active_loan_fees) / 1_000_000_000,
+      active_loans: active_loan_fees / 1_000_000_000,
+      collected: collected_total / 1_000_000_000
+    }
   end
 end

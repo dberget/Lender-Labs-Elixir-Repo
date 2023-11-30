@@ -25,6 +25,21 @@ defmodule SharkAttack.LenderFee do
     :ok
   end
 
+  # For backfilling the lender fee table
+  def update_lender_fee_amount(nonce_account, new_amount) do
+    post = SharkAttack.Repo.get_by(LenderFee, nonce_account: nonce_account)
+
+    post =
+      post
+      |> Changeset.change(%{amount: new_amount})
+      |> Changeset.optimistic_lock(:version)
+
+    case SharkAttack.Repo.update(post) do
+      {:ok, _struct} -> :ok
+      {:error, _changeset} -> :error
+    end
+  end
+
   defp update_lender_fee_status(nonce_account, new_status) do
     post = SharkAttack.Repo.get_by(LenderFee, nonce_account: nonce_account)
 
@@ -131,6 +146,12 @@ defmodule SharkAttack.LenderFee do
 
   def get_active_fees() do
     query = from fee in LenderFee, where: fee.status == "ACTIVE"
+
+    SharkAttack.Repo.all(query)
+  end
+
+  def get_collected_fees() do
+    query = from fee in LenderFee, where: fee.status == "COLLECTED"
 
     SharkAttack.Repo.all(query)
   end
