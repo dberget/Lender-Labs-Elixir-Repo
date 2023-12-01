@@ -285,6 +285,9 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       Map.get(loan, :lender, Map.get(loan, "lender", "unknown"))
       |> truncate_address()
 
+
+    formatted_end_time = "<t:#{Map.get(loan, :end, 0)}>"
+
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
         name: "Lender Labs",
@@ -314,7 +317,8 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         },
         %Nostrum.Struct.Embed.Field{name: "Platform", value: "#{platform}", inline: true},
         %Nostrum.Struct.Embed.Field{name: "LTF", value: ltf, inline: true},
-        %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true}
+        %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true},
+        %Nostrum.Struct.Embed.Field{name: "Ends", value: formatted_end_time, inline: true}
       ]
     }
   end
