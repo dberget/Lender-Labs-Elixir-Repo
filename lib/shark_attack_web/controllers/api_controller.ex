@@ -984,6 +984,12 @@ defmodule SharkAttackWeb.ApiController do
     conn |> json(res)
   end
 
+  def fee_overview(conn, _params) do
+    res = SharkAttack.Stats.get_fee_overview()
+
+    conn |> json(res)
+  end
+
   def track_fee(conn, params) do
     res =
       SharkAttack.LenderFee.insert_lender_fee(

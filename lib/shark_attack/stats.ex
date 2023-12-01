@@ -366,9 +366,12 @@ defmodule SharkAttack.Stats do
       |> Enum.map(&Map.get(&1, :amount, 0))
       |> Enum.sum()
 
-    collected_total =
+    collected_fees =
       SharkAttack.LenderFee.get_collected_fees()
-      |> Enum.map(&Map.fetch(&1, :amount, 0))
+
+    collected_total =
+      collected_fees
+      |> Enum.map(&Map.get(&1, :amount, 0))
       |> Enum.sum()
 
     %{
