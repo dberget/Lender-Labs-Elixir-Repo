@@ -286,7 +286,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       |> truncate_address()
 
 
-    formatted_end_time = "<t:#{Map.get(loan, :end, 0)}>"
+    formatted_end_time = "<t:#{Map.get(loan, :end, 0)}:R>"
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
