@@ -230,7 +230,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
 
     embed = %Nostrum.Struct.Embed{
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: get_thumbnail_url(c)
+        url: get_thumbnail_url(c, nft)
       },
       title: "**#{name}** Foreclosure",
       color: 5_815_448,
@@ -291,7 +291,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: get_thumbnail_url(c)
+        url: get_thumbnail_url(c, nft)
       },
       url: "https://solscan.io/account/#{pubkey}",
       title: "**#{parse_name(nft, c)}** Offer Accepted",
@@ -351,7 +351,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: get_thumbnail_url(c)
+        url: get_thumbnail_url(c, nft)
       },
       title: "**#{parse_name(nft, c)}** Loan Repaid",
       color: 5_815_448,
@@ -402,7 +402,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: get_thumbnail_url(c)
+        url: get_thumbnail_url(c, nft)
       },
       color: 5_815_448,
       title: "**#{c.name}** Offer Auto-Rescinded",
@@ -500,13 +500,16 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     name
   end
 
-  def get_thumbnail_url(nil),
+  def get_thumbnail_url(nil, nil),
     do:
       "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
 
-  def get_thumbnail_url(%Collections.Collection{logo: nil}),
+  def get_thumbnail_url(%Collections.Collection{logo: nil}, %Nft{image: nil}),
     do:
       "https://cdn.discordapp.com/icons/1064681179367870475/86f082809a9b54dfe68109e1aa074736.png"
+
+  def get_thumbnail_url(_, %Nft{image: image}), do: image
+  def get_thumbnail_url(%Collections.Collection{logo: logo}, %Nft{image: nil}), do: logo
 
   def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
 
