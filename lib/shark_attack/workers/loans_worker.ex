@@ -131,6 +131,8 @@ defmodule SharkAttack.LoansWorker do
 
     try do
       SharkAttack.Events.send_event("TAKE_LOAN", loan)
+
+      SharkAttackWeb.LoansChannel.push(loan)
     rescue
       e ->
         SharkAttack.DiscordConsumer.send_to_webhook(
@@ -140,8 +142,6 @@ defmodule SharkAttack.LoansWorker do
     end
 
     try do
-      SharkAttackWeb.LoansChannel.push(loan)
-
       SharkAttack.Rewards.create_entry(loan)
 
       if loan["is_ll_offer"] do

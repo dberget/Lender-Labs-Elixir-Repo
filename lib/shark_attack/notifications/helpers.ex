@@ -402,7 +402,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         url: "https://lenderlabs.xyz"
       },
       thumbnail: %Nostrum.Struct.Embed.Thumbnail{
-        url: get_thumbnail_url(c, nft)
+        url: get_thumbnail_url(c, nil)
       },
       color: 5_815_448,
       title: "**#{c.name}** Offer Auto-Rescinded",
@@ -511,7 +511,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
   def get_thumbnail_url(_, %Nft{image: image}), do: image
   def get_thumbnail_url(%Collections.Collection{logo: logo}, %Nft{image: nil}), do: logo
 
-  def get_thumbnail_url(%Collections.Collection{logo: logo}), do: logo
+  def get_thumbnail_url(%Collections.Collection{logo: logo}, _), do: logo
 
   defp truncate_address(address) do
     "#{String.slice(address, 0..3)}...#{String.slice(address, -4..-1)}"

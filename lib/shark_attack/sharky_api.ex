@@ -185,13 +185,14 @@ defmodule SharkAttack.SharkyApi do
 
   def get_borrow_tx(%{index: index, borrower: borrower, offer: offer, mint: mint}) do
     case SharkAttack.Helpers.do_get_request(
-           "http://localhost:5001/offers/borrow/ix?wallet=#{borrower}&offerPubkey=#{offer}&mint=#{mint}&index=#{index}"
+           "http://localhost:5001/offers/borrow/ix?borrower=#{borrower}&offer=#{offer}&mint=#{mint}&index=#{index}"
          ) do
       {:error, body} ->
         {:error, body}
 
       body ->
-        Map.get(body, "loanData", [])
+        IO.inspect(body)
+        Map.get(body, "ix", [])
     end
   end
 
