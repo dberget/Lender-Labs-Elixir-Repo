@@ -245,6 +245,7 @@ defmodule SharkAttack.Solana do
       "method" => "searchAssets",
       "params" => %{
         "ownerAddress" => address,
+        "tokenType" => "nonFungible",
         "page" => page,
         "limit" => 1000
       }
