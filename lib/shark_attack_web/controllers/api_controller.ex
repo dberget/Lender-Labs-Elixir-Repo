@@ -229,9 +229,16 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_collection_trading_history(conn, params) do
-    collection = SharkAttack.Collections.get_collection(params["collection_id"])
+    {id, ""} = Integer.parse(params["collection_id"])
 
-    history = SharkAttack.Tensor.get_trading_history(collection.me_slug)
+    volume_data =
+      SharkAttack.FloorWorker.get_volume(id)
+
+    history =
+      SharkAttack.Tensor.get_trading_history(
+        volume_data["tslug"],
+        Map.get(params, "count_back", 60)
+      )
 
     conn
     |> json(history)

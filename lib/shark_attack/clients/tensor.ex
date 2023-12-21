@@ -624,22 +624,17 @@ defmodule SharkAttack.Tensor do
     0
   end
 
-  def get_trading_history(slug) do
+  def get_trading_history(slug, count_back \\ 60) do
     unix_now = :os.system_time(:seconds)
 
     url =
-      "https://api-tradingview.tensor.so/tv/history?symbol=#{slug}/SOL&resolution=1D&from=1&to=#{unix_now}&countback=60"
+      "https://api-tradingview.tensor.so/tv/history?symbol=#{slug}/SOL&resolution=1D&from=1&to=#{unix_now}&countback=#{count_back}"
 
     SharkAttack.Helpers.do_get_request(url, [
       {"content-type", "application/json"},
       {"X-TENSOR-API-KEY", "e7b23445-cb60-4faa-8939-d3c571cd2fd7"}
     ])
     |> Map.drop(["s"])
-
-    # |> Map.values()
-    # |> Enum.zip()
-    # {0.8528, 0.9, 0.79, 0.9, 1695254400, 27.792762273},
-    # {close, high, low, open , time, volume }
   end
 end
 

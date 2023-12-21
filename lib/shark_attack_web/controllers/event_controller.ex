@@ -20,7 +20,7 @@ defmodule SharkAttackWeb.EventController do
     #   event
     # )
 
-    SharkAttack.Workers.LoanHandler.update_loan(event)
+    # SharkAttack.Workers.LoanHandler.update_loan(event)
 
     conn
     |> json(%{message: "ok"})

@@ -75,7 +75,11 @@ defmodule SharkAttack.FloorWorker do
   end
 
   def get_volume(%SharkAttack.Collections.Collection{} = collection) do
-    :ets.lookup(:floor_prices, collection.id)
+    get_volume(collection.id)
+  end
+
+  def get_volume(collection_id) do
+    :ets.lookup(:floor_prices, collection_id)
     |> List.first(
       {nil,
        %{
