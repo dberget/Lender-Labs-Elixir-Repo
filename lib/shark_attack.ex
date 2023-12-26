@@ -1,13 +1,6 @@
 defmodule SharkAttack do
   alias SharkAttack.DiscordConsumer
   require Logger
-  # %{
-  #   payer: "payer-pubkey",
-  #   ltf_target: 0.75,
-  #   orderbook: "orderBook-pubkey",
-  #   floor_price: 1,
-  #   target_loan_amount: 0
-  # }
 
   def getWallet(),
     do: Solana.Key.pair_from_file("/Users/davidberget/.config/solana/arbot.json")

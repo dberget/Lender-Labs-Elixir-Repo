@@ -116,19 +116,19 @@ defmodule SharkAttack.Users do
     fee =
       case turtles_count do
         count when count in 0..4 ->
-          0.003
+          0.10
 
         count when count in 5..10 ->
-          0.0025
+          0.075
 
         count when count in 11..20 ->
-          0.002
+          0.05
 
         count when count in 21..35 ->
-          0.0015
+          0.025
 
         count when count in 36..49 ->
-          0.001
+          0.01
 
         _ ->
           0

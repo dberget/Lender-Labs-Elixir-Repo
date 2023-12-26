@@ -333,8 +333,8 @@ defmodule SharkAttack.LoansWorker do
 
   defp add_new_offer(nil, _attempts), do: nil
 
-  defp add_new_offer(loanData, 4) do
-    Logger.info("Not found: #{loanData.loanAddress} ")
+  defp add_new_offer(loanData, 2) do
+    Logger.info("Not found: #{loanData.loanAddress}")
   end
 
   defp add_new_offer(loanData, attempts) do
