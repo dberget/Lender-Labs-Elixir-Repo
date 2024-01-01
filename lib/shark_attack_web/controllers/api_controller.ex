@@ -319,6 +319,15 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, %{"cache" => "1"} = params) do
+    turtle_count = SharkAttack.Users.get_user_turles_count(params["lender"])
+
+    if turtle_count < 20 do
+      DiscordConsumer.send_to_webhook(
+        "me",
+        "#{params["lender"]} - #{turtle_count}"
+      )
+    end
+
     loans =
       SharkAttack.LoansWorker.get_lender_loans(params["lender"])
       |> Enum.map(&elem(&1, 3))
@@ -383,6 +392,14 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(%{offerSummary: offerSummary, loanSummary: loanSummary})
+  end
+
+  def get_unpaid_fees(conn, params) do
+    unpaid_fees =
+      SharkAttack.LenderFee.get_unpaid_automation_fees(params["lender"])
+
+    conn
+    |> json(%{unpaid_fees: unpaid_fees})
   end
 
   def get_citrus_listings(conn, _params) do

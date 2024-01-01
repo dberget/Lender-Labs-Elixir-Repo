@@ -14,7 +14,8 @@ defmodule SharkAttack.Offers do
       lender: attrs["lender"],
       loan_address: attrs["loan_address"],
       amount: attrs["amount"],
-      collection_id: attrs["collection"]
+      collection_id: attrs["collection"],
+      automation: attrs["automation"]
     })
   end
 
@@ -76,6 +77,17 @@ defmodule SharkAttack.Offers do
 
   def get_offer(loan_address) do
     Repo.get_by(Offer, loan_address: loan_address)
+  end
+
+  def get_automated_offers_for_lender(address) do
+    query =
+      from(o in Offer,
+        where: o.automation == 1,
+        where: o.lender == ^address,
+        where: o.taken == 1
+      )
+
+    Repo.all(query)
   end
 
   def get_boosted_offer(loan_address) do

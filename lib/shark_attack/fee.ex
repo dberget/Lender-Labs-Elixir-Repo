@@ -138,6 +138,19 @@ defmodule SharkAttack.LenderFee do
     :error
   end
 
+  def get_unpaid_automation_fees(lender) do
+    query =
+      from offer in SharkAttack.Loans.Offer,
+        left_join: fee in LenderFee,
+        on: fee.loan_id == offer.loan_address,
+        where: offer.automation == true and is_nil(fee.loan_id),
+        where: offer.lender == ^lender,
+        where: offer.taken == 1,
+        select: offer
+
+    SharkAttack.Repo.all(query) |> Repo.preload(:loan)
+  end
+
   def get_fees_for_user(user_address) do
     query = from fee in LenderFee, where: fee.user_address == ^user_address
 

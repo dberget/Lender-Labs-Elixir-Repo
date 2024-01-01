@@ -8,7 +8,9 @@ defmodule SharkAttack.Loans.Offer do
              :amount,
              :rescinded,
              :taken,
-             :collection_id
+             :collection_id,
+             :automation,
+             :loan
            ]}
   schema "offers" do
     field(:loan_address, :string)
@@ -17,9 +19,11 @@ defmodule SharkAttack.Loans.Offer do
     field(:rescinded, :integer)
     field(:taken, :integer)
 
+    field(:automation, :boolean)
     field(:lender, :string)
 
     belongs_to(:collection, SharkAttack.Collections.Collection)
+    has_one(:loan, SharkAttack.Loans.Loan, foreign_key: :loan, references: :loan_address)
 
     timestamps()
   end
@@ -33,6 +37,7 @@ defmodule SharkAttack.Loans.Offer do
       :amount,
       :collection_id,
       :lender,
+      :automation,
       :loan_address
     ])
     |> validate_required([])

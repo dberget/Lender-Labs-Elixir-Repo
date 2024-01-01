@@ -98,7 +98,7 @@ defmodule SharkAttack.Users do
     |> Repo.delete()
   end
 
-  def get_fee_amount(address) do
+  def get_user_turles_count(address) do
     user_address =
       case SharkAttack.Users.get_user_from_address!(address) do
         %SharkAttack.Accounts.User{} = user ->
@@ -110,8 +110,12 @@ defmodule SharkAttack.Users do
 
     all_user_wallets = get_all_user_addresses!(user_address)
 
+    Enum.map(all_user_wallets, &SharkAttack.Clients.Helius.has_turtles/1) |> Enum.sum()
+  end
+
+  def get_fee_amount(address) do
     turtles_count =
-      Enum.map(all_user_wallets, &SharkAttack.Clients.Helius.has_turtles/1) |> Enum.sum()
+      get_user_turles_count(address)
 
     fee =
       case turtles_count do
