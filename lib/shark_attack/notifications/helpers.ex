@@ -285,8 +285,14 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       Map.get(loan, :lender, Map.get(loan, "lender", "unknown"))
       |> truncate_address()
 
+    # Convert the timestamp to a DateTime
+    start_datetime = DateTime.from_unix!(Map.get(loan, :start, 0), :second)
 
-    formatted_end_time = "<t:#{Map.get(loan, :end, 0)}:R>"
+    # Add the duration in days
+    end_datetime = start_datetime |> DateTime.add(~D[days: Map.get(loan, :duration, 0)])
+
+    # Convert the resulting DateTime back to the Discord timestamp format
+    formatted_end_time = "<t:#{DateTime.to_unix(end_datetime)}:R>"
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
