@@ -9,8 +9,7 @@ defmodule SharkAttack.Loans.Offer do
              :rescinded,
              :taken,
              :collection_id,
-             :automation,
-             :loan
+             :automation
            ]}
   schema "offers" do
     field(:loan_address, :string)

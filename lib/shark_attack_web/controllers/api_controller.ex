@@ -324,7 +324,7 @@ defmodule SharkAttackWeb.ApiController do
     if turtle_count < 20 do
       DiscordConsumer.send_to_webhook(
         "me",
-        "#{params["lender"]} - #{turtle_count}"
+        "Turtles - #{params["lender"]} - #{turtle_count}"
       )
     end
 

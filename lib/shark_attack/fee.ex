@@ -143,12 +143,15 @@ defmodule SharkAttack.LenderFee do
       from offer in SharkAttack.Loans.Offer,
         left_join: fee in LenderFee,
         on: fee.loan_id == offer.loan_address,
+        join: loan in SharkAttack.Loans.Loan,
+        on: offer.loan_address == loan.loan,
+        where: loan.status == "COMPLETE",
         where: offer.automation == true and is_nil(fee.loan_id),
         where: offer.lender == ^lender,
         where: offer.taken == 1,
-        select: offer
+        select: %{offer: offer, earnings: loan.earnings}
 
-    SharkAttack.Repo.all(query) |> Repo.preload(:loan)
+    SharkAttack.Repo.all(query)
   end
 
   def get_fees_for_user(user_address) do
