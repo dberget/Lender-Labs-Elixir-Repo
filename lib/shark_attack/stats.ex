@@ -1,4 +1,6 @@
 defmodule SharkAttack.Stats do
+  import Ecto.Query, warn: false
+
   alias SharkAttack.Repo
   require Logger
 
@@ -113,6 +115,35 @@ defmodule SharkAttack.Stats do
           |> Repo.update()
         end
     end
+  end
+
+  def backfill_missing_earnings do
+    query =
+      from(l in SharkAttack.Loans.Loan,
+        where: l.status == "COMPLETE" and l.earnings == 0.0 and is_nil(l.dateForeclosed),
+        limit: 500,
+        select: l
+      )
+
+    loans =
+      Repo.all(query)
+      |> Enum.group_by(& &1.lender)
+
+    history =
+      Map.keys(loans)
+      |> Enum.map(fn {lender} ->
+        case SharkAttack.SharkyApi.get_history(lender) do
+          {:error, _} ->
+            {:error, :error}
+
+          data ->
+            data
+            |> Enum.map(&format_historical_loan(&1, "Sharky"))
+            |> Enum.filter(fn l -> is_nil(l["dateForeclosed"]) end)
+        end
+      end)
+
+    SharkAttack.Loans.update_or_insert_completed_loans(history, :earnings)
   end
 
   def pull_lending_history(address) do

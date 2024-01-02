@@ -243,8 +243,16 @@ defmodule SharkAttack.Loans do
 
     Enum.map(chunks, fn chunk ->
       Repo.insert_all(Loan, chunk,
-        on_conflict: {:replace_all_except, [:id, :inserted_at, :earnings]}
+        on_conflict: {:replace_all_except, [:id, :inserted_at, :earnings, :end]}
       )
+    end)
+  end
+
+  def update_or_insert_completed_loans(loans, :earnings) do
+    chunks = Enum.chunk_every(loans, 2000)
+
+    Enum.map(chunks, fn chunk ->
+      Repo.insert_all(Loan, chunk, on_conflict: {:replace_all_except, [:id, :inserted_at, :end]})
     end)
   end
 
