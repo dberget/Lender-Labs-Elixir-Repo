@@ -121,7 +121,7 @@ defmodule SharkAttack.Stats do
     query =
       from(l in SharkAttack.Loans.Loan,
         where: l.status == "COMPLETE" and l.earnings == 0.0 and is_nil(l.dateForeclosed),
-        limit: 500,
+        limit: 250,
         select: l
       )
 
@@ -129,21 +129,34 @@ defmodule SharkAttack.Stats do
       Repo.all(query)
       |> Enum.group_by(& &1.lender)
 
-    history =
-      Map.keys(loans)
-      |> Enum.map(fn {lender} ->
-        case SharkAttack.SharkyApi.get_history(lender) do
-          {:error, _} ->
-            {:error, :error}
+    Map.keys(loans)
+    |> Enum.map(fn lender ->
+      IO.inspect("Backfilling earnings for #{lender}")
 
-          data ->
-            data
-            |> Enum.map(&format_historical_loan(&1, "Sharky"))
-            |> Enum.filter(fn l -> is_nil(l["dateForeclosed"]) end)
-        end
-      end)
+      case SharkAttack.SharkyApi.get_history(lender) do
+        {:error, _} ->
+          {:error, :error}
 
-    SharkAttack.Loans.update_or_insert_completed_loans(history, :earnings)
+        data ->
+          data
+          |> Enum.map(&format_historical_loan(&1, "Sharky"))
+          |> Enum.filter(fn l -> is_nil(l["dateForeclosed"]) end)
+          |> SharkAttack.Loans.update_or_insert_completed_loans(:earnings)
+      end
+    end)
+  end
+
+  def backfill(lender) do
+    case SharkAttack.SharkyApi.get_history(lender) do
+      {:error, _} ->
+        {:error, :error}
+
+      data ->
+        data
+        |> Enum.map(&format_historical_loan(&1, "Sharky"))
+        |> Enum.filter(fn l -> is_nil(l["dateForeclosed"]) end)
+        |> SharkAttack.Loans.update_or_insert_completed_loans(:earnings)
+    end
   end
 
   def pull_lending_history(address) do
@@ -361,7 +374,7 @@ defmodule SharkAttack.Stats do
       main = Map.get(SharkAttack.Users.get_user_from_address!(add), :address, add)
       lender_history = history |> Enum.filter(fn l -> l.lender == add end)
 
-      repaid = Enum.map(lender_history, fn l -> l.amountSol end) |> Enum.sum()
+      repaid = Enum.map(lender_history, fn l -> l.earnings end) |> Enum.sum()
       [turtle_count, fee_tier] = SharkAttack.Users.get_fee_amount(main)
 
       %{

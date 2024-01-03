@@ -52,6 +52,13 @@ defmodule SharkAttackWeb.Router do
     get("/list", RewardController, :list)
   end
 
+  scope "/staking", SharkAttackWeb do
+    pipe_through(:api)
+
+    post("/stake", StakeController, :stake)
+    post("/unstake", StakeController, :unstake)
+  end
+
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 

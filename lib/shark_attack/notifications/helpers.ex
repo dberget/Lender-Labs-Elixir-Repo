@@ -277,7 +277,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     pubkey = Map.get(loan, :pubkey, Map.get(loan, "pubkey", Map.get(loan, :loan, "unknown")))
 
     platform =
-      Map.get(loan, :platform, Map.get(loan, "platform", Map.get(loan, :loan, "unknown")))
+      Map.get(loan, :platform, Map.get(loan, "platform", Map.get(loan, :platform, "unknown")))
 
     ltf = parse_ltf(loan, fp)
 
@@ -285,13 +285,20 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       Map.get(loan, :lender, Map.get(loan, "lender", "unknown"))
       |> truncate_address()
 
+    borrower =
+      Map.get(loan, :borrower, Map.get(loan, "borrower", "unknown"))
+      |> truncate_address()
+
     # Convert the timestamp to a DateTime
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    duration_days = Map.get(loan, :duration, 7) * 24 * 60 * 60
 
-    end_datetime = NaiveDateTime.add(now, duration_days, :second)
+    # duration_days =
+    #   Map.get(loan, :duration, Map.get(loan, "duration", Map.get(loan, "length", 7))) * 24 * 60 *
+    #     60
 
-    formatted_end_time = "<t:#{Timex.to_unix(end_datetime)}:R>"
+    # end_datetime = NaiveDateTime.add(now, duration_days, :second)
+
+    # formatted_end_time = "<t:#{Timex.to_unix(end_datetime)}:R>"
 
     %Nostrum.Struct.Embed{
       author: %Nostrum.Struct.Embed.Author{
@@ -323,7 +330,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
         %Nostrum.Struct.Embed.Field{name: "Platform", value: "#{platform}", inline: true},
         %Nostrum.Struct.Embed.Field{name: "LTF", value: ltf, inline: true},
         %Nostrum.Struct.Embed.Field{name: "Wallet", value: lender, inline: true},
-        %Nostrum.Struct.Embed.Field{name: "Ends", value: formatted_end_time, inline: true}
+        %Nostrum.Struct.Embed.Field{name: "Borrower", value: borrower, inline: true}
       ]
     }
   end

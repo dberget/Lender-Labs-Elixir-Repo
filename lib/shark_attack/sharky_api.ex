@@ -283,4 +283,12 @@ defmodule SharkAttack.SharkyApi do
         end
     end
   end
+
+  def stake(params) do
+    SharkAttack.Helpers.do_post_request("http://localhost:5001/stake", params)
+  end
+
+  def unstake(params) do
+    SharkAttack.Helpers.do_post_request("http://localhost:5001/unstake", params)
+  end
 end

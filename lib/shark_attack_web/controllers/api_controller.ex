@@ -784,8 +784,7 @@ defmodule SharkAttackWeb.ApiController do
       lender_count: lender_count,
       total_repaid: tvl,
       holder_earnings: earnings,
-      estimated_fees_sol: fee_total,
-      estimated_fees_usdc: fee_total * 55
+      estimated_fees_sol: fee_total
     })
   end
 
