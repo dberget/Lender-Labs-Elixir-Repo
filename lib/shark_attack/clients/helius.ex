@@ -1,5 +1,7 @@
 defmodule SharkAttack.Clients.Helius do
   # @url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  import SharkAttack.Helpers
+
   @coll "FrZ6UuodANWfw8mMWBggDbQjrjnV8hcAaDVBUWRwwkAY"
 
   require Logger
@@ -64,11 +66,34 @@ defmodule SharkAttack.Clients.Helius do
   end
 
   defp count_turtles_in_assets(assets) do
-    Enum.count(assets, fn %{"creators" => creators} ->
+    Enum.count(assets, fn %{"creators" => creators, "ownership" => ownership} ->
       first_creator = List.first(creators, %{})
 
-      Map.get(first_creator, "address") == @coll
+      Map.get(first_creator, "address") == @coll and
+        Map.get(ownership, "delegate", "") !== "FLshW3pj5KWt4S5JDnsHiFqoUu8WK8S8JhVHp5L9rC6x"
     end)
+  end
+
+  def get_turtles() do
+    get_turtles(1, [], 1000)
+  end
+
+  def get_turtles(_page, assets, result_count) when result_count < 1000 do
+    assets
+  end
+
+  def get_turtles(page, assets, _result_count) do
+    case Solana.fetch_creator_assets(@coll, page) do
+      {:ok, new_assets} ->
+        get_turtles(
+          page + 1,
+          assets ++ new_assets,
+          new_assets |> Enum.count()
+        )
+
+      {:error, _} ->
+        :error
+    end
   end
 
   def get_native_balance(address) do
@@ -96,5 +121,15 @@ defmodule SharkAttack.Clients.Helius do
       balance ->
         balance
     end
+  end
+
+  def parse_transactions(transactions) do
+    url = "https://api.helius.xyz/v0/transactions/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+
+    params = %{
+      "transactions" => transactions
+    }
+
+    do_post_request(url, params)
   end
 end

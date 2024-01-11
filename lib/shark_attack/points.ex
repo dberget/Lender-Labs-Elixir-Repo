@@ -1,6 +1,7 @@
 defmodule SharkAttack.Points do
   alias SharkAttack.Points.{PointEntry, UserPoints}
   alias SharkAttack.Repo
+  import Ecto.Query
 
   def get_user_points(address) do
     Repo.get_by(UserPoints, address: address)
@@ -32,5 +33,14 @@ defmodule SharkAttack.Points do
     point_entry = Repo.get(PointEntry, id)
 
     Repo.delete(point_entry)
+  end
+
+  def get_points_from_event_type(address, event_type) do
+    from(p in PointEntry,
+      select: sum(p.amount),
+      where: p.address == ^address,
+      where: p.event_type == ^event_type
+    )
+    |> Repo.one()
   end
 end

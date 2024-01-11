@@ -1,7 +1,7 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  @rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  @rpc_url "https://rpc.helius.xyz/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
   # @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
 
@@ -19,6 +19,25 @@ defmodule SharkAttack.Solana do
         ]
       }
       |> Jason.encode!()
+
+    res = do_post_request(@rpc_url, params)
+
+    res["result"]
+  end
+
+  def get_signatures_for_address(address) do
+    params =
+      %{
+        "jsonrpc" => "2.0",
+        "id" => "my-id",
+        "method" => "getSignaturesForAddress",
+        "params" => [
+          address,
+          %{
+            "limit" => 10
+          }
+        ]
+      }
 
     res = do_post_request(@rpc_url, params)
 
@@ -248,6 +267,29 @@ defmodule SharkAttack.Solana do
         "tokenType" => "nonFungible",
         "page" => page,
         "limit" => 1000
+      }
+    }
+
+    case do_post_request(@rpc_url, body) do
+      {:error, _} ->
+        {:error, []}
+
+      body ->
+        %{"result" => %{"items" => items}} = body
+
+        {:ok, items}
+    end
+  end
+
+  def fetch_creator_assets(address, page) do
+    body = %{
+      "jsonrpc" => "2.0",
+      "id" => "my-id",
+      "method" => "getAssetsByCreator",
+      "params" => %{
+        "onlyVerified" => true,
+        "creatorAddress" => address,
+        "page" => page
       }
     }
 

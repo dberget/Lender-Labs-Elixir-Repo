@@ -1014,14 +1014,25 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def track_fee(conn, params) do
-    res =
-      SharkAttack.LenderFee.insert_lender_fee(
-        params["user_address"],
-        params["loan_id"],
-        params["nonce_account"],
-        params["amount"]
-      )
+    case SharkAttack.LenderFee.insert_lender_fee(
+           params["user_address"],
+           params["loan_id"],
+           params["nonce_account"],
+           params["amount"]
+         ) do
+      {:ok, _fee} ->
+        conn
+        |> json(%{success: true})
 
-    conn |> json(res)
+      {:error, changeset} ->
+        DiscordConsumer.send_to_webhook(
+          "me",
+          "Unable to save fee: #{inspect(changeset)} \n #{inspect(params)}"
+        )
+
+        conn
+        |> put_status(400)
+        |> json(%{error: "Error, please try again"})
+    end
   end
 end

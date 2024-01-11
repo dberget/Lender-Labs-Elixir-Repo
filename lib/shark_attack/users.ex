@@ -110,7 +110,8 @@ defmodule SharkAttack.Users do
 
     all_user_wallets = get_all_user_addresses!(user_address)
 
-    Enum.map(all_user_wallets, &SharkAttack.Clients.Helius.has_turtles/1) |> Enum.sum()
+    Enum.map(all_user_wallets, &SharkAttack.Clients.Helius.has_turtles/1)
+    |> Enum.sum()
   end
 
   def get_fee_amount(address) do

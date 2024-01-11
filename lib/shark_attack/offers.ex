@@ -127,4 +127,17 @@ defmodule SharkAttack.Offers do
 
     Repo.all(query)
   end
+
+  def get_lender_offers(lender) do
+    {:ok, datetime} = NaiveDateTime.new(~D[2023-12-01], ~T[00:00:00])
+
+    query =
+      from(o in Offer,
+        where: o.lender == ^lender,
+        where: o.inserted_at > ^datetime,
+        where: o.automation == false
+      )
+
+    Repo.all(query)
+  end
 end

@@ -34,11 +34,14 @@ defmodule SharkAttackWeb.UserController do
 
     points = SharkAttack.Points.get_user_points(address)
 
+    staked_points = SharkAttack.Points.get_points_from_event_type(address, "STAKE")
+
     conn
     |> json(%{
       address: user.address,
       settings: user.user_settings,
       turtles_count: turtles_count,
+      staked_rewards: staked_points,
       points: points
     })
   end

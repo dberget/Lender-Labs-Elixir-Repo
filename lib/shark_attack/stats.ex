@@ -399,11 +399,32 @@ defmodule SharkAttack.Stats do
       SharkAttack.LenderFee.get_active_fees()
       |> Repo.preload(:offer)
 
+    active_automation_loans =
+      SharkAttack.LenderFee.get_all_active_unpaid_automation_loans()
+      |> Enum.map(& &1.offer.amount)
+      |> Enum.sum()
+
     active_loan_fees =
       all_active_fees
       |> Enum.filter(& &1.offer.taken)
       |> Enum.map(&Map.get(&1, :amount, 0))
       |> Enum.sum()
+
+    upcoming_fee_schedule =
+      all_active_fees
+      |> Enum.filter(& &1.offer.taken)
+      |> Enum.group_by(fn f ->
+        f.inserted_at
+        |> Timex.to_date()
+        |> Timex.shift(days: 7)
+      end)
+      |> Enum.map(fn {date, fees} ->
+        %{
+          date: date,
+          amount: Enum.map(fees, &(Map.get(&1, :amount, 0) / 1_000_000_000)) |> Enum.sum()
+        }
+      end)
+      |> Enum.sort_by(fn v -> v.date end, {:desc, Date})
 
     active_total =
       all_active_fees
@@ -413,8 +434,31 @@ defmodule SharkAttack.Stats do
     collected_fees =
       SharkAttack.LenderFee.get_collected_fees()
 
+    fees_grouped_by_week =
+      collected_fees
+      |> Enum.group_by(fn f ->
+        f.updated_at
+        |> Timex.to_date()
+        |> Timex.Date.beginning_of_week(:sunday)
+      end)
+      |> Enum.map(fn {date, fees} ->
+        %{
+          date: date,
+          amount: Enum.map(fees, &(Map.get(&1, :amount, 0) / 1_000_000_000)) |> Enum.sum()
+        }
+      end)
+      |> Enum.sort_by(fn v -> v.date end, {:desc, Date})
+
     collected_total =
       collected_fees
+      |> Enum.map(&Map.get(&1, :amount, 0))
+      |> Enum.sum()
+
+    collected_last_24 =
+      collected_fees
+      |> Enum.filter(fn f ->
+        Timex.compare(f.updated_at, Timex.now() |> Timex.shift(hours: -24)) > -1
+      end)
       |> Enum.map(&Map.get(&1, :amount, 0))
       |> Enum.sum()
 
@@ -422,7 +466,25 @@ defmodule SharkAttack.Stats do
       active_total: active_total / 1_000_000_000,
       active_offers: (active_total - active_loan_fees) / 1_000_000_000,
       active_loans: active_loan_fees / 1_000_000_000,
-      collected: collected_total / 1_000_000_000
+      collected_last_24: collected_last_24 / 1_000_000_000,
+      collected: collected_total / 1_000_000_000,
+      collected_by_week: fees_grouped_by_week,
+      automation_loans_tvl: active_automation_loans / 1_000_000_000,
+      automation_offer_tvl: get_automation_tvl(),
+      upcoming_fee_schedule: upcoming_fee_schedule
     }
+  end
+
+  def get_automation_tvl() do
+    query =
+      from offer in SharkAttack.Loans.Offer,
+        left_join: fee in SharkAttack.Loans.LenderFee,
+        on: fee.loan_id == offer.loan_address,
+        where: offer.automation == true,
+        where: is_nil(offer.taken),
+        where: is_nil(offer.rescinded),
+        select: sum(offer.amount) / 1_000_000_000
+
+    SharkAttack.Repo.all(query)
   end
 end
