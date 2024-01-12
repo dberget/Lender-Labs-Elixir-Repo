@@ -65,7 +65,6 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
          %User{address: pk, discordId: discordId, user_settings: %UserSettings{} = settings} <-
            user,
          false <- is_nil(discordId),
-         true <- SharkAttack.Clients.Helius.has_turtles(pk, 3) >= 3,
          {:ok, true} <-
            Map.fetch(settings, setting) do
       {:user, discordId}

@@ -319,15 +319,6 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def get_lender_loans(conn, %{"cache" => "1"} = params) do
-    turtle_count = SharkAttack.Users.get_user_turles_count(params["lender"])
-
-    if turtle_count < 20 do
-      DiscordConsumer.send_to_webhook(
-        "me",
-        "Turtles - #{params["lender"]} - #{turtle_count}"
-      )
-    end
-
     loans =
       SharkAttack.LoansWorker.get_lender_loans(params["lender"])
       |> Enum.map(&elem(&1, 3))
