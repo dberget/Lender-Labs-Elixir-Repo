@@ -3,7 +3,7 @@ defmodule SharkAttack do
   require Logger
 
   def getWallet(),
-    do: Solana.Key.pair_from_file("/Users/davidberget/.config/solana/arbot.json")
+    do: Solana.Key.pair_from_file("/home/sharx/id.json")
 
   def check_collections do
     loans = SharkAttack.LoansWorker.get_all_collection_loans()

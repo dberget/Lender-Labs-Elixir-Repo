@@ -59,6 +59,7 @@ defmodule SharkAttack.Raffles do
   end
 
   def draw_raffle(raffle_id) do
+    raffle = get_raffle(raffle_id)
     raffle_entries = get_raffle_entries_by_raffle(raffle_id)
 
     winner =
@@ -69,6 +70,8 @@ defmodule SharkAttack.Raffles do
       |> Enum.shuffle()
       |> Enum.random()
 
-    update_raffle(raffle_id, %{winner: winner, status: "DRAWN"})
+    tx = SharkAttack.Solana.send_nft(winner, raffle.mint) |> IO.inspect()
+
+    update_raffle(raffle_id, %{winner: winner, status: "DRAWN", reward_transaction: tx})
   end
 end
