@@ -1,7 +1,7 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  @rpc_url "https://rpc.helius.xyz/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  @rpc_url "https://rpc-proxy.davidberget.workers.dev/"
   # @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
 
@@ -53,14 +53,26 @@ defmodule SharkAttack.Solana do
     res["nativeBalance"]
   end
 
-  def sign_and_send_transaction(instructions, client) do
+  def sign_and_send_transaction(instructions) do
     {:ok, signer} = SharkAttack.getWallet()
 
-    {:ok, %{"blockhash" => blockhash}} =
-      Solana.RPC.send(
-        client,
-        Solana.RPC.Request.get_latest_blockhash()
-      )
+    %{
+      "result" => %{
+        "value" => %{
+          "blockhash" => blockhash
+        }
+      }
+    } =
+      SharkAttack.Helpers.do_post_request(@rpc_url, %{
+        "id" => 1,
+        "jsonrpc" => "2.0",
+        "method" => "getLatestBlockhash",
+        "params" => [
+          %{
+            "commitment" => "finalized"
+          }
+        ]
+      })
 
     t = %Solana.Transaction{
       payer: @pk,
@@ -69,10 +81,14 @@ defmodule SharkAttack.Solana do
       signers: [signer]
     }
 
-    Solana.RPC.send(
-      client,
-      Solana.RPC.Request.send_transaction(t, skip_preflight: true)
-    )
+    %{"result" => sig} =
+      SharkAttack.Helpers.do_post_request(
+        @rpc_url,
+        Solana.RPC.Request.send_transaction(t, skip_preflight: true)
+        |> Solana.RPC.Request.encode()
+      )
+
+    sig
   end
 
   @spec get_account_info(binary | {any, binary}, binary | Tesla.Client.t()) ::
@@ -90,33 +106,57 @@ defmodule SharkAttack.Solana do
     )
   end
 
-  def getAndCreateTokenAccountIfNotExists(address, client) do
-    token_account = get_token_account(address, @pk)
+  def getAndCreateTokenAccountIfNotExists(address, user, client) do
+    token_account = get_token_account(address, Solana.pubkey!(user))
 
     {:ok, token_account_info} = get_account_info(B58.encode58(token_account), client)
-    createTokenAccount(token_account_info, address |> Solana.pubkey!(), client)
+
+    parse_token_account_info = token_account_info |> Jason.decode!()
+
+    createTokenAccount(
+      parse_token_account_info["result"]["value"],
+      address,
+      token_account,
+      user
+    )
 
     token_account
   end
 
-  defp createTokenAccount(nil, address, client) do
-    {:ok, assoc_address} = Solana.SPL.AssociatedToken.find_address(address, @pk)
+  def send_nft(recipient, mint) do
+    client = Solana.RPC.client(network: @rpc_url)
+
+    from_token_acct = get_token_account(mint, @pk)
+
+    to_token_acct = getAndCreateTokenAccountIfNotExists(mint, recipient, client)
+
+    Process.sleep(10_000)
 
     ix =
-      Solana.SPL.AssociatedToken.create_account(
-        new: assoc_address,
-        payer: @pk,
+      Solana.SPL.Token.transfer(
+        to: to_token_acct,
+        from: from_token_acct,
         owner: @pk,
-        mint: address
+        mint: mint |> Solana.pubkey!(),
+        amount: 1
       )
 
-    sign_and_send_transaction(
-      [ix],
-      client
-    )
+    sign_and_send_transaction([ix])
   end
 
-  defp createTokenAccount(_info_, _address, _client), do: nil
+  defp createTokenAccount(nil, address, token_account, recipient) do
+    ix =
+      Solana.SPL.AssociatedToken.create_account(
+        new: token_account,
+        payer: @pk,
+        owner: recipient |> Solana.pubkey!(),
+        mint: address |> Solana.pubkey!()
+      )
+
+    sign_and_send_transaction([ix])
+  end
+
+  defp createTokenAccount(_info_, _, _, _address, _client), do: nil
 
   def get_token_account(mint, address) do
     mint = Solana.pubkey!(mint)
