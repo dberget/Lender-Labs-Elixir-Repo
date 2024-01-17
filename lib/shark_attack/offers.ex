@@ -29,6 +29,17 @@ defmodule SharkAttack.Offers do
     Repo.all(query)
   end
 
+  def get_offers_since_fees do
+    {:ok, datetime} = NaiveDateTime.new(~D[2023-12-01], ~T[00:00:00])
+
+    query =
+      from(o in Offer,
+        where: o.inserted_at > ^datetime
+      )
+
+    Repo.all(query)
+  end
+
   def create_offer(attr) do
     %Offer{}
     |> SharkAttack.Loans.Offer.changeset(attr)
@@ -102,17 +113,6 @@ defmodule SharkAttack.Offers do
     query =
       from(o in Offer,
         where: o.inserted_at > fragment("NOW() - INTERVAL 4 WEEK")
-      )
-
-    Repo.all(query)
-  end
-
-  def last_two_weeks() do
-    query =
-      from(o in Offer,
-        where:
-          o.inserted_at > fragment("NOW() - INTERVAL 3 WEEK") and
-            is_nil(o.rescinded)
       )
 
     Repo.all(query)

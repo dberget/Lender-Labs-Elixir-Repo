@@ -3,7 +3,7 @@ defmodule SharkAttack.Solana do
 
   @rpc_url "https://rpc-proxy.davidberget.workers.dev/"
   # @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
-  @pk Solana.pubkey!("BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm")
+  @pk Solana.pubkey!("FLshW3pj5KWt4S5JDnsHiFqoUu8WK8S8JhVHp5L9rC6x")
 
   def send_transaction(bin_tx) do
     params =
@@ -130,7 +130,7 @@ defmodule SharkAttack.Solana do
 
     to_token_acct = getAndCreateTokenAccountIfNotExists(mint, recipient, client)
 
-    Process.sleep(10_000)
+    Process.sleep(30_000)
 
     ix =
       Solana.SPL.Token.transfer(
@@ -270,6 +270,26 @@ defmodule SharkAttack.Solana do
         %{
           "limit" => limit
         }
+      ]
+    }
+  end
+
+  def get_transaction(signatures) do
+    params = get_transaction_request(signatures)
+
+    res = do_post_request(@rpc_url, params) |> IO.inspect()
+
+    res["result"]
+  end
+
+  def get_transaction_request(signatures) do
+    %{
+      "jsonrpc" => "2.0",
+      "id" => 1,
+      "method" => "getTransaction",
+      "params" => [
+        signatures,
+        "json"
       ]
     }
   end

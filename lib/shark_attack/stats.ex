@@ -23,7 +23,9 @@ defmodule SharkAttack.Stats do
   end
 
   def update_ll_offers() do
-    offers = SharkAttack.Offers.get_active_offers()
+    offers =
+      SharkAttack.Offers.get_offers_since_fees()
+      |> Enum.filter(&(is_nil(&1.rescinded) and is_nil(&1.taken)))
 
     offers
     |> Enum.map(fn l ->
