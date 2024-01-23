@@ -94,6 +94,16 @@ defmodule SharkAttack.AutoRescind do
     end)
   end
 
+  def get_rescinded_loan_count() do
+    # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
+    query =
+      from(l in AutoRescind,
+        select: count(l.id)
+      )
+
+    SharkAttack.Repo.one(query)
+  end
+
   def get_offers_to_rescind(user_address) do
     # get all the offers in AutoRescind that are ACTIVE and have a end_time in the past
     from(

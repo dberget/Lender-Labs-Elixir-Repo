@@ -75,6 +75,16 @@ defmodule SharkAttack.AutoForeclose do
     SharkAttack.Repo.all(query)
   end
 
+  def get_foreclosed_loan_count() do
+    # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
+    query =
+      from(l in AutoForeclose,
+        select: count(l.id)
+      )
+
+    SharkAttack.Repo.one(query)
+  end
+
   def get_loans_to_foreclose() do
     # get all the loans in AutoForeclose that are ACTIVE and have a forecloseTime in the past
     query =

@@ -13,6 +13,12 @@ defmodule SharkAttack.SharkyApi do
     res
   end
 
+  def claim_rewards(params) do
+    res = SharkAttack.Helpers.do_post_request("http://localhost:5001/claim_rewards", params)
+
+    res["result"]
+  end
+
   def get_raw_order_books() do
     res = SharkAttack.Helpers.do_get_request("http://localhost:5001/order_book/rawlist")
 

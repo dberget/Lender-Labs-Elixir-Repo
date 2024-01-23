@@ -400,6 +400,7 @@ defmodule SharkAttack.Stats do
     all_active_fees =
       SharkAttack.LenderFee.get_active_fees()
       |> Repo.preload(:offer)
+      |> Enum.filter(&(!is_nil(&1.offer)))
 
     active_automation_loans =
       SharkAttack.LenderFee.get_all_active_unpaid_automation_loans()
@@ -468,6 +469,7 @@ defmodule SharkAttack.Stats do
       active_total: active_total / 1_000_000_000,
       active_offers: (active_total - active_loan_fees) / 1_000_000_000,
       active_loans: active_loan_fees / 1_000_000_000,
+      auto_defaults: SharkAttack.AutoForeclose.get_foreclosed_loan_count() * 0.01144768,
       collected_last_24: collected_last_24 / 1_000_000_000,
       collected: collected_total / 1_000_000_000,
       collected_by_week: fees_grouped_by_week,
@@ -480,8 +482,6 @@ defmodule SharkAttack.Stats do
   def get_automation_tvl() do
     query =
       from offer in SharkAttack.Loans.Offer,
-        left_join: fee in SharkAttack.Loans.LenderFee,
-        on: fee.loan_id == offer.loan_address,
         where: offer.automation == true,
         where: is_nil(offer.taken),
         where: is_nil(offer.rescinded),

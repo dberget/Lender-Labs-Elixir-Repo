@@ -120,6 +120,44 @@ defmodule SharkAttack.LenderFee do
     Logger.info("#{user_address} complete.")
   end
 
+  def get_missing_fees_from_nonce_account(address) do
+    signature =
+      case SharkAttack.Solana.get_signatures_for_address(address)
+           |> List.last(%{})
+           |> Map.get("signature", nil) do
+        nil ->
+          nil
+
+        signature ->
+          signature
+      end
+
+    txs =
+      SharkAttack.Clients.Helius.parse_transactions([signature])
+
+    txs
+    |> Enum.map(fn tx ->
+      data =
+        tx["instructions"]
+        |> Enum.find(fn i -> i["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP" end)
+
+      if !is_nil(data) do
+        %{"accounts" => accounts} = data
+
+        user_address = Enum.at(accounts, 0)
+        loan = Enum.at(accounts, 3)
+
+        insert_lender_fee(
+          user_address,
+          loan,
+          address,
+          SharkAttack.Solana.fetch_native_balance(address)
+        )
+      end
+    end)
+    |> Enum.filter(&(&1 != nil))
+  end
+
   # For backfilling the lender fee table
   def update_lender_fee_amount(nonce_account, new_amount) do
     post = SharkAttack.Repo.get_by(LenderFee, nonce_account: nonce_account)

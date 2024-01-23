@@ -57,6 +57,9 @@ defmodule SharkAttackWeb.Router do
 
     get("/", RaffleController, :index)
     get("/get_user_raffle_entries", RaffleController, :get_user_raffle_entries)
+
+    get("/claim_sol", RaffleController, :claim_sol)
+    post("/submit_claim", RaffleController, :submit_claim)
     post("/insert", RaffleController, :insert)
   end
 

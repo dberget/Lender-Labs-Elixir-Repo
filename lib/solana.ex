@@ -12,7 +12,7 @@ defmodule SharkAttack.Solana do
         "id" => 1,
         "method" => "sendTransaction",
         "params" => [
-          Base.encode64(bin_tx),
+          bin_tx |> to_string() |> B58.encode58(),
           %{
             "encoding" => "base64"
           }
@@ -156,7 +156,7 @@ defmodule SharkAttack.Solana do
     sign_and_send_transaction([ix])
   end
 
-  defp createTokenAccount(_info_, _, _, _address, _client), do: nil
+  defp createTokenAccount(_info_, _, _address, _client), do: nil
 
   def get_token_account(mint, address) do
     mint = Solana.pubkey!(mint)
