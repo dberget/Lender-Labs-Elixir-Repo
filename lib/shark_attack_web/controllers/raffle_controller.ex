@@ -3,7 +3,6 @@ defmodule SharkAttackWeb.RaffleController do
   require Logger
 
   @pool_address "TRTPt95VNwzPMrmB3D4zceqVACipq35QWoQ1xhNorck"
-  @lamports_per_sol 1_000_000_000
 
   def index(conn, params) do
     raffles =
@@ -12,8 +11,12 @@ defmodule SharkAttackWeb.RaffleController do
     raffle_data =
       raffles
       |> Enum.map(fn raffle ->
+        c = SharkAttack.Collections.get_collection_from_mint(raffle.mint)
+        fp = SharkAttack.FloorWorker.get_floor_price(c.id)
+
         %{
           raffle: raffle,
+          floor_price: fp,
           entries: raffle.entries,
           total_entries: Enum.map(raffle.entries, fn entry -> entry.entries end) |> Enum.sum(),
           user_entries:
@@ -58,74 +61,86 @@ defmodule SharkAttackWeb.RaffleController do
   end
 
   def claim_sol(conn, params) do
-    existing_points =
-      SharkAttack.Points.get_user_points(params["user"])
+    case SharkAttack.SharkyApi.verify(params["msg"], params["user"]) do
+      %{"verify" => true} ->
+        existing_points =
+          SharkAttack.Points.get_user_points(params["user"])
 
-    {amount, ""} = Integer.parse(params["amount"])
+        {amount, ""} = Integer.parse(params["amount"])
 
-    IO.inspect(amount, label: "amount")
-    IO.inspect(existing_points.total_amount, label: "existing_points_total")
+        case existing_points.total_amount < amount do
+          true ->
+            conn
+            |> json(%{error: "not enough points"})
 
-    case existing_points.total_amount < amount do
-      true ->
-        conn
-        |> json(%{error: "not enough points"})
+          false ->
+            pool_balance = SharkAttack.Solana.fetch_native_balance(@pool_address)
 
-      false ->
-        pool_balance = SharkAttack.Solana.fetch_native_balance(@pool_address)
+            all_points =
+              SharkAttack.Points.all()
+              |> Enum.map(fn p -> p.total_amount end)
+              |> Enum.sum()
 
-        all_points =
-          SharkAttack.Points.all()
-          |> Enum.map(fn p -> p.total_amount end)
-          |> Enum.sum()
+            points_per_sol = pool_balance / all_points
 
-        points_per_sol = pool_balance / all_points
+            tx =
+              %{}
+              |> Map.put("user", params["user"])
+              |> Map.put("lamports", (amount * points_per_sol) |> floor())
+              |> Map.put("points", amount)
+              |> Map.put("balance", existing_points.total_amount)
+              |> SharkAttack.SharkyApi.claim_rewards()
 
-        tx =
-          %{}
-          |> Map.put("user", params["user"])
-          |> Map.put("lamports", (amount * points_per_sol) |> floor())
-          |> Map.put("points", amount)
-          |> SharkAttack.SharkyApi.claim_rewards()
+            {:ok, _point_entry} =
+              SharkAttack.Points.create(%{
+                address: params["user"],
+                source: tx,
+                amount: amount * -1,
+                event_type: "CLAIM_SOL",
+                platform: "LL"
+              })
 
-        {:ok, _point_entry} =
-          SharkAttack.Points.create(%{
-            address: params["user"],
-            source: tx,
-            amount: amount * -1,
-            event_type: "CLAIM_SOL",
-            platform: "LL"
-          })
+            conn
+            |> json(%{
+              tx: tx,
+              point_entry: amount
+            })
 
-        conn
-        |> json(%{
-          tx: tx,
-          point_entry: amount
-        })
+          _ ->
+            conn
+            |> json(%{error: "Invalid signature"})
+        end
     end
   end
 
   def insert(conn, params) do
-    existing_points = SharkAttack.Points.get_user_points(params["user"])
+    case SharkAttack.SharkyApi.verify(params["msg"], params["user"]) do
+      %{"verify" => true} ->
+        existing_points = SharkAttack.Points.get_user_points(params["user"])
 
-    with true <- existing_points.total_amount - params["entries"] >= 0,
-         {:ok, _} <-
-           SharkAttack.Points.create(%{
-             address: params["user"],
-             amount: params["entries"] * -1,
-             event_type: "RAFFLE_ENTRY",
-             platform: "LL",
-             source: params["raffle_id"] |> Integer.to_string()
-           }),
-         {:ok, raffle_entry} <- SharkAttack.Raffles.create_raffle_entry(params) do
-      conn |> json(raffle_entry)
-    else
-      false ->
-        conn |> json(%{error: "Not enough points"})
+        with true <- existing_points.total_amount - params["entries"] >= 0,
+             {:ok, _} <-
+               SharkAttack.Points.create(%{
+                 address: params["user"],
+                 amount: params["entries"] * -1,
+                 event_type: "RAFFLE_ENTRY",
+                 platform: "LL",
+                 source: params["raffle_id"] |> Integer.to_string()
+               }),
+             {:ok, raffle_entry} <- SharkAttack.Raffles.create_raffle_entry(params) do
+          conn |> json(raffle_entry)
+        else
+          false ->
+            conn |> json(%{error: "Not enough points"})
 
-      {:error, changeset} ->
-        Logger.error("Error creating raffle entry: #{inspect(changeset)}")
-        conn |> json(%{error: "Error creating raffle entry"})
+          {:error, changeset} ->
+            Logger.error("Error creating raffle entry: #{inspect(changeset)}")
+            conn |> json(%{error: "Error creating raffle entry"})
+        end
+
+      _ ->
+        conn
+        |> json(%{error: "Invalid signature"})
     end
   end
 end
