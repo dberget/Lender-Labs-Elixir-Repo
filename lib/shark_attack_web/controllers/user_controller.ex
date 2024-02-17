@@ -72,6 +72,13 @@ defmodule SharkAttackWeb.UserController do
     end
   end
 
+  def get_report(conn, %{"pk" => address}) do
+    data = SharkAttack.Stats.get_user_weekly_breakdown(address)
+
+    conn
+    |> json(data)
+  end
+
   def is_holder(conn, %{"pk" => address}) do
     case SharkAttack.Users.get_user_from_address!(address) do
       %SharkAttack.Accounts.User{} = user ->

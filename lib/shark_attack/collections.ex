@@ -76,13 +76,15 @@ defmodule SharkAttack.Collections do
         collection =
           Map.get(slug, "data", %{})
           |> Map.get("mints", [])
-          |> List.first()
-          |> Map.get("collection", nil)
+          |> List.first(%{})
+          |> Map.get("collection")
 
-        update_collection(c, %{
-          me_slug: Map.get(collection, "slugMe", nil),
-          logo: Map.get(collection, "imageUri", nil)
-        })
+        if !is_nil(collection) do
+          update_collection(c, %{
+            me_slug: Map.get(collection, "slugMe", nil),
+            logo: Map.get(collection, "imageUri", nil)
+          })
+        end
       end
     end)
   end

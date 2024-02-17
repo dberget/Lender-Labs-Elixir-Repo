@@ -479,6 +479,38 @@ defmodule SharkAttack.Stats do
     }
   end
 
+  def get_user_weekly_breakdown(address) do
+    {:ok, start} = NaiveDateTime.new(~D[2023-01-01], ~T[00:00:00])
+    {:ok, endTime} = NaiveDateTime.new(~D[2023-12-31], ~T[00:00:00])
+
+    query =
+      from l in SharkAttack.Loans.Loan,
+        where: l.lender == ^address,
+        where: l.inserted_at > ^start,
+        where: l.inserted_at < ^endTime,
+        select: %{
+          lender: l.lender,
+          amountSol: l.amountSol,
+          earnings: l.earnings,
+          week: fragment("WEEK(?)", l.inserted_at)
+        }
+
+    Repo.all(query)
+    |> Enum.group_by(fn l -> l.week end)
+    |> Enum.map(fn {week, loans} ->
+      earnings = Enum.map(loans, &Map.get(&1, :earnings, 0)) |> Enum.sum()
+      loaned = Enum.map(loans, &Map.get(&1, :amountSol, 0)) |> Enum.sum()
+
+      %{
+        week: week,
+        loans: Enum.count(loans),
+        loaned: loaned,
+        earnings: earnings,
+        weekly_return: (earnings / loaned * 100) |> Float.round(3)
+      }
+    end)
+  end
+
   def get_automation_tvl() do
     query =
       from offer in SharkAttack.Loans.Offer,

@@ -486,6 +486,12 @@ defmodule SharkAttack.Tensor do
     :error
   end
 
+  defp parse_tensor_response({:ok, %{status: 520, body: _body}}, info) do
+    Logger.warning("Error calling Tensor: 520 Service Unavailable, #{info}")
+
+    :error
+  end
+
   defp parse_tensor_response({:ok, %{status: 400, body: body}}, _info) do
     Logger.warning("Error calling Tensor: 400 Service Unavailable, #{body}")
 

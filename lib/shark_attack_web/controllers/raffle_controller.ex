@@ -34,7 +34,7 @@ defmodule SharkAttackWeb.RaffleController do
 
     all_points =
       SharkAttack.Points.all()
-      |> Enum.map(fn p -> p.total_amount end)
+      |> Enum.map(fn p -> Map.get(p, :total_amount, 0) end)
       |> Enum.sum()
 
     price_per_point = pool_balance / all_points

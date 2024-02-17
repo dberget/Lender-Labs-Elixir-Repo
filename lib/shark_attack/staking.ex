@@ -5,7 +5,15 @@ defmodule SharkAttack.Staking do
     get_staked_turtles()
     |> Enum.group_by(& &1["ownership"]["owner"])
     |> Enum.map(fn {address, turtles} ->
-      award_points(address, turtles)
+      try do
+        award_points(address, turtles)
+      rescue
+        _err ->
+          SharkAttack.DiscordConsumer.send_to_webhook(
+            "me",
+            "Error awarding points to #{address} for staking turtles."
+          )
+      end
     end)
   end
 

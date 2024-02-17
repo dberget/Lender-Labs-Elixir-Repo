@@ -139,7 +139,8 @@ defmodule SharkAttack.LenderFee do
     |> Enum.map(fn tx ->
       data =
         tx["instructions"]
-        |> Enum.find(fn i -> i["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP" end)
+        |> Enum.filter(fn i -> i["programId"] == "SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP" end)
+        |> List.last()
 
       if !is_nil(data) do
         %{"accounts" => accounts} = data
