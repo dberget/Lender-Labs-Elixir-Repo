@@ -19,6 +19,7 @@ defmodule SharkAttack.Collections.Collection do
              :fp,
              :nfts,
              :me_slug,
+             :tensor_slug,
              :hide
            ]}
   schema "collections" do
@@ -32,6 +33,7 @@ defmodule SharkAttack.Collections.Collection do
     field(:duration, :integer)
     field(:apy, :integer)
     field(:me_slug, :string)
+    field(:tensor_slug, :string)
 
     field(:hyperspace_id, :string)
     field(:hide, :boolean, default: false)
@@ -57,6 +59,7 @@ defmodule SharkAttack.Collections.Collection do
       :duration,
       :logo,
       :me_slug,
+      :tensor_slug,
       :rain_fi_id
     ])
     |> validate_required([])

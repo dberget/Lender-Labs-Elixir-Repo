@@ -536,4 +536,26 @@ defmodule SharkAttack.Collections do
   def get_collection_from_loan(loan) do
     get_collection_from_loan(loan["orderBook"])
   end
+
+  def update_tensor_slug() do
+    # Get the mapping of me_slug to tensor_slug directly from sharky
+    SharkAttack.Helpers.do_get_request("https://sharky.fi/api/floor-prices")
+    |> Map.get("floorPrices", %{})
+    |> Enum.map(fn {name, c} ->
+      collection = get_collection_by_me_slug(c["magicEden"]["slug"])
+      if is_nil(collection) do
+        IO.inspect("No matching collection found - #{c["magicEden"]["slug"]}")
+      else
+        if is_nil(collection.tensor_slug) do
+          collection = %Collection{id: collection.id}
+          update_collection(collection, %{
+            tensor_slug: c["tensor"]["slug"]
+          })
+        else
+          IO.inspect("Already updated - #{c["magicEden"]["slug"]}")
+        end
+      end
+    end)
+  end
+
 end
