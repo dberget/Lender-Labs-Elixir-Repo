@@ -6,8 +6,8 @@ defmodule SharkAttack.Tensor do
   def get_floor_prices(tokens) do
     slugs =
       tokens
-      |> Enum.reject(&is_nil(&1.tensor_slug))
-      |> Enum.map(& &1.tensor_slug)
+      |> Enum.reject(&is_nil(&1.me_slug))
+      |> Enum.map(& &1.me_slug)
       |> Enum.chunk_every(30)
 
     url = "https://api.tensor.so/graphql"
@@ -63,7 +63,7 @@ defmodule SharkAttack.Tensor do
       post_data =
         %{
           query: query,
-          variables: %{slugs: slug}
+          variables: %{slugsMe: slug}
         }
         |> Jason.encode!()
 
