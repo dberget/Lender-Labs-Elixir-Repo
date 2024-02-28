@@ -60,6 +60,8 @@ defmodule SharkAttack.MixProject do
       {:timex, "~> 3.7.9"},
       {:gen_stage, "~> 1.1.2"},
       {:quantum, "~> 3.5.0"},
+      {:grpc, "~> 0.7"},
+      {:protobuf, "~> 0.11"},
       {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
       {:ecto_mysql_extras, "~> 0.3"},
       {:gun, "== 2.0.1",
