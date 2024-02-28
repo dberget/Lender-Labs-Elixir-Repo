@@ -18,6 +18,7 @@ defmodule SharkAttack.Collections.Collection do
              :offers,
              :fp,
              :nfts,
+             :orderbooks,
              :me_slug,
              :tensor_slug,
              :hide
@@ -43,6 +44,8 @@ defmodule SharkAttack.Collections.Collection do
     field(:fp, :integer, virtual: true)
 
     has_many(:nfts, SharkAttack.Collections.Nft)
+    has_many(:orderbooks, SharkAttack.Collections.Orderbook)
+
     timestamps()
   end
 

@@ -1,6 +1,5 @@
 defmodule SharkAttackWeb.ApiController do
   alias SharkAttack.DiscordConsumer
-  alias SharkAttack.Discord
   alias SharkAttack.SharkyApi
   use SharkAttackWeb, :controller
 
@@ -412,16 +411,15 @@ defmodule SharkAttackWeb.ApiController do
       collection ->
         floor_price = SharkAttack.FloorWorker.get_floor_price(collection.id)
 
-        sharky_loans_and_offers =
-          SharkAttack.LoansWorker.get_collection_loans(collection.sharky_address)
-
-        citrus_loans_and_offers =
-          SharkAttack.LoansWorker.get_collection_loans(collection.foxy_address)
-          |> Enum.map(fn loan ->
-            calculate_ltv_value(loan, floor_price)
+        loans_and_offers =
+          Enum.map(
+            collection.orderbooks,
+            fn ob ->
+              SharkAttack.LoansWorker.get_collection_loans(ob.public_key)
+            |> Enum.map(&calculate_offer_fields(&1, ob))
           end)
-
-        loans_and_offers = [sharky_loans_and_offers, citrus_loans_and_offers] |> List.flatten()
+          |> List.flatten()
+          |> Enum.map(&calculate_ltv_value(&1, floor_price))
 
         offers =
           loans_and_offers
@@ -913,6 +911,20 @@ defmodule SharkAttackWeb.ApiController do
         |> json(%{message: "Error, please try again"})
     end
   end
+  
+  defp calculate_offer_fields(offer, %{platform: "sharky"} = orderbook) do
+    offer
+    |> Map.put(
+      "length",
+      Map.get(orderbook, :duration)
+    )
+    |> Map.put(
+      "apy",
+      Map.get(orderbook, :apy)
+    ) 
+  end
+
+  defp calculate_offer_fields(offer, _ob), do: offer
 
   defp calculate_ltv_value(%{"amountSol" => 0, "state" => "waitingForBorrower"} = loan) do
     collection = SharkAttack.Collections.get_collection_from_loan(loan["orderBook"])

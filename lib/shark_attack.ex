@@ -107,13 +107,13 @@ defmodule SharkAttack do
   #   end)
   # end
 
-  defp format_floor_price(price) when is_float(price) do
-    price |> Float.round(2)
-  end
+  # defp format_floor_price(price) when is_float(price) do
+  #   price |> Float.round(2)
+  # end
 
-  defp format_floor_price(price) do
-    price
-  end
+  # defp format_floor_price(price) do
+  #   price
+  # end
 
   def calculate_target_loan_amount(floor_price, ltf_target) do
     (floor_price * ltf_target) |> Float.round(2)

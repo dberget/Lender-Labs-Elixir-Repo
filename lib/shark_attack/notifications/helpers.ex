@@ -62,7 +62,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
              address,
              :user_settings
            ),
-         %User{address: pk, discordId: discordId, user_settings: %UserSettings{} = settings} <-
+         %User{address: _pk, discordId: discordId, user_settings: %UserSettings{} = settings} <-
            user,
          false <- is_nil(discordId),
          {:ok, true} <-
@@ -289,7 +289,7 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
       |> truncate_address()
 
     # Convert the timestamp to a DateTime
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    # now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     # duration_days =
     #   Map.get(loan, :duration, Map.get(loan, "duration", Map.get(loan, "length", 7))) * 24 * 60 *

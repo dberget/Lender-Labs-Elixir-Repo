@@ -14,7 +14,7 @@ defmodule SharkAttack.Nfts do
   end
 
   def get_nft_by_mint(mint) do
-    Repo.get_by(Nft, mint: mint)
+    Repo.get(Nft, mint: mint)
   end
 
   def get_nfts_by_mints(mints) do

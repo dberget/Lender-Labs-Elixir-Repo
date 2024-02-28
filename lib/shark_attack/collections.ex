@@ -1,8 +1,7 @@
 defmodule SharkAttack.Collections do
   alias SharkAttack.Repo
   import Ecto.Query
-  alias SharkAttack.Collections.Collection
-  alias SharkAttack.Collections.Nft
+  alias SharkAttack.Collections.{Collection, Orderbook, Nft}
   alias SharkAttack.Loans.Loan
   require Logger
 
@@ -125,8 +124,10 @@ defmodule SharkAttack.Collections do
       from(c in Collection,
         join: n in Nft,
         on: c.id == n.collection_id,
+        join: ob in Orderbook,
+        on: ob.collection_id == c.id,
         where: n.mint in ^mint_list,
-        preload: [nfts: n]
+        preload: [nfts: n, orderbooks: ob]
       )
 
     Repo.all(query)
@@ -144,7 +145,7 @@ defmodule SharkAttack.Collections do
   end
 
   def get_collection(id) when is_integer(id) do
-    Repo.get(Collection, id)
+    Repo.get(Collection, id) |> Repo.preload([:orderbooks])
   end
 
   def get_collection(address) do
@@ -174,6 +175,7 @@ defmodule SharkAttack.Collections do
       collection ->
         collection
     end
+    |> Repo.preload(:orderbooks)
   end
 
   def get_collection(id, "RAIN") do
@@ -195,7 +197,7 @@ defmodule SharkAttack.Collections do
       collection ->
         collection
     end
-    |> Repo.preload(:nfts)
+    |> Repo.preload([:nfts, :orderbooks])
   end
 
   def get_collection(id, _platform) do
@@ -541,13 +543,15 @@ defmodule SharkAttack.Collections do
     # Get the mapping of me_slug to tensor_slug directly from sharky
     SharkAttack.Helpers.do_get_request("https://sharky.fi/api/floor-prices")
     |> Map.get("floorPrices", %{})
-    |> Enum.map(fn {name, c} ->
+    |> Enum.map(fn {_name, c} ->
       collection = get_collection_by_me_slug(c["magicEden"]["slug"])
+
       if is_nil(collection) do
         IO.inspect("No matching collection found - #{c["magicEden"]["slug"]}")
       else
         if is_nil(collection.tensor_slug) do
           collection = %Collection{id: collection.id}
+
           update_collection(collection, %{
             tensor_slug: c["tensor"]["slug"]
           })
@@ -557,5 +561,4 @@ defmodule SharkAttack.Collections do
       end
     end)
   end
-
 end
