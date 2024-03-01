@@ -31,7 +31,7 @@ defmodule GeyserClient do
     end
 
      # Function to start a subscription and handle incoming messages
-  def subscribe(accounts_of_interest) do
+  def program_subscribe(accounts_of_interest \\ ["SHARKobtfF1bHhxD2eqftjHBdVSCbKo9JtgK71FhELP"]) do
     accounts = Enum.map(accounts_of_interest, &to_base58/1)
 
     request = %SubscribeRequest{
@@ -74,7 +74,9 @@ defmodule GeyserClient do
 
   defp handle_update(note) do
     {:account, accountInfo} = note.update_oneof
-    IO.inspect(B58.encode58(accountInfo.account.pubkey))
+
+    SharkAttack.SharkyApi.get_loan(B58.encode58(accountInfo.account.pubkey), :binary.bin_to_list(accountInfo.account.data))
+    |> SharkAttack.LoansWorker.update_data()
   end
 
   defp to_base58(account), do: account # Placeholder, implement actual base58 conversion if needed

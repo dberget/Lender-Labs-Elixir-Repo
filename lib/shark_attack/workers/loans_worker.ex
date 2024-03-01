@@ -95,13 +95,56 @@ defmodule SharkAttack.LoansWorker do
     add_new_offer(loanData, 0)
   end
 
+  def update_data(nil) do
+    nil
+  end
+
+  def update_data(%{"state" => "taken"} = loanData) do
+    loanAddress = Map.get(loanData, "pubkey")
+    offer = get_offer(loanAddress)
+
+    offerTime =
+      case Map.get(loanData, "offerTime") do
+        nil -> Map.get(offer, "offerTime", Timex.to_unix(Timex.now()) * 1000)
+        offerTime -> offerTime
+      end
+
+    loan =
+      loanData
+      |> Map.put("is_ll_offer", SharkAttack.Rewards.is_ll_offer(loanAddress))
+      |> Map.put(
+        "offerTime",
+        offerTime
+      )
+
+    :ets.insert(:loans, {loanAddress, loan})
+    :ets.delete(:offers, loanAddress)
+    :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
+
+    :ets.insert(
+      :collection_loans,
+      {loan["orderBook"], loanAddress, loan["lender"], loan}
+    )
+  end
+
+  def update_data(%{"state" => "offered"} = loanData) do
+    offer =
+     Map.put(loanData, "is_ll_offer", SharkAttack.Clients.Helius.has_turtles(loanData["lender"], 0))
+
+    :ets.insert(:offers, {loanData["pubkey"], offer})
+
+   :ets.insert(
+    :collection_loans,
+    {loanData["orderBook"], loanData["pubkey"], loanData["lender"], offer}
+  )
+  end
+
   def insert_loan(nil) do
     nil
   end
 
   def insert_loan(loan) do
     loanAddress = Map.get(loan, "pubkey")
-
     offer = get_offer(loanAddress)
 
     offerTime =
@@ -119,9 +162,7 @@ defmodule SharkAttack.LoansWorker do
       )
 
     :ets.insert(:loans, {loanAddress, loan})
-
     :ets.delete(:offers, loanAddress)
-
     :ets.match_delete(:collection_loans, {:_, loanAddress, :_, :_})
 
     :ets.insert(
@@ -131,7 +172,6 @@ defmodule SharkAttack.LoansWorker do
 
     try do
       SharkAttack.Events.send_event("TAKE_LOAN", loan)
-
       SharkAttackWeb.LoansChannel.push(loan)
     rescue
       e ->

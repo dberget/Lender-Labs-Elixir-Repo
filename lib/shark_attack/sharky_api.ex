@@ -78,12 +78,26 @@ defmodule SharkAttack.SharkyApi do
         {:error, body}
 
       body ->
+        IO.inspect(body)
+
         Map.get(body, "loanData", %{})
     end
   end
 
   def get_loan(%{loanAddress: pk}) do
     case SharkAttack.Helpers.do_get_request("http://localhost:5001/loans/loan/#{pk}") do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        Map.get(body, "loanData", %{})
+    end
+  end
+
+  def get_loan(pk, data) do
+    case SharkAttack.Helpers.do_post_request("http://localhost:5001/loans/loan/#{pk}", %{
+      data: data
+    }) do
       {:error, body} ->
         {:error, body}
 
