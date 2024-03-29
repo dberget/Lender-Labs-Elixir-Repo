@@ -14,7 +14,9 @@ defmodule SharkAttack.Nfts do
   end
 
   def get_nft_by_mint(mint) do
-    Repo.get(Nft, mint: mint)
+    query = from(n in Nft, where: n.mint == ^mint)
+
+    Repo.one(query)
   end
 
   def get_nfts_by_mints(mints) do
@@ -32,6 +34,7 @@ defmodule SharkAttack.Nfts do
           %Nft{
             mint: mint,
             name: nil,
+            collection_id: nil,
             image: nil
           }
 

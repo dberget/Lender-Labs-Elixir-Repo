@@ -6,7 +6,8 @@ defmodule SharkAttack.Collections.Nft do
            only: [
              :mint,
              :image,
-             :name
+             :name,
+             :collection_id
            ]}
   schema "nfts" do
     field(:mint, :string)
