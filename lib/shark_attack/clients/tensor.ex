@@ -92,70 +92,6 @@ defmodule SharkAttack.Tensor do
     |> Map.new()
   end
 
-  def get_mint_price_and_owner(mint) do
-    url = "https://api.tensor.so/graphql"
-
-    query = """
-    query Mint($mint: String!) {
-      mint(mint: $mint) {
-          activeListings {
-            tx {
-              source
-              grossAmount
-            }
-          }
-          owner
-          name
-          slug
-          sellRoyaltyFeeBPS
-          tswapOrders {
-            address
-            buyNowPrice
-            nftsForSale {
-              onchainId
-            }
-          }
-        }
-        mpFees {
-          makerFeeBps
-          mp
-          takerFeeBps
-          takerRoyalties
-        }
-    }
-    """
-
-    post_data =
-      %{
-        query: query,
-        variables: %{
-          mint: mint,
-        }
-      }
-      |> Jason.encode!()
-
-    Logger.debug("Making graphql query to #{url}")
-
-    request =
-      Finch.build(
-        :post,
-        url,
-        [
-          {"content-type", "application/json"},
-          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
-        ],
-        post_data
-      )
-
-    response = Finch.request(request, SharkAttackWeb.Finch)
-    |> parse_tensor_response(mint)
-    price = SharkAttack.PriceCalculator.compute_mint_price(response, mint)
-    %{
-      price: price,
-      owner: response["data"]["mint"]["owner"]
-    }
-  end
-
   def get_sell_tx(seller, mint) do
     url = "https://api.tensor.so/graphql"
 
@@ -218,6 +154,138 @@ defmodule SharkAttack.Tensor do
     Finch.request(request, SharkAttackWeb.Finch)
     |> parse_tensor_response(mint)
     |> parse_mint_response(mint, seller)
+  end
+
+  def get_buy_tx(buyer, mint) do
+    url = "https://api.tensor.so/graphql"
+
+    info = get_listing_info(mint)
+    Logger.debug("Info: #{inspect(info)}")
+
+    query = get_buy_query(info[:platform])
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          mint: mint,
+          buyer: buyer,
+          seller: info[:owner],
+          price: info[:price] |> Integer.to_string()
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    Finch.request(request, SharkAttackWeb.Finch)
+    |> parse_tensor_response(mint)
+    |> parse_tx_response
+  end
+
+  defp get_buy_query("MAGICEDEN_V2") do
+    """
+    query MeBuyNftTx($buyer: String!, $mint: String!, $price: Decimal!, $seller: String!) {
+      meBuyNftTx(buyer: $buyer, mint: $mint, priceLamports: $price, seller: $seller) {
+        txs {
+          lastValidBlockHeight
+          tx
+          txV0
+        }
+      }
+    }
+    """
+  end
+
+  defp get_buy_query("TENSORSWAP") do
+    """
+    query TswapBuySingleListingTx($buyer: String!, $mint: String!, $price: Decimal!, $seller: String!) {
+      tswapBuySingleListingTx(buyer: $buyer, maxPrice: $price, mint: $mint, owner: $seller) {
+        txs {
+          lastValidBlockHeight
+          tx
+          txV0
+        }
+      }
+    }
+    """
+  end
+
+  def get_listing_info(mint) do
+    url = "https://api.tensor.so/graphql"
+
+    query = """
+    query Mint($mint: String!) {
+      mint(mint: $mint) {
+          activeListings {
+            tx {
+              source
+              grossAmount
+            }
+          }
+          owner
+          name
+          slug
+          sellRoyaltyFeeBPS
+          tswapOrders {
+            address
+            buyNowPrice
+            nftsForSale {
+              onchainId
+            }
+          }
+        }
+        mpFees {
+          makerFeeBps
+          mp
+          takerFeeBps
+          takerRoyalties
+        }
+    }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          mint: mint,
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    response = Finch.request(request, SharkAttackWeb.Finch)
+    |> parse_tensor_response(mint)
+    {:ok, price} = SharkAttack.PriceCalculator.compute_mint_buy_price(response, mint)
+
+    %{
+      price: price,
+      owner: response["data"]["mint"]["owner"],
+      platform: get_listing_platform(response),
+    }
   end
 
   defp get_tswap_sell_tx(mint, seller, best_tensor_order) do
@@ -504,6 +572,12 @@ defmodule SharkAttack.Tensor do
           %{"userTcompBids" => bids} ->
             bids
 
+          %{"meBuyNftTx" => me_buy_nft_tx} ->
+            me_buy_nft_tx
+
+          %{"tswapBuySingleListingTx" => tswap_buy_single_listing_tx} ->
+            tswap_buy_single_listing_tx
+
           _ ->
             {:error, "Unkown order type"}
         end
@@ -654,9 +728,21 @@ defmodule SharkAttack.Tensor do
     ])
     |> Map.drop(["s"])
   end
+
+  defp get_listing_platform(response) do
+    response
+    |> Map.get("data")
+    |> Map.get("mint")
+    |> Map.get("activeListings")
+    |> List.first()
+    |> case do
+      nil -> nil
+      listing -> Map.get(listing["tx"], "source")
+  end
+  end
 end
 
 # To test in interactive shell run:
 # iex -S mix
 # SharkAttack.Tensor.get_floor_prices([%{me_slug: "degenfatcats"}])
-# SharkAttack.Tensor.get_mint_price_and_owner("BE4te4e7Uuzb7ik9j9XAqay7PeJXKbQVcWqGvmQzTwWq")
+# SharkAttack.Tensor.get_listing_info("BE4te4e7Uuzb7ik9j9XAqay7PeJXKbQVcWqGvmQzTwWq")

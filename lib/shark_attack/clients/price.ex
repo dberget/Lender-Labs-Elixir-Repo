@@ -1,29 +1,29 @@
 defmodule SharkAttack.PriceCalculator do
   require Logger
 
-  @default_owner "4zdNGgAtFsW1cQgHqkiWyRsxaAgxrSRRynnuunxzjxue"
+  @tensor_pool_owner "4zdNGgAtFsW1cQgHqkiWyRsxaAgxrSRRynnuunxzjxue"
 
   @taker_fee_bps %{
     "TENSORSWAP" =>  "TensorSwap",
     "MAGICEDEN_V2" => "MagicEden"
   }
 
-  def compute_mint_price(:error, mint) do
+  def compute_mint_buy_price(:error, mint) do
     {:error, "Error fetching mint #{mint} from Tensor"}
   end
 
-  def compute_mint_price(response, mint) do
+  def compute_mint_buy_price(response, mint) do
     get_mint_info(response, mint)
-    |> compute_price(response)
+    |> compute_buy_price(response)
   end
 
   defp get_mint_info(%{"data" => %{"mint" => info}}, _mint) when is_map(info), do: info
   defp get_mint_info(_, mint), do: {:error, "Mint #{mint} not found on Tensor"}
 
-  defp compute_price({:error, _} = error, _response), do: error
-  defp compute_price(info, response) do
+  defp compute_buy_price({:error, _} = error, _response), do: error
+  defp compute_buy_price(info, response) do
     case info do
-      %{"activeListings" => [], "owner" => "4zdNGgAtFsW1cQgHqkiWyRsxaAgxrSRRynnuunxzjxue"} ->
+      %{"activeListings" => [], "owner" => @tensor_pool_owner} ->
         {:error, "NFT listed on a Pool belonging to Tensor"}
 
       %{"activeListings" => []} ->
@@ -42,7 +42,6 @@ defmodule SharkAttack.PriceCalculator do
       %{"takerFeeBps" => fee_bps} ->
         total_fees = (fee_bps + royalty_bps) / 10_000
         gross_amount = gross_amount |> String.to_integer()
-        Logger.debug("Amount: #{gross_amount} Fees: #{total_fees} = #{fee_bps} + #{royalty_bps}")
         {:ok, floor(gross_amount * (1 + total_fees))}
     end
   end
