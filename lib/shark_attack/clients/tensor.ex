@@ -92,6 +92,70 @@ defmodule SharkAttack.Tensor do
     |> Map.new()
   end
 
+  def get_mint_price_and_owner(mint) do
+    url = "https://api.tensor.so/graphql"
+
+    query = """
+    query Mint($mint: String!) {
+      mint(mint: $mint) {
+          activeListings {
+            tx {
+              source
+              grossAmount
+            }
+          }
+          owner
+          name
+          slug
+          sellRoyaltyFeeBPS
+          tswapOrders {
+            address
+            buyNowPrice
+            nftsForSale {
+              onchainId
+            }
+          }
+        }
+        mpFees {
+          makerFeeBps
+          mp
+          takerFeeBps
+          takerRoyalties
+        }
+    }
+    """
+
+    post_data =
+      %{
+        query: query,
+        variables: %{
+          mint: mint,
+        }
+      }
+      |> Jason.encode!()
+
+    Logger.debug("Making graphql query to #{url}")
+
+    request =
+      Finch.build(
+        :post,
+        url,
+        [
+          {"content-type", "application/json"},
+          {"X-TENSOR-API-KEY", "b571603c-f1e3-40c8-8f09-61e192481e89"}
+        ],
+        post_data
+      )
+
+    response = Finch.request(request, SharkAttackWeb.Finch)
+    |> parse_tensor_response(mint)
+    price = SharkAttack.PriceCalculator.compute_mint_price(response, mint)
+    %{
+      price: price,
+      owner: response["data"]["mint"]["owner"]
+    }
+  end
+
   def get_sell_tx(seller, mint) do
     url = "https://api.tensor.so/graphql"
 
@@ -541,14 +605,14 @@ defmodule SharkAttack.Tensor do
     else
       best_order =
         Enum.reduce(orders, hd(orders), fn order, best_order ->
-          if calculate_next_spot_price(
+          if SharkAttack.PriceCalculator.calculate_next_spot_price(
                "Sell",
                order["baseSpotPrice"],
                order["delta"],
                order["curveType"],
                order["mathCounter"]
              ) >
-               calculate_next_spot_price(
+               SharkAttack.PriceCalculator.calculate_next_spot_price(
                  "Sell",
                  best_order["baseSpotPrice"],
                  best_order["delta"],
@@ -564,7 +628,7 @@ defmodule SharkAttack.Tensor do
       Logger.debug("Best Hade order: #{inspect(best_order)}")
 
       best_price =
-        calculate_next_spot_price(
+        SharkAttack.PriceCalculator.calculate_next_spot_price(
           "Sell",
           best_order["baseSpotPrice"],
           best_order["delta"],
@@ -576,58 +640,6 @@ defmodule SharkAttack.Tensor do
       final_price = floor(best_price * (1 - fees))
       %{final_price: final_price, best_order: best_order}
     end
-  end
-
-  defp calculate_next_spot_price(
-         order_type,
-         spot_price,
-         delta,
-         bonding_curve_type,
-         counter
-       ) do
-    Logger.debug(
-      "Calculating next spot price for #{spot_price} #{delta} #{bonding_curve_type} #{counter}"
-    )
-
-    spot_price = spot_price |> String.to_integer()
-    delta = delta |> String.to_integer()
-    calc_for_bonding_curve_type(bonding_curve_type, order_type, spot_price, delta, counter)
-  end
-
-  defp calc_for_bonding_curve_type("LINEAR", order_type, spot_price, delta, counter) do
-    target_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
-
-    delta = if target_counter >= 0, do: delta, else: -delta
-
-    Enum.reduce(1..abs(target_counter), spot_price, fn _, acc -> acc + delta end)
-  end
-
-  defp calc_for_bonding_curve_type("EXPONENTIAL", order_type, spot_price, delta, counter) do
-    new_counter = if order_type == "Buy", do: counter + 1, else: counter - 1
-
-    new_delta =
-      if new_counter > 0, do: (delta + 1.0e4) / 1.0e4, else: 1 / ((delta + 1.0e4) / 1.0e4)
-
-    (spot_price * :math.pow(new_delta, abs(new_counter))) |> floor
-  end
-
-  defp calc_for_bonding_curve_type("XYK", order_type, spot_price, delta, counter) do
-    nft_tokens_balance = delta * spot_price
-    counter_updated = if order_type == "Buy", do: counter, else: counter - 1
-    current_delta = delta + 1 - counter_updated
-    diff_amount = counter_updated * nft_tokens_balance / current_delta
-    new_nft_tokens_balance = nft_tokens_balance + diff_amount
-
-    if order_type == "Buy" do
-      new_nft_tokens_balance / (current_delta - 1)
-    else
-      new_nft_tokens_balance / (current_delta + 1)
-    end
-  end
-
-  defp calc_for_bonding_curve_type(curve_type, _order_type, _spot_price, _delta, _counter) do
-    Logger.debug("Unkown bonding curve type: #{curve_type}")
-    0
   end
 
   def get_trading_history(slug, count_back \\ 60) do
@@ -647,3 +659,4 @@ end
 # To test in interactive shell run:
 # iex -S mix
 # SharkAttack.Tensor.get_floor_prices([%{me_slug: "degenfatcats"}])
+# SharkAttack.Tensor.get_mint_price_and_owner("BE4te4e7Uuzb7ik9j9XAqay7PeJXKbQVcWqGvmQzTwWq")
