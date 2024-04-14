@@ -44,6 +44,8 @@ defmodule SharkAttackWeb.Router do
     get("/", BorrowController, :index)
     get("/get_index", BorrowController, :get_index)
     get("/get_borrow_tx", BorrowController, :get_borrow_tx)
+    get("/get_listing_info", BorrowController, :get_listing_info)
+    get("/get_buy_tx", BorrowController, :get_buy_tx)
     get("/get_sell_tx", BorrowController, :get_sell_tx)
   end
 
