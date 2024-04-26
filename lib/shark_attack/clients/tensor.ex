@@ -178,7 +178,8 @@ defmodule SharkAttack.Tensor do
           mint: mint,
           buyer: buyer,
           seller: info[:owner],
-          price: amount |> Integer.to_string()
+          price: amount |> Integer.to_string(),
+          optionalRoyaltyPct: 0
         }
       }
       |> Jason.encode!()
@@ -203,8 +204,8 @@ defmodule SharkAttack.Tensor do
 
   defp get_buy_query("MAGICEDEN_V2") do
     """
-    query MeBuyNftTx($buyer: String!, $mint: String!, $price: Decimal!, $seller: String!) {
-      meBuyNftTx(buyer: $buyer, mint: $mint, priceLamports: $price, seller: $seller) {
+    query MeBuyNftTx($buyer: String!, $mint: String!, $price: Decimal!, $seller: String!, $optionalRoyaltyPct: Int) {
+      meBuyNftTx(buyer: $buyer, mint: $mint, priceLamports: $price, seller: $seller, optionalRoyaltyPct: $optionalRoyaltyPct) {
         txs {
           lastValidBlockHeight
           tx
@@ -217,8 +218,8 @@ defmodule SharkAttack.Tensor do
 
   defp get_buy_query("TENSORSWAP") do
     """
-    query TswapBuySingleListingTx($buyer: String!, $mint: String!, $price: Decimal!, $seller: String!) {
-      tswapBuySingleListingTx(buyer: $buyer, maxPrice: $price, mint: $mint, owner: $seller) {
+    query TswapBuySingleListingTx($buyer: String!, $mint: String!, $price: Decimal!, $seller: String!, $optionalRoyaltyPct: Int) {
+      tswapBuySingleListingTx(buyer: $buyer, maxPrice: $price, mint: $mint, owner: $seller, optionalRoyaltyPct: $optionalRoyaltyPct) {
         txs {
           lastValidBlockHeight
           tx
