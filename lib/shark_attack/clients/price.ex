@@ -42,7 +42,7 @@ defmodule SharkAttack.PriceCalculator do
       %{"takerFeeBps" => fee_bps} ->
         total_fees = (fee_bps + royalty_bps) / 10_000
         gross_amount = gross_amount |> String.to_integer()
-        {:ok, floor(gross_amount * (1 + total_fees))}
+        {:ok, gross_amount, floor(gross_amount * total_fees)}
     end
   end
 

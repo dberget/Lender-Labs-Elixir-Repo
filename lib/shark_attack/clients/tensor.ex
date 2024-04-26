@@ -164,6 +164,13 @@ defmodule SharkAttack.Tensor do
 
     query = get_buy_query(info[:platform])
 
+    # if the platform is MAGICEDEN_V2, we need to exclude the fees
+    amount = if info[:platform] == "MAGICEDEN_V2" do
+      info[:price]
+    else
+      info[:price] + info[:fees]
+    end
+
     post_data =
       %{
         query: query,
@@ -171,7 +178,7 @@ defmodule SharkAttack.Tensor do
           mint: mint,
           buyer: buyer,
           seller: info[:owner],
-          price: info[:price] |> Integer.to_string()
+          price: amount |> Integer.to_string()
         }
       }
       |> Jason.encode!()
@@ -279,10 +286,11 @@ defmodule SharkAttack.Tensor do
 
     response = Finch.request(request, SharkAttackWeb.Finch)
     |> parse_tensor_response(mint)
-    {:ok, price} = SharkAttack.PriceCalculator.compute_mint_buy_price(response, mint)
+    {:ok, price, fees} = SharkAttack.PriceCalculator.compute_mint_buy_price(response, mint)
 
     %{
       price: price,
+      fees: fees,
       owner: response["data"]["mint"]["owner"],
       platform: get_listing_platform(response),
     }
