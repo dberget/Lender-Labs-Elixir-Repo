@@ -74,6 +74,12 @@ defmodule SharkAttackWeb.Router do
     post("/unstake", StakeController, :unstake)
   end
 
+  scope "/rpc", SharkAttackWeb do
+    pipe_through(:api)
+
+    post("/", RPCController, :index)
+  end
+
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 

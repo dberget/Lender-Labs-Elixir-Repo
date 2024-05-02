@@ -102,13 +102,6 @@ defmodule SharkAttackWeb.ApiController do
     |> json(grouped_loans)
   end
 
-  def track_bnpls(conn, params) do
-     res = SharkAttack.BNPL.create_bnpl(params)
-
-    conn
-    |> json(res)
-  end
-
   def get_history(conn, params) do
     SharkAttack.Stats.update_history_safe(params["pk"])
 
@@ -141,6 +134,13 @@ defmodule SharkAttackWeb.ApiController do
 
     conn
     |> json(data)
+  end
+
+  def track_bnpls(conn, params) do
+    res = SharkAttack.BNPL.create_bnpl(params)
+
+    conn
+    |> json(res)
   end
 
   def get_borrower_history(conn, params) do
@@ -425,8 +425,9 @@ defmodule SharkAttackWeb.ApiController do
             collection.orderbooks,
             fn ob ->
               SharkAttack.LoansWorker.get_collection_loans(ob.public_key)
-            |> Enum.map(&calculate_offer_fields(&1, ob))
-          end)
+              |> Enum.map(&calculate_offer_fields(&1, ob))
+            end
+          )
           |> List.flatten()
           |> Enum.map(&calculate_ltv_value(&1, floor_price))
 

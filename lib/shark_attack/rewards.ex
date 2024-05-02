@@ -1,7 +1,7 @@
 defmodule SharkAttack.Rewards do
   alias SharkAttack.Offers
 
-  @double_collections [215, 18, 371, 367, 276, 19, 73, 678]
+  # @double_collections [215, 18, 371, 367, 276, 19, 73, 678]
 
   # This is called for all new loan events, so we need to check if its an LL offer.
   def create_entry(%{"is_ll_offer" => false}) do

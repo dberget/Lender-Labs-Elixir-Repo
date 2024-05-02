@@ -27,7 +27,7 @@ config :cors_plug,
   ],
   max_age: 86400,
   headers: ["accept", "content-type", "origin", "authorization", "baggage"],
-  methods: ["GET", "POST"]
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
 
 config :shark_attack, SharkAttack.Scheduler,
   timeout: 500_000,

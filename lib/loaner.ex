@@ -3,12 +3,12 @@ defmodule SharkAttack.Loaner do
   # best: Always offer loans above best active offer but below max LTF.
   # max: Always offer loans above best active offer regardless of target LTF.
 
-  @loanPlan %{
-    loan_style: "best",
-    wallet_address: "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
-    target_collection: "AiYV1ZfNTNdcfyCsxQVGJUqdhHvfiMkkW1Dtif1RHf3o",
-    ltf_target: 0.55
-  }
+  # @loanPlan %{
+  #   loan_style: "best",
+  #   wallet_address: "BS61tv1KbsPhns3ppU8pmWozfReZjhxFL2MPhBdDWNEm",
+  #   target_collection: "AiYV1ZfNTNdcfyCsxQVGJUqdhHvfiMkkW1Dtif1RHf3o",
+  #   ltf_target: 0.55
+  # }
 
   # def calculate_loan(loanPlan \\ @loanPlan) do
   #   target_collection = loanPlan.target_collection

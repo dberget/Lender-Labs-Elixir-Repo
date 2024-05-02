@@ -46,8 +46,8 @@ config :shark_attack, :environment, :dev
 config :cors_plug,
   origin: ["*"],
   max_age: 86400,
-  headers: ["accept", "content-type", "origin", "authorization", "baggage"],
-  methods: ["GET", "POST"]
+  headers: ["accept", "content-type", "origin", "authorization", "baggage", "*"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
 
 # ## SSL Support
 #
