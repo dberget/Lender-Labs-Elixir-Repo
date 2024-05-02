@@ -3,7 +3,7 @@ import Config
 # Configure your database
 config :shark_attack, SharkAttack.Repo,
   username: "root",
-  password: "root",
+  password: "",
   database: "shark_attack_dev",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,

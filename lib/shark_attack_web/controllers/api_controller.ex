@@ -911,7 +911,7 @@ defmodule SharkAttackWeb.ApiController do
         |> json(%{message: "Error, please try again"})
     end
   end
-  
+
   defp calculate_offer_fields(offer, %{platform: "sharky"} = orderbook) do
     offer
     |> Map.put(
@@ -921,7 +921,7 @@ defmodule SharkAttackWeb.ApiController do
     |> Map.put(
       "apy",
       Map.get(orderbook, :apy)
-    ) 
+    )
   end
 
   defp calculate_offer_fields(offer, _ob), do: offer
