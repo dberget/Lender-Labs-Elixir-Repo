@@ -102,16 +102,6 @@ defmodule SharkAttackWeb.ApiController do
     |> json(grouped_loans)
   end
 
-<<<<<<< HEAD
-  def track_bnpl(conn, params) do
-    res = SharkAttack.Loans.create_bnpl(params)
-
-    conn
-    |> json(res)
-  end
-
-=======
->>>>>>> main
   def get_history(conn, params) do
     SharkAttack.Stats.update_history_safe(params["pk"])
 
