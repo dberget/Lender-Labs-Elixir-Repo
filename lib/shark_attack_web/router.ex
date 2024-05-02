@@ -89,6 +89,7 @@ defmodule SharkAttackWeb.Router do
     get("/get_lender_loans", ApiController, :get_lender_loans)
     get("/get_collection_offers", ApiController, :get_collection_offers)
     get("/get_user_bnpls", ApiController, :get_user_bnpls)
+    post("/track_bnpl", ApiController, :track_bnpl)
 
     get("/get_orderbooks", ApiController, :get_orderbooks)
     get("/get_ll_volume", ApiController, :get_ll_volume)
