@@ -11,8 +11,8 @@ defmodule SharkAttack.Loans.BNPL do
   end
 
   @doc false
-  def changeset(offer, attrs) do
-    offer
+  def changeset(bnpl, attrs) do
+    bnpl
     |> cast(attrs, [
       :loan_id,
       :mint,

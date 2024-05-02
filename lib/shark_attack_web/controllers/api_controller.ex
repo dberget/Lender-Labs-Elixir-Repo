@@ -102,6 +102,13 @@ defmodule SharkAttackWeb.ApiController do
     |> json(grouped_loans)
   end
 
+  def track_bnpls(conn, params) do
+     res = SharkAttack.BNPL.create_bnpl(params)
+
+    conn
+    |> json(res)
+  end
+
   def get_history(conn, params) do
     SharkAttack.Stats.update_history_safe(params["pk"])
 
@@ -162,6 +169,7 @@ defmodule SharkAttackWeb.ApiController do
     historical_loan_count = Enum.count(historical_loans)
 
     loans = SharkAttack.LoansWorker.get_borrower_loans(params["pk"])
+    bnpls = SharkAttack.Loans.get_user_bnpls(params["pk"])
 
     forelosedLoans = Enum.filter(historical_loans, fn l -> !is_nil(l.dateForeclosed) end)
     forelosedLoanCount = forelosedLoans |> Enum.count()
@@ -171,6 +179,7 @@ defmodule SharkAttackWeb.ApiController do
       foreclosed: forelosedLoans,
       active_loan_count: Enum.count(loans),
       loans: loans |> Enum.sort_by(& &1["end"]),
+      bnpls: bnpls,
       totalSolLoaned: Enum.map(historical_loans, fn l -> l.amountSol end) |> Enum.sum(),
       totalInterest: Enum.map(historical_loans, & &1.earnings) |> Enum.sum(),
       activeSolLoaned: Enum.map(loans, & &1["amountSol"]) |> Enum.sum(),

@@ -6,6 +6,8 @@ defmodule SharkAttack.Repo.Migrations.AddBnpl do
       add(:loan_id, :string)
       add(:mint, :string)
       add(:listing_price, :integer)
+
+      timestamps()
     end
   end
 end

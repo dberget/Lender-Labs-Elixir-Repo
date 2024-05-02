@@ -12,7 +12,7 @@ defmodule SharkAttack.Loans do
   alias SharkAttack.LoansWorker
   alias SharkAttack.Repo
 
-  alias SharkAttack.Loans.{PlanSettings, Loan, TakenLoan}
+  alias SharkAttack.Loans.{PlanSettings, Loan, TakenLoan, BNPL}
 
   alias SharkAttack.Accounts.User
 
@@ -341,6 +341,28 @@ defmodule SharkAttack.Loans do
 
         Map.put(loan, :loan, loan.pubkey)
     end
+  end
+
+  def get_user_bnpls(user_address) do
+    query = from(b in BNPL,
+      join: l in Loan,
+      on: b.loan_id == l.loan,
+      where: l.borrower == ^user_address
+    )
+
+    Repo.all(query)
+  end
+
+  def create_bnpl(attrs \\ %{}) do
+    %BNPL{}
+    |> BNPL.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_bnpl(%BNPL{} = bnpl, attrs) do
+    bnpl
+    |> BNPL.changeset(attrs)
+    |> Repo.update()
   end
 
   def create_plan_settings(attrs \\ %{}) do
