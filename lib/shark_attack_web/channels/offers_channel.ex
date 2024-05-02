@@ -26,13 +26,13 @@ defmodule SharkAttackWeb.OffersChannel do
     {:noreply, socket}
   end
 
-  defp get_lender_name(offer) do
-    SharkAttack.Helpers.do_get_request(
-      "https://api.helius.xyz/v0/addresses/#{offer["lender"]}/names?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
-    )
-    |> Map.get("domainNames")
-    |> List.first()
-  end
+  # defp get_lender_name(offer) do
+  #   SharkAttack.Helpers.do_get_request(
+  #     "https://api.helius.xyz/v0/addresses/#{offer["lender"]}/names?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  #   )
+  #   |> Map.get("domainNames")
+  #   |> List.first()
+  # end
 
   def push(offer) do
     res = SharkAttack.Offers.get_offer(offer["pubkey"])
