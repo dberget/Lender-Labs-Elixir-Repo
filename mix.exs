@@ -59,6 +59,7 @@ defmodule SharkAttack.MixProject do
       {:cors_plug, "~> 3.0"},
       {:timex, "~> 3.7.9"},
       {:gen_stage, "~> 1.1.2"},
+      {:basefiftyeight, "~> 0.1.0"},
       {:quantum, "~> 3.5.0"},
       {:grpc, "~> 0.7"},
       {:protobuf, "~> 0.11"},

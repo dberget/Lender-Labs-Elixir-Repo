@@ -80,6 +80,13 @@ defmodule SharkAttackWeb.Router do
     post("/", RPCController, :index)
   end
 
+  scope "/defi", SharkAttackWeb do
+    pipe_through(:api)
+
+    get("/", DefiController, :dlmm_pools)
+  end
+
+
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 

@@ -7,6 +7,8 @@ defmodule SharkAttack.Repo.Migrations.AddDlmmPools do
       add(:name, :string)
       add(:mint_x, :string)
       add(:mint_y, :string)
+      add(:mint_x_decimals, :string)
+      add(:mint_y_decimals, :string)
       add(:reserve_x, :string)
       add(:reserve_y, :string)
       add(:bin_step, :integer)

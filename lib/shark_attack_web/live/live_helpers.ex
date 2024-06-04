@@ -1,4 +1,4 @@
 defmodule SharkAttackWeb.LiveHelpers do
-  import Phoenix.Component
-  alias Phoenix.LiveView.JS
+  # import Phoenix.Component
+  # alias Phoenix.LiveView.JS
 end

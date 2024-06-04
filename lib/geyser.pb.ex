@@ -109,7 +109,7 @@ defmodule Geyser.SubscribeRequestFilterAccountsFilter do
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
-  oneof :filter, 0
+  oneof(:filter, 0)
 
   field :memcmp, 1, type: Geyser.SubscribeRequestFilterAccountsFilterMemcmp, oneof: 0
   field :datasize, 2, type: :uint64, oneof: 0
@@ -121,7 +121,7 @@ defmodule Geyser.SubscribeRequestFilterAccountsFilterMemcmp do
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
-  oneof :data, 0
+  oneof(:data, 0)
 
   field :offset, 1, type: :uint64
   field :bytes, 2, type: :bytes, oneof: 0
@@ -203,7 +203,7 @@ defmodule Geyser.SubscribeUpdate do
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
-  oneof :update_oneof, 0
+  oneof(:update_oneof, 0)
 
   field :filters, 1, repeated: true, type: :string
   field :account, 2, type: Geyser.SubscribeUpdateAccount, oneof: 0
@@ -445,19 +445,19 @@ defmodule Geyser.Geyser.Service do
 
   use GRPC.Service, name: "geyser.Geyser", protoc_gen_elixir_version: "0.12.0"
 
-  rpc :Subscribe, stream(Geyser.SubscribeRequest), stream(Geyser.SubscribeUpdate)
+  rpc(:Subscribe, stream(Geyser.SubscribeRequest), stream(Geyser.SubscribeUpdate))
 
-  rpc :Ping, Geyser.PingRequest, Geyser.PongResponse
+  rpc(:Ping, Geyser.PingRequest, Geyser.PongResponse)
 
-  rpc :GetLatestBlockhash, Geyser.GetLatestBlockhashRequest, Geyser.GetLatestBlockhashResponse
+  rpc(:GetLatestBlockhash, Geyser.GetLatestBlockhashRequest, Geyser.GetLatestBlockhashResponse)
 
-  rpc :GetBlockHeight, Geyser.GetBlockHeightRequest, Geyser.GetBlockHeightResponse
+  rpc(:GetBlockHeight, Geyser.GetBlockHeightRequest, Geyser.GetBlockHeightResponse)
 
-  rpc :GetSlot, Geyser.GetSlotRequest, Geyser.GetSlotResponse
+  rpc(:GetSlot, Geyser.GetSlotRequest, Geyser.GetSlotResponse)
 
-  rpc :IsBlockhashValid, Geyser.IsBlockhashValidRequest, Geyser.IsBlockhashValidResponse
+  rpc(:IsBlockhashValid, Geyser.IsBlockhashValidRequest, Geyser.IsBlockhashValidResponse)
 
-  rpc :GetVersion, Geyser.GetVersionRequest, Geyser.GetVersionResponse
+  rpc(:GetVersion, Geyser.GetVersionRequest, Geyser.GetVersionResponse)
 end
 
 defmodule Geyser.Geyser.Stub do

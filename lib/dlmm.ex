@@ -22,6 +22,20 @@ defmodule SharkAttack.DLMMPools do
     Repo.all(DLMM)
   end
 
+  def get_accounts() do
+    gpas =
+      SharkAttack.Solana.get_program_accounts("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo")
+      |> Enum.map(&Map.get(&1, "pubkey"))
+
+    accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo" | gpas]
+
+    list_pools()
+    |> Enum.map(&(Map.take(&1, [:reserve_x, :reserve_y, :address]) |> Map.values()))
+    |> List.flatten()
+    |> Enum.dedup()
+    |> Enum.concat(accounts)
+  end
+
   def create_pool(attrs) do
     DLMM.changeset(%DLMM{}, attrs)
     |> Repo.insert()
