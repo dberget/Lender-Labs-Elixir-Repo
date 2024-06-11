@@ -6,7 +6,7 @@ defmodule SharkAttack.Loans.BNPL do
   schema "bnpls" do
     field(:loan_id, :string)
     field(:mint, :string)
-    field(:listing_price, :integer)
+    field(:listing_price, :float)
 
     timestamps()
   end

@@ -140,6 +140,13 @@ defmodule SharkAttackWeb.ApiController do
     res = SharkAttack.Loans.create_bnpl(params)
 
     conn
+    |> json(%{success: true})
+  end
+
+  def get_user_bnpls(conn, params) do
+    res = SharkAttack.Loans.get_user_bnpls(params["pk"])
+
+    conn
     |> json(res)
   end
 
