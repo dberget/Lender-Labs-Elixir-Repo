@@ -2,10 +2,11 @@ defmodule SharkAttack.Loans.BNPL do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:loan_id, :mint, :listing_price]}
   schema "bnpls" do
     field(:loan_id, :string)
     field(:mint, :string)
-    field(:listing_price, :integer)
+    field(:listing_price, :float)
 
     timestamps()
   end

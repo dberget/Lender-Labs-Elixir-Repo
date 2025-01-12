@@ -52,7 +52,9 @@ defmodule SharkAttack.Nfts do
         })
 
         %{
+          mint: nft.mint,
           name: nft_res["result"]["content"]["metadata"]["name"],
+          collection_id: nft.collection_id,
           image: parse_nft_image(nft_res["result"]["content"]["files"])
         }
 
