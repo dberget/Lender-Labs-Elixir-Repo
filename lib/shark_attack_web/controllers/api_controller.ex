@@ -137,7 +137,7 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def track_bnpl(conn, params) do
-    res = SharkAttack.Loans.create_bnpl(params)
+    SharkAttack.Loans.create_bnpl(params)
 
     conn
     |> json(%{success: true})

@@ -8,8 +8,8 @@ defmodule SharkAttack.Defi.DLMM do
     field(:name, :string)
     field(:mint_x, :string)
     field(:mint_y, :string)
-    field(:mint_x_decimals, :string)
-    field(:mint_y_decimals, :string)
+    # field(:mint_x_decimals, :string)
+    # field(:mint_y_decimals, :string)
     field(:reserve_x, :string)
     field(:reserve_y, :string)
     field(:bin_step, :integer)
@@ -25,8 +25,8 @@ defmodule SharkAttack.Defi.DLMM do
       :name,
       :mint_x,
       :mint_y,
-      :mint_x_decimals,
-      :mint_Y_decimals,
+      # :mint_x_decimals,
+      # :mint_Y_decimals,
       :reserve_x,
       :reserve_y,
       :bin_step,

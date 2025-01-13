@@ -86,7 +86,6 @@ defmodule SharkAttackWeb.Router do
     get("/", DefiController, :dlmm_pools)
   end
 
-
   scope "/api", SharkAttackWeb do
     pipe_through(:api)
 

@@ -38,6 +38,7 @@ config :shark_attack, SharkAttack.Scheduler,
     {"@daily", {SharkAttack.Stats, :pull_all_citrus_loans, []}},
     {"@daily", {SharkAttack.Staking, :stake_awards, []}},
     {"*/5 * * * *", {SharkAttack.Notifications, :foreclosures, []}},
+    {"*/5 * * * *", {SharkAttack.DLMMPools, :update_pools_api, []}},
     {"*/1 * * * *", {SharkAttack.AutoForeclose, :get_and_foreclose_loans, []}},
     {"*/3 * * * *", {SharkAttack.AutoRescind, :get_and_rescind_loans, []}},
     {"*/3 * * * *", {SharkAttack.LenderFee, :batch_refund_and_collect_fees, []}}

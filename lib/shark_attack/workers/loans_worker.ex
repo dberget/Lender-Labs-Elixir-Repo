@@ -129,14 +129,18 @@ defmodule SharkAttack.LoansWorker do
 
   def update_data(%{"state" => "offered"} = loanData) do
     offer =
-     Map.put(loanData, "is_ll_offer", SharkAttack.Clients.Helius.has_turtles(loanData["lender"], 0))
+      Map.put(
+        loanData,
+        "is_ll_offer",
+        SharkAttack.Clients.Helius.has_turtles(loanData["lender"], 0)
+      )
 
     :ets.insert(:offers, {loanData["pubkey"], offer})
 
-   :ets.insert(
-    :collection_loans,
-    {loanData["orderBook"], loanData["pubkey"], loanData["lender"], offer}
-  )
+    :ets.insert(
+      :collection_loans,
+      {loanData["orderBook"], loanData["pubkey"], loanData["lender"], offer}
+    )
   end
 
   def insert_loan(nil) do

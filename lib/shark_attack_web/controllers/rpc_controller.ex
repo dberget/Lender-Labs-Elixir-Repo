@@ -32,9 +32,9 @@ defmodule SharkAttackWeb.RPCController do
     json(conn, res)
   end
 
-  def index(conn, %{"method" => "getMultipleAccounts"} = params) do
-    process_request(conn, params)
-  end
+  # def index(conn, %{"method" => "getMultipleAccounts"} = params) do
+  #   process_request(conn, params)
+  # end
 
   def index(conn, params) do
     res =
@@ -56,6 +56,7 @@ defmodule SharkAttackWeb.RPCController do
         do_remote_request(params, remaining, encoding, results)
       end
 
+    IO.inspect(result, label: "result")
     json(conn, result)
   end
 
@@ -77,74 +78,59 @@ defmodule SharkAttackWeb.RPCController do
   defp format_cached_data(results) do
     results
     |> Enum.map(fn {_, account} -> format_account(account) end)
+    |> IO.inspect(label: "formatted results")
   end
 
   defp cache_hit_response(cached_result) do
     cached_data = format_cached_data(cached_result)
 
     %{
-      "id" => "cache-hit",
       "jsonrpc" => "2.0",
       "result" => %{
         "context" => %{
-          "apiVersion" => "1.17.31",
-          "slot" => 263_519_770
+          "apiVersion" => "2.2.0",
+          "slot" => 313_629_867
         },
-        "value" => cached_data
-      }
+        "value" => Enum.map(cached_data, fn {_, account} -> format_account(account) end)
+      },
+      "id" => 1
     }
   end
 
   defp do_remote_request(params, remaining, encoding, cached_results) do
-    # Extracting the original address_list for later reordering of results
-    [original_address_list, _] = params["params"]
+    case do_post_request(@rpc, %{params | "params" => [remaining, encoding]}) do
+      %{"result" => %{"value" => remote_accounts} = result} ->
+        # Combine cached and remote results
+        all_accounts =
+          (cached_results ++ Enum.zip(remaining, remote_accounts))
+          |> Enum.sort_by(fn {addr, _} ->
+            Enum.find_index(params["params"] |> hd(), &(&1 == addr))
+          end)
+          |> Enum.map(fn {_, account} -> account end)
 
-    # Update params with the remaining addresses to be requested
-    updated_params = Map.put(params, "params", [remaining, encoding])
+        # Return formatted response using original result context
+        %{
+          "jsonrpc" => "2.0",
+          "result" => %{result | "value" => all_accounts},
+          "id" => params["id"]
+        }
 
-    # Performing the remote request
-    res = do_post_request(@rpc, updated_params)
-
-    combined_remaining = Enum.zip(remaining, res["result"]["value"])
-
-    merged_data = merge_results(combined_remaining, cached_results, original_address_list)
-
-    %{
-      "id" => res["id"],
-      "jsonrpc" => "2.0",
-      "result" => %{
-        "context" => %{
-          "apiVersion" => "1.17.31",
-          "slot" => res["result"]["context"]["slot"]
-        },
-        "value" => merged_data
-      }
-    }
-  end
-
-  defp merge_results(remote_data, cached_data, address_list) do
-    # Combine data with addresses as keys
-    combined_data = Map.new(remote_data ++ cached_data)
-
-    # Order combined data according to the original address_list
-    address_list
-    |> Enum.map(fn pk -> format_account(combined_data[pk]) end)
-  end
-
-  defp format_account(%Geyser.SubscribeUpdateAccountInfo{} = account) do
-    # Logger.warn("Formatting cached account")
-
-    %{
-      "data" => [account.data |> Base.encode64(), "base64"],
-      "executable" => account.executable,
-      "lamports" => account.lamports,
-      "owner" => account.owner |> B58.encode58(),
-      "rentEpoch" => account.rent_epoch,
-      "space" => ""
-    }
+      error ->
+        error
+    end
   end
 
   defp format_account(account) do
-    account
+    %{
+      "data" => [format_data(account["data"]), "base64"],
+      "executable" => false,
+      "lamports" => account["lamports"],
+      "owner" => account["owner"],
+      "rentEpoch" => 18_446_744_073_709_551_615,
+      "space" => account["space"]
+    }
   end
+
+  def format_data([data, _]), do: data
+  def format_data(data), do: data
 end
