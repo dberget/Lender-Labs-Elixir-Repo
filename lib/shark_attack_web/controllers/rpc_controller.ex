@@ -119,18 +119,6 @@ defmodule SharkAttackWeb.RPCController do
     end
   end
 
-  %{
-    "data" => [
-      "BpuIV/6rgYT7aH9jRhjANdrEOdwa6ztVmKDwAAAAAAFXHqmuldqipFsdbCNhCZQvQNzYnsxWKiZazunJzGXPpHbE1V0BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEAAADwHR8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      "base64"
-    ],
-    "executable" => false,
-    "lamports" => 5_871_297_126,
-    "owner" => "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-    "rentEpoch" => nil,
-    "space" => 165
-  }
-
   defp format_account(account) do
     %{
       "data" => [format_data(account["data"]), "base64"],
