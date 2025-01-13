@@ -39,7 +39,13 @@ defmodule SharkAttack.SolanaWS do
   end
 
   def terminate(reason, state) do
-    Logger.warning("Socket #{state.connection_index} terminating: #{inspect(reason)}")
+    Logger.error("""
+    Socket #{state.connection_index} terminating!
+    Reason: #{inspect(reason)}
+    State: #{inspect(state)}
+    Stack: #{inspect(Process.info(self(), :current_stacktrace))}
+    """)
+
     {:ok, state}
   end
 
@@ -48,21 +54,29 @@ defmodule SharkAttack.SolanaWS do
     {:ok, state}
   end
 
+  def handle_disconnect(connection_status, state) do
+    Logger.warning("""
+    Socket #{state.connection_index} disconnected!
+    Status: #{inspect(connection_status)}
+    State: #{inspect(state)}
+    """)
+
+    {:reconnect, state}
+  end
+
   def handle_frame({:text, msg}, state) do
     case Jason.decode!(msg) do
       %{"result" => subscription_id, "id" => account} ->
-        Logger.info("Connection #{state.connection_index} subscribed to account #{account}")
         new_state = put_in(state, [:subscription_map, to_string(subscription_id)], account)
         {:ok, new_state}
 
       %{"method" => "accountNotification"} = message ->
-        Logger.info("Connection #{state.connection_index} received account notification")
         subscription = get_in(message, ["params", "subscription"])
         account = get_in(state, [:subscription_map, to_string(subscription)])
         account_info = get_in(message, ["params", "result", "value"])
 
         if account_info do
-          :ets.insert(:accounts, {account, format_account_info(account, account_info)})
+          :ets.insert(:accounts, {account, format_account_info(account_info)})
         end
 
         {:ok, state}
@@ -76,13 +90,13 @@ defmodule SharkAttack.SolanaWS do
     end
   end
 
-  defp format_account_info(account, account_info) do
+  defp format_account_info(account_info) do
     %{
-      "pubkey" => account,
+      "space" => account_info["space"],
       "lamports" => account_info["lamports"],
       "owner" => account_info["owner"],
       "executable" => account_info["executable"],
-      "rent_epoch" => account_info["rentEpoch"],
+      "rentEpoch" => account_info["rentEpoch"],
       "data" => account_info["data"]
     }
   end

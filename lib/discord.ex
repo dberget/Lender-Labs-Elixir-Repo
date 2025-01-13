@@ -6,7 +6,7 @@ defmodule SharkAttack.DiscordConsumer do
 
   require Logger
 
-  @env Application.get_env(:shark_attack, :environment)
+  @env Application.compile_env(:shark_attack, :environment, :dev)
 
   @gibbers [
     451_888_759_865_081_866,

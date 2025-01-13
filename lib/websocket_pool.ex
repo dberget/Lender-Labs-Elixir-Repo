@@ -25,8 +25,12 @@ defmodule SharkAttack.SolanaWSPool do
     # Group accounts into chunks that fit within subscription limits
     chunks = Enum.chunk_every(accounts, @max_subscriptions_per_connection)
 
-    # Ensure we have enough connections for all chunks
-    ensure_connections(length(chunks))
+    # Ensure we have enough connections and wait for them to be ready
+    needed_connections = length(chunks)
+
+    :ok = ensure_connections(needed_connections)
+
+    wait_for_connections(needed_connections)
 
     # Distribute chunks across connections
     chunks
@@ -40,20 +44,49 @@ defmodule SharkAttack.SolanaWSPool do
   defp ensure_connections(needed_connections) do
     current_connections = Supervisor.count_children(__MODULE__).active
 
-    # Give connections time to establish
-    Process.sleep(1000)
-
     if needed_connections > current_connections do
-      IO.inspect(needed_connections, label: "needed_connections")
-      IO.inspect(current_connections, label: "current_connections")
-
       Enum.each(current_connections..(needed_connections - 1), fn index ->
-        Supervisor.start_child(__MODULE__, {
-          SharkAttack.SolanaWS,
-          {index, @ws_url}
-        })
+        IO.inspect(index, label: "starting")
+
+        Supervisor.start_child(
+          __MODULE__,
+          %{
+            id: :"ws_#{index}",
+            start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
+            restart: :permanent,
+            type: :worker
+          }
+        )
       end)
     end
+
+    :ok
+  end
+
+  defp wait_for_connections(count, max_attempts \\ 100) do
+    Task.async_stream(
+      0..(count - 1),
+      fn index ->
+        wait_for_connection(connection_name(index), max_attempts)
+      end,
+      timeout: 60_000,
+      max_concurrency: 2
+    )
+    |> Stream.run()
+    |> IO.inspect(label: "wait_for_connections")
+  end
+
+  defp wait_for_connection(name, attempts_left) when attempts_left > 0 do
+    if Process.whereis(name) do
+      :ok
+    else
+      Process.sleep(500)
+      wait_for_connection(name, attempts_left - 1)
+    end
+  end
+
+  defp wait_for_connection(name, _) do
+    raise "Connection #{inspect(name)} failed to initialize"
   end
 
   defp connection_name(index), do: :"solana_ws_#{index}"

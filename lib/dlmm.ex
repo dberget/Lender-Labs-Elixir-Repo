@@ -27,20 +27,21 @@ defmodule SharkAttack.DLMMPools do
   end
 
   def get_accounts() do
+    # way too many accounts when doing all the gpas
     # gpas =
     #   SharkAttack.Solana.get_program_accounts("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo")
     #   |> Enum.map(&Map.get(&1, "pubkey"))
 
-    # accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
-    # ["8Xji8qTn8MwrWYsTu8GEcHg7Y4NvxoQApNgpVKq9TixA"]
+    accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
 
     list_pools()
-    |> Enum.map(&(Map.take(&1, [:address]) |> Map.values()))
+    |> Enum.map(&(Map.take(&1, [:address, :reserve_x, :reserve_y]) |> Map.values()))
     |> tap(fn x ->
       length(x) |> IO.inspect(label: "length")
     end)
     |> List.flatten()
     |> Enum.dedup()
+    |> Enum.concat(accounts)
   end
 
   def create_pool(attrs) do

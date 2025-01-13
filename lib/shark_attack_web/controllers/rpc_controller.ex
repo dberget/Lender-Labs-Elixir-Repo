@@ -32,9 +32,9 @@ defmodule SharkAttackWeb.RPCController do
     json(conn, res)
   end
 
-  # def index(conn, %{"method" => "getMultipleAccounts"} = params) do
-  #   process_request(conn, params)
-  # end
+  def index(conn, %{"method" => "getMultipleAccounts"} = params) do
+    process_request(conn, params)
+  end
 
   def index(conn, params) do
     res =
@@ -56,7 +56,6 @@ defmodule SharkAttackWeb.RPCController do
         do_remote_request(params, remaining, encoding, results)
       end
 
-    IO.inspect(result, label: "result")
     json(conn, result)
   end
 
@@ -78,7 +77,6 @@ defmodule SharkAttackWeb.RPCController do
   defp format_cached_data(results) do
     results
     |> Enum.map(fn {_, account} -> format_account(account) end)
-    |> IO.inspect(label: "formatted results")
   end
 
   defp cache_hit_response(cached_result) do
@@ -91,7 +89,7 @@ defmodule SharkAttackWeb.RPCController do
           "apiVersion" => "2.2.0",
           "slot" => 313_629_867
         },
-        "value" => Enum.map(cached_data, fn {_, account} -> format_account(account) end)
+        "value" => cached_data
       },
       "id" => 1
     }
@@ -101,6 +99,7 @@ defmodule SharkAttackWeb.RPCController do
     case do_post_request(@rpc, %{params | "params" => [remaining, encoding]}) do
       %{"result" => %{"value" => remote_accounts} = result} ->
         # Combine cached and remote results
+
         all_accounts =
           (cached_results ++ Enum.zip(remaining, remote_accounts))
           |> Enum.sort_by(fn {addr, _} ->
@@ -110,9 +109,9 @@ defmodule SharkAttackWeb.RPCController do
 
         # Return formatted response using original result context
         %{
+          "id" => params["id"],
           "jsonrpc" => "2.0",
-          "result" => %{result | "value" => all_accounts},
-          "id" => params["id"]
+          "result" => %{result | "value" => all_accounts}
         }
 
       error ->
@@ -120,17 +119,36 @@ defmodule SharkAttackWeb.RPCController do
     end
   end
 
+  %{
+    "data" => [
+      "BpuIV/6rgYT7aH9jRhjANdrEOdwa6ztVmKDwAAAAAAFXHqmuldqipFsdbCNhCZQvQNzYnsxWKiZazunJzGXPpHbE1V0BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEAAADwHR8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "base64"
+    ],
+    "executable" => false,
+    "lamports" => 5_871_297_126,
+    "owner" => "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "rentEpoch" => nil,
+    "space" => 165
+  }
+
   defp format_account(account) do
     %{
       "data" => [format_data(account["data"]), "base64"],
       "executable" => false,
       "lamports" => account["lamports"],
       "owner" => account["owner"],
-      "rentEpoch" => 18_446_744_073_709_551_615,
+      "rentEpoch" => account["rent_epoch"],
       "space" => account["space"]
     }
   end
 
-  def format_data([data, _]), do: data
+  def format_data([data, "base64"]), do: data
+
+  def format_data([data, format]) do
+    IO.inspect(format, label: "NOT BASE64")
+
+    data
+  end
+
   def format_data(data), do: data
 end

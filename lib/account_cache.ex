@@ -9,12 +9,13 @@ defmodule SharkAttack.AccountCache do
   def init([]) do
     generate_table()
 
-    # Task.start(fn ->
-    # {:ok, ws_pid} = SharkAttack.SolanaWS.start_link([])
-    accounts = SharkAttack.DLMMPools.get_accounts()
-    SharkAttack.SolanaWSPool.subscribe_accounts(accounts)
-    # end)
+    # Start the account fetching in a separate process
+    Task.start_link(fn ->
+      accounts = SharkAttack.DLMMPools.get_accounts()
+      SharkAttack.SolanaWSPool.subscribe_accounts(accounts)
+    end)
 
+    # Return immediately while accounts are being fetched
     {:ok, []}
   end
 
