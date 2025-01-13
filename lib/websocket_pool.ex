@@ -30,7 +30,7 @@ defmodule SharkAttack.SolanaWSPool do
 
     :ok = ensure_connections(needed_connections)
 
-    wait_for_connections(needed_connections)
+    # wait_for_connections(needed_connections)
 
     # Distribute chunks across connections
     chunks
@@ -63,31 +63,31 @@ defmodule SharkAttack.SolanaWSPool do
     :ok
   end
 
-  defp wait_for_connections(count, max_attempts \\ 100) do
-    Task.async_stream(
-      0..(count - 1),
-      fn index ->
-        wait_for_connection(connection_name(index), max_attempts)
-      end,
-      timeout: 60_000,
-      max_concurrency: 2
-    )
-    |> Stream.run()
-    |> IO.inspect(label: "wait_for_connections")
-  end
+  # defp wait_for_connections(count, max_attempts \\ 100) do
+  #   Task.async_stream(
+  #     0..(count - 1),
+  #     fn index ->
+  #       wait_for_connection(connection_name(index), max_attempts)
+  #     end,
+  #     timeout: 60_000,
+  #     max_concurrency: 2
+  #   )
+  #   |> Stream.run()
+  #   |> IO.inspect(label: "wait_for_connections")
+  # end
 
-  defp wait_for_connection(name, attempts_left) when attempts_left > 0 do
-    if Process.whereis(name) do
-      :ok
-    else
-      Process.sleep(500)
-      wait_for_connection(name, attempts_left - 1)
-    end
-  end
+  # defp wait_for_connection(name, attempts_left) when attempts_left > 0 do
+  #   if Process.whereis(name) do
+  #     :ok
+  #   else
+  #     Process.sleep(500)
+  #     wait_for_connection(name, attempts_left - 1)
+  #   end
+  # end
 
-  defp wait_for_connection(name, _) do
-    raise "Connection #{inspect(name)} failed to initialize"
-  end
+  # defp wait_for_connection(name, _) do
+  #   raise "Connection #{inspect(name)} failed to initialize"
+  # end
 
   defp connection_name(index), do: :"solana_ws_#{index}"
 end

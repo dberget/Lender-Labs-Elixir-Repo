@@ -32,13 +32,11 @@ defmodule SharkAttack.DLMMPools do
     #   SharkAttack.Solana.get_program_accounts("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo")
     #   |> Enum.map(&Map.get(&1, "pubkey"))
 
+    # metera program acct
     accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
 
     list_pools()
     |> Enum.map(&(Map.take(&1, [:address, :reserve_x, :reserve_y]) |> Map.values()))
-    |> tap(fn x ->
-      length(x) |> IO.inspect(label: "length")
-    end)
     |> List.flatten()
     |> Enum.dedup()
     |> Enum.concat(accounts)
@@ -79,6 +77,12 @@ defmodule SharkAttack.DLMMPools do
     end
   end
 
+  def get_active_bin_id(account_data) when is_map(account_data) do
+    account_data["data"]
+    |> hd()
+    |> get_active_bin_id()
+  end
+
   def get_active_bin_id(raw_data) when is_binary(raw_data) do
     try do
       decoded_data = Base.decode64!(raw_data)
@@ -94,8 +98,8 @@ defmodule SharkAttack.DLMMPools do
         active_id: active_id
       }
     rescue
-      e ->
-        IO.inspect(e, label: "Error parsing binary")
+      _e ->
+        # IO.inspect(e, label: "Error parsing binary")
         {:error, "Failed to decode LbPair data"}
     end
   end

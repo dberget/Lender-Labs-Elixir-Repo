@@ -21,6 +21,7 @@ defmodule SharkAttack.Application do
       SharkAttack.Discord,
       SharkAttack.LoansWorker,
       SharkAttack.SolanaWSPool,
+      SharkAttack.AccountMonitor,
       SharkAttack.AccountCache,
       SharkAttack.FloorWorker,
       SharkAttack.Scheduler

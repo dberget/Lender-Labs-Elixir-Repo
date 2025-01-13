@@ -7,15 +7,14 @@ defmodule SharkAttack.AccountCache do
   end
 
   def init([]) do
-    generate_table()
+    generate_table_and_monitor()
 
     # Start the account fetching in a separate process
-    Task.start_link(fn ->
-      accounts = SharkAttack.DLMMPools.get_accounts()
-      SharkAttack.SolanaWSPool.subscribe_accounts(accounts)
-    end)
+    # Task.start_link(fn ->
+    accounts = SharkAttack.DLMMPools.get_accounts()
+    SharkAttack.SolanaWSPool.subscribe_accounts(accounts)
+    # end)
 
-    # Return immediately while accounts are being fetched
     {:ok, []}
   end
 
@@ -23,10 +22,10 @@ defmodule SharkAttack.AccountCache do
     :ets.lookup(:accounts, pubkey)
   end
 
-  def generate_table() do
+  def generate_table_and_monitor() do
     :ets.new(:accounts, [
-      :public,
       :named_table,
+      :public,
       {:read_concurrency, true},
       {:write_concurrency, true}
     ])

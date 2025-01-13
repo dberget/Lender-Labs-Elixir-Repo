@@ -28,7 +28,7 @@ defmodule SharkAttack.SolanaWS do
         "params" => [
           account,
           %{
-            "encoding" => "jsonParsed",
+            "encoding" => "base64",
             "commitment" => "confirmed"
           }
         ]
@@ -76,7 +76,14 @@ defmodule SharkAttack.SolanaWS do
         account_info = get_in(message, ["params", "result", "value"])
 
         if account_info do
-          :ets.insert(:accounts, {account, format_account_info(account_info)})
+          info = format_account_info(account_info)
+          :ets.insert(:accounts, {account, info})
+
+          Phoenix.PubSub.broadcast(
+            SharkAttack.PubSub,
+            "account_updates",
+            {:account_updated, account, info}
+          )
         end
 
         {:ok, state}
