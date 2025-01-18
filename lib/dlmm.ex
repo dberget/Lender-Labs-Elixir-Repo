@@ -77,6 +77,58 @@ defmodule SharkAttack.DLMMPools do
     end
   end
 
+  def get_position_state(position_address) do
+    client =
+      Solana.RPC.client(network: @rpc_url)
+
+    case SharkAttack.Solana.get_account_info(position_address, client) do
+      {:ok, response} ->
+        parse_position_state(response)
+
+      {:error, error} ->
+        {:error, "Failed to fetch account info: #{inspect(error)}"}
+    end
+  end
+
+  def parse_position_state(response) do
+    try do
+      decoded_data =
+        response
+        |> get_in(["data"])
+        |> hd()
+        |> Base.decode64!()
+
+      <<
+        _discriminator::binary-size(8),
+        lb_pair::binary-size(32),
+        owner::binary-size(32),
+        # Skip to binId location
+        _other_data::binary-size(7840),
+        # At offset 7912
+        lower_bin_id::little-signed-32,
+        # At offset 7916
+        upper_bin_id::little-signed-32,
+        _rest::binary
+      >> = decoded_data
+
+      %{
+        lb_pair: B58.encode58(lb_pair),
+        owner: B58.encode58(owner),
+        lower_bin_id: lower_bin_id,
+        upper_bin_id: upper_bin_id,
+        total_size: byte_size(decoded_data)
+      }
+    rescue
+      e ->
+        {:error,
+         "Failed to decode position data: #{inspect(e)}\nStacktrace: #{Exception.format_stacktrace(__STACKTRACE__)}"}
+    end
+  end
+
+  # defp decode_liquidity_shares(binary) do
+  #   for <<share::little-unsigned-128 <- binary>>, do: share
+  # end
+
   def get_active_bin_id(account_data) when is_map(account_data) do
     account_data["data"]
     |> hd()
