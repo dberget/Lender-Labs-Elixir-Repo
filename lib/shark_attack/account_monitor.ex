@@ -27,12 +27,12 @@ defmodule SharkAttack.AccountMonitor do
   def handle_info({:account_updated, account, account_info}, state) do
     market_positions = get_market_positions(state, account)
 
-    # IO.inspect(market_positions, label: "Market Positions #{account}")
+    IO.inspect(market_positions, label: "Market Positions #{account}")
 
     if length(market_positions) > 0 do
       case SharkAttack.DLMMPools.get_active_bin_id(account_info) do
         %{active_id: pool_bin_id} ->
-          # IO.inspect(pool_bin_id, label: "Active Bin ID #{account}")
+          IO.inspect(pool_bin_id, label: "Active Bin ID #{account}")
 
           positions_to_close =
             market_positions

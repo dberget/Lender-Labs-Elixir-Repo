@@ -51,17 +51,45 @@ defmodule SharkAttack.SolanaWS do
 
   def handle_connect(_conn, state) do
     Logger.info("SolanaWS #{state.connection_index} Connected!")
+
+    # Resubscribe to all accounts after reconnection
+    accounts = Map.values(state.subscription_map) |> Enum.uniq()
+
+    if length(accounts) > 0 do
+      Logger.info("Resubscribing to #{length(accounts)} accounts")
+
+      for account <- accounts do
+        request = %{
+          "jsonrpc" => "2.0",
+          "id" => account,
+          "method" => "accountSubscribe",
+          "params" => [
+            account,
+            %{
+              "encoding" => "base64",
+              "commitment" => "confirmed"
+            }
+          ]
+        }
+
+        WebSockex.send_frame(self(), {:text, Jason.encode!(request)})
+      end
+    end
+
+    schedule_ping()
     {:ok, state}
   end
 
-  def handle_disconnect(connection_status, state) do
+  def handle_disconnect(%{reason: reason} = disconnect_status, state) do
     Logger.warning("""
     Socket #{state.connection_index} disconnected!
-    Status: #{inspect(connection_status)}
+    Status: #{inspect(disconnect_status)}
+    Reason: #{inspect(reason)}
     State: #{inspect(state)}
     """)
 
-    {:reconnect, state}
+    # Clear subscription map since all subscriptions are invalidated on disconnect
+    {:reconnect, %{state | subscription_map: %{}}}
   end
 
   def handle_frame({:text, msg}, state) do
@@ -88,6 +116,11 @@ defmodule SharkAttack.SolanaWS do
 
         {:ok, state}
 
+      %{"result" => _result, "id" => "ping"} ->
+        Logger.debug("Connection #{state.connection_index} received pong")
+        schedule_ping()
+        {:ok, state}
+
       _ ->
         Logger.debug(
           "Connection #{state.connection_index} received other message: #{inspect(msg)}"
@@ -95,6 +128,10 @@ defmodule SharkAttack.SolanaWS do
 
         {:ok, state}
     end
+  end
+
+  def handle_info(:ping, state) do
+    {:reply, :ping, state}
   end
 
   defp format_account_info(account_info) do
@@ -106,5 +143,10 @@ defmodule SharkAttack.SolanaWS do
       "rentEpoch" => account_info["rentEpoch"],
       "data" => account_info["data"]
     }
+  end
+
+  defp schedule_ping do
+    # Send ping every minute
+    Process.send_after(self(), :ping, 60_000)
   end
 end

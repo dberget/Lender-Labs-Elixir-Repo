@@ -57,11 +57,22 @@ defmodule SharkAttack.DLMMPools do
     end
   end
 
-  def get_pool_state(pool_address) do
-    client =
-      Solana.RPC.client(network: @rpc_url)
+  defp get_account_info(account_address) do
+    case SharkAttack.AccountCache.get_account(account_address) do
+      [] ->
+        client =
+          Solana.RPC.client(network: @rpc_url)
 
-    case SharkAttack.Solana.get_account_info(pool_address, client) do
+        {:ok, account_data} = SharkAttack.Solana.get_account_info(account_address, client)
+        account_data
+
+      [account_data] ->
+        account_data
+    end
+  end
+
+  def get_pool_state(pool_address) do
+    case get_account_info(pool_address) do
       {:ok, response} ->
         # Parse the response
         account_data =
