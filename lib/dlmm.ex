@@ -36,7 +36,7 @@ defmodule SharkAttack.DLMMPools do
     accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
 
     list_pools()
-    |> Enum.map(&(Map.take(&1, [:address, :reserve_x, :reserve_y]) |> Map.values()))
+    |> Enum.map(&(Map.take(&1, [:address]) |> Map.values()))
     |> List.flatten()
     |> Enum.dedup()
     |> Enum.concat(accounts)
@@ -124,10 +124,6 @@ defmodule SharkAttack.DLMMPools do
          "Failed to decode position data: #{inspect(e)}\nStacktrace: #{Exception.format_stacktrace(__STACKTRACE__)}"}
     end
   end
-
-  # defp decode_liquidity_shares(binary) do
-  #   for <<share::little-unsigned-128 <- binary>>, do: share
-  # end
 
   def get_active_bin_id(account_data) when is_map(account_data) do
     account_data["data"]
