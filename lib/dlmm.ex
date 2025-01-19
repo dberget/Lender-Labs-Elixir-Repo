@@ -162,4 +162,10 @@ defmodule SharkAttack.DLMMPools do
         {:error, "Failed to decode LbPair data"}
     end
   end
+
+  def get_dlmm_position_data(dlmm, position) do
+    SharkAttack.Helpers.do_get_request(
+      "http://localhost:5001/dlmm/#{dlmm}/#{position.position_address}"
+    )
+  end
 end

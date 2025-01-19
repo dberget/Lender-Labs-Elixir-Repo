@@ -72,7 +72,7 @@ defmodule SharkAttack.AutoClose do
       Logger.info("Closing position #{position.position_address}")
 
       SharkAttack.Helpers.do_post_request(
-        "http://localhost:5001/close_position",
+        "http://localhost:5001/send_nonce_tx",
         %{encodedTx: position.encoded_transaction, nonceAccount: position.nonce_account}
       )
       |> parse_close_position_response(position)

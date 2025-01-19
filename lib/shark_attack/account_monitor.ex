@@ -27,9 +27,14 @@ defmodule SharkAttack.AccountMonitor do
   def handle_info({:account_updated, account, account_info}, state) do
     market_positions = get_market_positions(state, account)
 
-    IO.inspect(market_positions, label: "Market Positions #{account}")
+    # IO.inspect(market_positions, label: "Market Positions #{account}")
 
     if length(market_positions) > 0 do
+      # Gets full DLMM position on-chain data from node repo.
+      # dlmm_position_data =
+      #   SharkAttack.DLMMPools.get_dlmm_position_data(account, hd(market_positions))
+      #   |> IO.inspect(label: "DLMM Position Data #{account}")
+
       case SharkAttack.DLMMPools.get_active_bin_id(account_info) do
         %{active_id: pool_bin_id} ->
           IO.inspect(pool_bin_id, label: "Active Bin ID #{account}")
