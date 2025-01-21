@@ -7,7 +7,7 @@ defmodule SharkAttack.Repo.Migrations.AutoClose do
       add(:pool_address, :string)
       add(:position_address, :string)
       add(:sell_direction, :string)
-      add(:exit_bin_id, :string)
+      add(:exit_bin_id, :integer)
       add(:nonce_account, :string)
       add(:encoded_transaction, :text)
       add(:status, :string)

@@ -10,6 +10,16 @@ defmodule SharkAttack.AutoClose do
     get_positions_to_close() |> close_positions()
   end
 
+  def get_user_auto_close(user_address) do
+    query =
+      from(p in AutoClose,
+        where: p.user_address == ^user_address,
+        select: p
+      )
+
+    Repo.all(query)
+  end
+
   def insert_auto_close(params) do
     %AutoClose{}
     |> AutoClose.changeset(Map.put(params, "status", "ACTIVE"))
@@ -129,5 +139,31 @@ defmodule SharkAttack.AutoClose do
   defp parse_close_response({:error, reason}, _, _) do
     Logger.warning("Error calling the node backend to close the nonce account, #{reason}")
     :error
+  end
+
+  def cleanup_closed_positions() do
+    get_positions_to_close()
+    |> Enum.each(fn position ->
+      response =
+        SharkAttack.DLMMPools.get_dlmm_position_data(
+          position.pool_address,
+          position
+        )
+
+      case response do
+        {:error, "{\"error\":\"Account does not exist or has no data " <> _} ->
+          # Position no longer exists, mark as CLOSED
+          Logger.info("Position #{position.position_address} no longer exists, marking as CLOSED")
+          update_close_status(position.nonce_account, "CLOSED")
+
+        %{"position" => _} ->
+          # Position still exists, do nothing
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Error checking position status: #{reason}")
+          :error
+      end
+    end)
   end
 end

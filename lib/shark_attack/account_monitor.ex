@@ -9,16 +9,28 @@ defmodule SharkAttack.AccountMonitor do
   def init([]) do
     Phoenix.PubSub.subscribe(SharkAttack.PubSub, "account_updates")
     positions = SharkAttack.AutoClose.get_positions_to_close()
+    # Start the cleanup check
+    # Check every 5 minutes
+    Process.send_after(self(), :cleanup_positions, 300_000)
 
     {:ok, positions}
   end
 
   # call update_positions on an interval
   def handle_info(:update_positions, _state) do
-    IO.inspect("Updating positions")
     {:ok, new_state} = update_positions()
     # Check every minute
     Process.send_after(self(), :update_positions, 60_000)
+
+    {:noreply, new_state}
+  end
+
+  def handle_info(:cleanup_positions, _state) do
+    SharkAttack.AutoClose.cleanup_closed_positions()
+
+    {:ok, new_state} = update_positions()
+    # Schedule next cleanup
+    Process.send_after(self(), :cleanup_positions, 300_000)
 
     {:noreply, new_state}
   end
@@ -37,8 +49,6 @@ defmodule SharkAttack.AccountMonitor do
 
       case SharkAttack.DLMMPools.get_active_bin_id(account_info) do
         %{active_id: pool_bin_id} ->
-          IO.inspect(pool_bin_id, label: "Active Bin ID #{account}")
-
           positions_to_close =
             market_positions
             |> Enum.filter(fn position ->
@@ -65,14 +75,13 @@ defmodule SharkAttack.AccountMonitor do
   end
 
   defp should_close_position?(position, pool_bin_id) do
-    # Convert exit_bin_id from string to integer
-    position_bin_id = String.to_integer(position.exit_bin_id)
+    exit_bin_id = position.exit_bin_id
 
     cond do
-      position.sell_direction == "BELOW" and position_bin_id < pool_bin_id ->
+      position.sell_direction == "CLOSE_BELOW" and exit_bin_id < pool_bin_id ->
         true
 
-      position.sell_direction == "ABOVE" and position_bin_id > pool_bin_id ->
+      position.sell_direction == "CLOSE_ABOVE" and exit_bin_id > pool_bin_id ->
         true
 
       true ->
