@@ -12,12 +12,15 @@ defmodule SharkAttack.AccountMonitor do
     # Start the cleanup check
     # Check every 5 minutes
     Process.send_after(self(), :cleanup_positions, 300_000)
+    Process.send_after(self(), :update_positions, 60_000)
 
     {:ok, positions}
   end
 
   # call update_positions on an interval
   def handle_info(:update_positions, _state) do
+    IO.inspect("Updating positions")
+    # check_positions()
     {:ok, new_state} = update_positions()
     # Check every minute
     Process.send_after(self(), :update_positions, 60_000)
@@ -26,6 +29,7 @@ defmodule SharkAttack.AccountMonitor do
   end
 
   def handle_info(:cleanup_positions, _state) do
+    IO.inspect("Cleaning up positions")
     SharkAttack.AutoClose.cleanup_closed_positions()
 
     {:ok, new_state} = update_positions()
@@ -39,13 +43,15 @@ defmodule SharkAttack.AccountMonitor do
   def handle_info({:account_updated, account, account_info}, state) do
     market_positions = get_market_positions(state, account)
 
-    # IO.inspect(market_positions, label: "Market Positions #{account}")
-
     if length(market_positions) > 0 do
+      IO.inspect(SharkAttack.DLMMPools.get_active_bin_id(account_info),
+        label: "Active Bin ID #{account}"
+      )
+
       # Gets full DLMM position on-chain data from node repo.
       # dlmm_position_data =
-      #   SharkAttack.DLMMPools.get_dlmm_position_data(account, hd(market_positions))
-      #   |> IO.inspect(label: "DLMM Position Data #{account}")
+      # SharkAttack.DLMMPools.get_dlmm_position_data(account, hd(market_positions))
+      # |> IO.inspect(label: "DLMM Position Data #{account}")
 
       case SharkAttack.DLMMPools.get_active_bin_id(account_info) do
         %{active_id: pool_bin_id} ->
@@ -65,9 +71,29 @@ defmodule SharkAttack.AccountMonitor do
     {:noreply, state}
   end
 
-  defp update_positions() do
+  def update_positions() do
     positions = SharkAttack.AutoClose.get_positions_to_close()
+
     {:ok, positions}
+  end
+
+  # Check all positions and close any that aren't being updated correctly by :account_update
+  def check_positions() do
+    positions = SharkAttack.AutoClose.get_positions_to_close()
+
+    for position <- positions do
+      if position.status == "ACTIVE" do
+        dlmm_position_data =
+          SharkAttack.DLMMPools.get_dlmm_position_data(position.pool_address, position)
+          |> IO.inspect(label: "DLMM Position Data #{position.pool_address}")
+
+        # pool_bin_id =
+        #   SharkAttack.DLMMPools.get_active_bin_id(dlmm_position_data)
+        #   |> IO.inspect(label: "Active Bin ID #{position.pool_address}")
+
+        # should_close_position?(position, pool_bin_id)
+      end
+    end
   end
 
   defp get_market_positions(state, account) do
@@ -77,15 +103,17 @@ defmodule SharkAttack.AccountMonitor do
   defp should_close_position?(position, pool_bin_id) do
     exit_bin_id = position.exit_bin_id
 
-    cond do
-      position.sell_direction == "CLOSE_BELOW" and exit_bin_id < pool_bin_id ->
-        true
+    should_close =
+      case position.sell_direction do
+        "CLOSE_BELOW" -> pool_bin_id < exit_bin_id
+        "CLOSE_ABOVE" -> pool_bin_id > exit_bin_id
+      end
 
-      position.sell_direction == "CLOSE_ABOVE" and exit_bin_id > pool_bin_id ->
-        true
+    SharkAttack.DiscordConsumer.send_to_webhook(
+      "me",
+      "Closing position #{position.pool_address} because #{pool_bin_id} is #{String.downcase(position.sell_direction)} #{exit_bin_id}"
+    )
 
-      true ->
-        false
-    end
+    should_close
   end
 end
