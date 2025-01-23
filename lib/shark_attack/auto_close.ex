@@ -6,10 +6,6 @@ defmodule SharkAttack.AutoClose do
   import Ecto.Query
   require Logger
 
-  def get_and_close_positions() do
-    get_positions_to_close() |> close_positions()
-  end
-
   def get_user_auto_close(user_address) do
     query =
       from(p in AutoClose,
