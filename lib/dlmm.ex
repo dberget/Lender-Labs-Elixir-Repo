@@ -57,7 +57,7 @@ defmodule SharkAttack.DLMMPools do
     end
   end
 
-  defp get_account_info(account_address) do
+  def get_account_info(account_address) do
     case SharkAttack.AccountCache.get_account(account_address) do
       [] ->
         client =
@@ -73,7 +73,7 @@ defmodule SharkAttack.DLMMPools do
 
   def get_pool_state(pool_address) do
     case get_account_info(pool_address) do
-      {_account, %{"data" => [data | _]}} ->
+      %{"data" => [data | _]} ->
         get_active_bin_id(data)
 
       {:ok, response} ->
