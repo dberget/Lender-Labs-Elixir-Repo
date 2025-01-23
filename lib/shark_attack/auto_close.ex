@@ -85,6 +85,7 @@ defmodule SharkAttack.AutoClose do
         "http://localhost:5001/send_nonce_tx",
         %{encodedTx: position.encoded_transaction, nonceAccount: position.nonce_account}
       )
+      |> IO.inspect(label: "Close Position Response")
       |> parse_close_position_response(position)
     end
   end

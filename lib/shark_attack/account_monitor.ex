@@ -19,10 +19,8 @@ defmodule SharkAttack.AccountMonitor do
 
   # call update_positions on an interval
   def handle_info(:update_positions, _state) do
-    IO.inspect("Updating positions")
-    # check_positions()
+    check_positions()
     {:ok, new_state} = update_positions()
-    # Check every minute
     Process.send_after(self(), :update_positions, 60_000)
 
     {:noreply, new_state}
@@ -31,7 +29,6 @@ defmodule SharkAttack.AccountMonitor do
   def handle_info(:cleanup_positions, _state) do
     IO.inspect("Cleaning up positions")
     SharkAttack.AutoClose.cleanup_closed_positions()
-
     {:ok, new_state} = update_positions()
     # Schedule next cleanup
     Process.send_after(self(), :cleanup_positions, 300_000)
@@ -44,15 +41,6 @@ defmodule SharkAttack.AccountMonitor do
     market_positions = get_market_positions(state, account)
 
     if length(market_positions) > 0 do
-      IO.inspect(SharkAttack.DLMMPools.get_active_bin_id(account_info),
-        label: "Active Bin ID #{account}"
-      )
-
-      # Gets full DLMM position on-chain data from node repo.
-      # dlmm_position_data =
-      # SharkAttack.DLMMPools.get_dlmm_position_data(account, hd(market_positions))
-      # |> IO.inspect(label: "DLMM Position Data #{account}")
-
       case SharkAttack.DLMMPools.get_active_bin_id(account_info) do
         %{active_id: pool_bin_id} ->
           positions_to_close =
@@ -83,15 +71,20 @@ defmodule SharkAttack.AccountMonitor do
 
     for position <- positions do
       if position.status == "ACTIVE" do
-        dlmm_position_data =
-          SharkAttack.DLMMPools.get_dlmm_position_data(position.pool_address, position)
-          |> IO.inspect(label: "DLMM Position Data #{position.pool_address}")
+        case SharkAttack.DLMMPools.get_pool_state(position.pool_address) do
+          %{active_id: pool_bin_id} ->
+            if should_close_position?(position, pool_bin_id) do
+              SharkAttack.DiscordConsumer.send_to_webhook(
+                "me",
+                "check_positions - Closing position #{position.pool_address} because #{pool_bin_id} is #{String.downcase(position.sell_direction)} #{position.exit_bin_id}"
+              )
 
-        # pool_bin_id =
-        #   SharkAttack.DLMMPools.get_active_bin_id(dlmm_position_data)
-        #   |> IO.inspect(label: "Active Bin ID #{position.pool_address}")
+              SharkAttack.AutoClose.close_positions([position])
+            end
 
-        # should_close_position?(position, pool_bin_id)
+          {:error, reason} ->
+            Logger.error("Failed to get pool state for #{position.pool_address}: #{reason}")
+        end
       end
     end
   end
@@ -109,10 +102,12 @@ defmodule SharkAttack.AccountMonitor do
         "CLOSE_ABOVE" -> pool_bin_id > exit_bin_id
       end
 
-    SharkAttack.DiscordConsumer.send_to_webhook(
-      "me",
-      "Closing position #{position.pool_address} because #{pool_bin_id} is #{String.downcase(position.sell_direction)} #{exit_bin_id}"
-    )
+    if should_close do
+      SharkAttack.DiscordConsumer.send_to_webhook(
+        "me",
+        "Closing position #{position.pool_address} because #{pool_bin_id} is #{String.downcase(position.sell_direction)} #{exit_bin_id}"
+      )
+    end
 
     should_close
   end

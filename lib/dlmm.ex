@@ -73,6 +73,9 @@ defmodule SharkAttack.DLMMPools do
 
   def get_pool_state(pool_address) do
     case get_account_info(pool_address) do
+      {_account, %{"data" => [data | _]}} ->
+        get_active_bin_id(data)
+
       {:ok, response} ->
         # Parse the response
         account_data =
