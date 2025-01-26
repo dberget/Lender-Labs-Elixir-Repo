@@ -325,6 +325,10 @@ defmodule SharkAttack.Loans do
     end
   end
 
+  def get_loan(nil) do
+    nil
+  end
+
   def get_loan(loan) do
     case LoansWorker.get_loan(loan) do
       {:ok, nil} ->
@@ -344,11 +348,12 @@ defmodule SharkAttack.Loans do
   end
 
   def get_user_bnpls(user_address) do
-    query = from(b in BNPL,
-      join: l in Loan,
-      on: b.loan_id == l.loan,
-      where: l.borrower == ^user_address
-    )
+    query =
+      from(b in BNPL,
+        join: l in Loan,
+        on: b.loan_id == l.loan,
+        where: l.borrower == ^user_address
+      )
 
     Repo.all(query)
   end

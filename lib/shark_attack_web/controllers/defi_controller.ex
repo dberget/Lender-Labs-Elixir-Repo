@@ -38,4 +38,10 @@ defmodule SharkAttackWeb.DefiController do
         conn |> json(error)
     end
   end
+
+  def disable_auto_close(conn, params) do
+    SharkAttack.AutoClose.disable_auto_close(params["id"])
+
+    json(conn, "ok")
+  end
 end

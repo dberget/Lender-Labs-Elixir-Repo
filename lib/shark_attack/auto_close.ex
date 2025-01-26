@@ -22,6 +22,14 @@ defmodule SharkAttack.AutoClose do
     |> Repo.insert()
   end
 
+  def disable_auto_close(id) do
+    position =
+      Repo.get_by(AutoClose, id: id)
+      |> Changeset.change(%{status: "CANCELLED"})
+
+    Repo.update(position)
+  end
+
   defp update_close_status(nonce_account, new_status) do
     position = Repo.get_by(AutoClose, nonce_account: nonce_account)
 

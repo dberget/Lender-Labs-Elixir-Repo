@@ -9,9 +9,7 @@ defmodule SharkAttack.AccountMonitor do
   def init([]) do
     Phoenix.PubSub.subscribe(SharkAttack.PubSub, "account_updates")
     positions = SharkAttack.AutoClose.get_positions_to_close()
-    # Start the cleanup check
-    # Check every 5 minutes
-    Process.send_after(self(), :cleanup_positions, 300_000)
+
     Process.send_after(self(), :update_positions, 60_000)
 
     {:ok, positions}
@@ -21,17 +19,8 @@ defmodule SharkAttack.AccountMonitor do
   def handle_info(:update_positions, _state) do
     check_positions()
     {:ok, new_state} = update_positions()
+
     Process.send_after(self(), :update_positions, 60_000)
-
-    {:noreply, new_state}
-  end
-
-  def handle_info(:cleanup_positions, _state) do
-    IO.inspect("Cleaning up positions")
-    SharkAttack.AutoClose.cleanup_closed_positions()
-    {:ok, new_state} = update_positions()
-    # Schedule next cleanup
-    Process.send_after(self(), :cleanup_positions, 300_000)
 
     {:noreply, new_state}
   end
@@ -65,7 +54,6 @@ defmodule SharkAttack.AccountMonitor do
     {:ok, positions}
   end
 
-  # Check all positions and close any that aren't being updated correctly by :account_update
   def check_positions() do
     positions = SharkAttack.AutoClose.get_positions_to_close()
 
