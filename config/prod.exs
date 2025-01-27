@@ -14,6 +14,8 @@ config :shark_attack, SharkAttackWeb.Endpoint,
   check_origin: [
     "https://lenderlabs.xyz",
     "//lenderlabs.xyz",
+    "https://stage.lenderlabs.xyz",
+    "https://lenderlabs.xyz",
     "//stage.lenderlabs.xyz",
     "//stage--chimerical-custard-213af0.netlify.app",
     "//localhost:3000"

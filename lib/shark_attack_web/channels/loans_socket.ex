@@ -12,6 +12,7 @@ defmodule SharkAttackWeb.LoansSocket do
   #
   channel("room:loans", SharkAttackWeb.LoansChannel)
   channel("room:offers", SharkAttackWeb.OffersChannel)
+  channel("room:dlmm_pools:*", SharkAttackWeb.DLMMPoolsChannel)
   #
   # To create a channel file, use the mix task:
   #

@@ -2,31 +2,46 @@ defmodule SharkAttack.AccountMonitor do
   use GenServer
   require Logger
 
+  # 10 minutes
+  @activity_window_seconds 600
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, [], opts)
   end
 
   def init([]) do
+    # Create ETS table for activity tracking - store list of timestamps
+    :ets.new(:pool_activity, [:named_table, :public, :duplicate_bag, write_concurrency: true])
+
+    # Subscribe to base topic instead of trying to use wildcard
     Phoenix.PubSub.subscribe(SharkAttack.PubSub, "account_updates")
     positions = SharkAttack.AutoClose.get_positions_to_close()
 
     Process.send_after(self(), :update_positions, 60_000)
+    Process.send_after(self(), :cleanup_activity, 60_000 * 10)
 
     {:ok, positions}
   end
 
-  # call update_positions on an interval
-  def handle_info(:update_positions, _state) do
-    check_positions()
-    {:ok, new_state} = update_positions()
+  def get_pool_activity(pool_address) do
+    cutoff_time = System.system_time(:second) - @activity_window_seconds
 
-    Process.send_after(self(), :update_positions, 60_000)
-
-    {:noreply, new_state}
+    :ets.lookup(:pool_activity, pool_address)
+    |> Enum.count(fn {_, timestamp} -> timestamp >= cutoff_time end)
   end
 
-  # In your handle_info:
+  def handle_info(:cleanup_activity, state) do
+    cleanup_old_entries()
+    Process.send_after(self(), :cleanup_activity, 60_000 * 10)
+    {:noreply, state}
+  end
+
   def handle_info({:account_updated, account, account_info}, state) do
+    # Record activity - add new timestamp to the list
+    current_time = System.system_time(:second)
+    :ets.insert(:pool_activity, {account, current_time})
+
+    # Existing position checking logic
     market_positions = get_market_positions(state, account)
 
     if length(market_positions) > 0 do
@@ -46,6 +61,27 @@ defmodule SharkAttack.AccountMonitor do
     end
 
     {:noreply, state}
+  end
+
+  # call update_positions on an interval
+  def handle_info(:update_positions, _state) do
+    check_positions()
+    {:ok, new_state} = update_positions()
+
+    Process.send_after(self(), :update_positions, 60_000)
+
+    {:noreply, new_state}
+  end
+
+  defp cleanup_old_entries do
+    cutoff_time = System.system_time(:second) - @activity_window_seconds
+
+    :ets.match_object(:pool_activity, {:_, :_})
+    |> Enum.each(fn {pool, timestamp} ->
+      if timestamp < cutoff_time do
+        :ets.delete_object(:pool_activity, {pool, timestamp})
+      end
+    end)
   end
 
   def update_positions() do

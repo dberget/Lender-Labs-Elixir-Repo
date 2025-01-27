@@ -6,11 +6,18 @@ defmodule SharkAttack.Workers.LoanHandler do
 
     loan = SharkAttack.Loans.get_loan(loanAddress)
 
-    SharkAttack.Events.send_event("REPAY_LOAN", loan)
+    cond do
+      loan == nil ->
+        SharkAttack.DiscordConsumer.send_to_webhook(
+          "me",
+          "No loan data for REPAY_LOAN loan, #{loanAddress}, #{inspect(event)}"
+        )
 
-    SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
-
-    SharkAttack.LoansWorker.delete_loan(loanAddress)
+      true ->
+        SharkAttack.Events.send_event("REPAY_LOAN", loan)
+        SharkAttack.Loans.update_or_insert_repaid_loan(loan, event["signature"])
+        SharkAttack.LoansWorker.delete_loan(loanAddress)
+    end
   end
 
   def update_loan(%{"type" => "CANCEL_OFFER"} = event) do
@@ -42,11 +49,18 @@ defmodule SharkAttack.Workers.LoanHandler do
 
     loan = SharkAttack.Loans.get_loan(loanAddress)
 
-    SharkAttack.Loans.update_or_insert_foreclosed_loan(loan, event["signature"])
+    cond do
+      loan == nil ->
+        SharkAttack.DiscordConsumer.send_to_webhook(
+          "me",
+          "No loan data for FORECLOSE_LOAN loan, #{loanAddress}, #{inspect(event)}"
+        )
 
-    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
-
-    SharkAttack.LoansWorker.delete_loan(loanAddress)
+      true ->
+        SharkAttack.Loans.update_or_insert_foreclosed_loan(loan, event["signature"])
+        SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
+        SharkAttack.LoansWorker.delete_loan(loanAddress)
+    end
   end
 
   def update_loan(%{"type" => "CLAIM_NFT"} = event) do
@@ -60,11 +74,19 @@ defmodule SharkAttack.Workers.LoanHandler do
 
     loan = SharkAttack.Loans.get_loan(loanAddress)
 
-    SharkAttack.Loans.update_or_insert_foreclosed_loan(loan, event["signature"])
+    cond do
+      loan == nil ->
+        SharkAttack.DiscordConsumer.send_to_webhook(
+          "me",
+          "No loan data for CLAIM_NFT loan, #{loanAddress}, #{inspect(event)}"
+        )
 
-    SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
+      true ->
+        SharkAttack.Loans.update_or_insert_foreclosed_loan(loan, event["signature"])
+        SharkAttack.Events.send_event("FORECLOSE_LOAN", loan)
 
-    SharkAttack.LoansWorker.delete_loan(loanAddress)
+        SharkAttack.LoansWorker.delete_loan(loanAddress)
+    end
   end
 
   def update_loan(%{"type" => "REBORROW_SOL_FOR_NFT"} = event) do

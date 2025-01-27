@@ -39,6 +39,21 @@ defmodule SharkAttackWeb.DefiController do
     end
   end
 
+  def get_pools_by_token(conn, params) do
+    pools =
+      SharkAttack.DLMMPools.get_pools_by_token(params["token_address"])
+      |> Enum.map(fn pool ->
+        %{
+          pool: pool,
+          activity: SharkAttack.AccountMonitor.get_pool_activity(pool.address)
+        }
+      end)
+      |> Enum.sort_by(& &1.activity, :desc)
+      |> Enum.take(10)
+
+    json(conn, pools)
+  end
+
   def disable_auto_close(conn, params) do
     SharkAttack.AutoClose.disable_auto_close(params["id"])
 

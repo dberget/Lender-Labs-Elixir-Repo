@@ -52,28 +52,36 @@ defmodule SharkAttack.SolanaWS do
   def handle_connect(_conn, state) do
     Logger.info("SolanaWS #{state.connection_index} Connected!")
 
-    # Resubscribe to all accounts after reconnection
-    accounts = Map.values(state.subscription_map) |> Enum.uniq()
+    # Reset reconnection attempt counter on successful connection
+    state = Map.put(state, :reconnect_attempt, 0)
 
-    if length(accounts) > 0 do
-      Logger.info("Resubscribing to #{length(accounts)} accounts")
+    # Resubscribe to all accounts if needed
+    if Map.get(state, :needs_resubscribe, false) do
+      accounts = Map.values(state.subscription_map) |> Enum.uniq()
 
-      for account <- accounts do
-        request = %{
-          "jsonrpc" => "2.0",
-          "id" => account,
-          "method" => "accountSubscribe",
-          "params" => [
-            account,
-            %{
-              "encoding" => "base64",
-              "commitment" => "confirmed"
+      state =
+        if length(accounts) > 0 do
+          Logger.info("Resubscribing to #{length(accounts)} accounts")
+
+          for account <- accounts do
+            request = %{
+              "jsonrpc" => "2.0",
+              "id" => account,
+              "method" => "accountSubscribe",
+              "params" => [
+                account,
+                %{
+                  "encoding" => "base64",
+                  "commitment" => "confirmed"
+                }
+              ]
             }
-          ]
-        }
 
-        WebSockex.send_frame(self(), {:text, Jason.encode!(request)})
-      end
+            WebSockex.send_frame(self(), {:text, Jason.encode!(request)})
+          end
+        end
+
+      Map.put(state, :needs_resubscribe, false)
     end
 
     schedule_ping()
@@ -88,8 +96,19 @@ defmodule SharkAttack.SolanaWS do
     State: #{inspect(state)}
     """)
 
-    # Clear subscription map since all subscriptions are invalidated on disconnect
-    {:reconnect, %{state | subscription_map: %{}}}
+    # Keep the subscription map but mark for resubscription on reconnect
+    new_state = Map.put(state, :needs_resubscribe, true)
+
+    # Exponential backoff for reconnection attempts
+    backoff = Map.get(state, :reconnect_attempt, 0)
+    delay = min(:math.pow(2, backoff) * 1000, 30_000) |> round()
+
+    new_state = Map.put(new_state, :reconnect_attempt, backoff + 1)
+
+    Logger.info("Connection #{state.connection_index} will attempt reconnect in #{delay}ms")
+    Process.sleep(delay)
+
+    {:reconnect, new_state}
   end
 
   def handle_frame({:text, msg}, state) do
@@ -110,6 +129,13 @@ defmodule SharkAttack.SolanaWS do
           Phoenix.PubSub.broadcast(
             SharkAttack.PubSub,
             "account_updates",
+            {:account_updated, account, info}
+          )
+
+          # Broadcast to account-specific topic
+          Phoenix.PubSub.broadcast(
+            SharkAttack.PubSub,
+            "account_updates:#{account}",
             {:account_updated, account, info}
           )
         end

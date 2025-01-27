@@ -2,6 +2,7 @@ defmodule SharkAttack.DLMMPools do
   alias SharkAttack.Repo
   alias SharkAttack.Defi.DLMM
   import SharkAttack.Helpers
+  import Ecto.Query
 
   @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8"
   # @rpc_url "https://mainnet.helius-rpc.com/?api-key=87f15176-5b11-42e2-92a3-4332752769a4"
@@ -42,6 +43,17 @@ defmodule SharkAttack.DLMMPools do
     |> Enum.concat(accounts)
   end
 
+  def get_pools_by_token(token_identifier) do
+    token_pattern = "%#{token_identifier}%"
+
+    Repo.all(
+      from p in DLMM,
+        where:
+          p.mint_x == ^token_identifier or p.mint_y == ^token_identifier or
+            like(p.name, ^token_pattern)
+    )
+  end
+
   def create_pool(attrs) do
     case Repo.get_by(DLMM, address: attrs["address"]) do
       nil ->
@@ -73,6 +85,9 @@ defmodule SharkAttack.DLMMPools do
 
   def get_pool_state(pool_address) do
     case get_account_info(pool_address) do
+      %{"data" => [data | _]} ->
+        get_active_bin_id(data)
+
       {_account, %{"data" => [data | _]}} ->
         get_active_bin_id(data)
 

@@ -83,6 +83,10 @@ defmodule SharkAttack.Notifications.NotificationHelpers do
     end
   end
 
+  def build_message(_, nil) do
+    SharkAttack.DiscordConsumer.send_to_webhook("me", "No loan data for loan")
+  end
+
   def build_message("REPAY_LOAN", loan) do
     lender = Map.get(loan, :lender, Map.get(loan, "lender"))
 

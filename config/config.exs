@@ -26,7 +26,7 @@ config :cors_plug,
     "http://localhost:3000"
   ],
   max_age: 86400,
-  headers: ["accept", "content-type", "origin", "authorization", "baggage"],
+  headers: ["*"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
 
 config :shark_attack, SharkAttack.Scheduler,
