@@ -2,16 +2,23 @@ defmodule SharkAttack.SolanaWS do
   use WebSockex
   require Logger
 
+  @initial_reconnect_delay 1_000
+  @max_reconnect_delay 30_000
+  @ping_interval 60_000
+  @ping_timeout 10_000
+
   def start_link({index, url}) do
     name = :"solana_ws_#{index}"
     Logger.info("Starting SolanaWS connection #{index}")
-
     WebSockex.start_link(
       url,
       __MODULE__,
       %{
         subscription_map: %{},
-        connection_index: index
+        connection_index: index,
+        reconnect_attempt: 0,
+        needs_resubscribe: false,
+        last_ping_ref: nil
       },
       name: name
     )
@@ -19,160 +26,156 @@ defmodule SharkAttack.SolanaWS do
 
   def subscribe_accounts(connection_name, accounts) do
     Logger.info("Connection #{connection_name}: Subscribing to #{length(accounts)} accounts")
-
     Enum.each(accounts, fn account ->
-      request = %{
-        "jsonrpc" => "2.0",
-        "id" => account,
-        "method" => "accountSubscribe",
-        "params" => [
-          account,
-          %{
-            "encoding" => "base64",
-            "commitment" => "confirmed"
-          }
-        ]
-      }
-
-      WebSockex.send_frame(connection_name, {:text, Jason.encode!(request)})
+      send_subscription_request(connection_name, account)
     end)
   end
 
-  def terminate(reason, state) do
-    Logger.error("""
-    Socket #{state.connection_index} terminating!
-    Reason: #{inspect(reason)}
-    State: #{inspect(state)}
-    Stack: #{inspect(Process.info(self(), :current_stacktrace))}
-    """)
-
-    {:ok, state}
-  end
-
+  @impl WebSockex
   def handle_connect(_conn, state) do
     Logger.info("SolanaWS #{state.connection_index} Connected!")
 
-    # Reset reconnection attempt counter on successful connection
-    state = Map.put(state, :reconnect_attempt, 0)
+    state = state
+      |> Map.put(:reconnect_attempt, 0)
+      |> maybe_resubscribe()
+      |> schedule_heartbeat()
 
-    # Resubscribe to all accounts if needed
-    if Map.get(state, :needs_resubscribe, false) do
-      accounts = Map.values(state.subscription_map) |> Enum.uniq()
-
-      state =
-        if length(accounts) > 0 do
-          Logger.info("Resubscribing to #{length(accounts)} accounts")
-
-          for account <- accounts do
-            request = %{
-              "jsonrpc" => "2.0",
-              "id" => account,
-              "method" => "accountSubscribe",
-              "params" => [
-                account,
-                %{
-                  "encoding" => "base64",
-                  "commitment" => "confirmed"
-                }
-              ]
-            }
-
-            WebSockex.send_frame(self(), {:text, Jason.encode!(request)})
-          end
-        end
-
-      Map.put(state, :needs_resubscribe, false)
-    end
-
-    schedule_ping()
     {:ok, state}
   end
 
-  def handle_disconnect(%{reason: reason} = disconnect_status, state) do
-    Logger.warning("""
-    Socket #{state.connection_index} disconnected!
-    Status: #{inspect(disconnect_status)}
-    Reason: #{inspect(reason)}
-    State: #{inspect(state)}
-    """)
+  @impl WebSockex
+  def handle_disconnect(%{reason: reason}, state) do
+    Logger.warning("Socket #{state.connection_index} disconnected! Reason: #{inspect(reason)}")
 
-    # Keep the subscription map but mark for resubscription on reconnect
-    new_state = Map.put(state, :needs_resubscribe, true)
+    state = state
+      |> cleanup_heartbeat()
+      |> Map.merge(%{
+        needs_resubscribe: true,
+        reconnect_attempt: state.reconnect_attempt + 1,
+        last_ping_ref: nil
+      })
 
-    # Exponential backoff for reconnection attempts
-    backoff = Map.get(state, :reconnect_attempt, 0)
-    delay = min(:math.pow(2, backoff) * 1000, 30_000) |> round()
+    backoff = calculate_backoff(state.reconnect_attempt)
+    Logger.info("Connection #{state.connection_index} will attempt reconnect in #{backoff}ms")
+    Process.send_after(self(), :attempt_reconnect, backoff)
 
-    new_state = Map.put(new_state, :reconnect_attempt, backoff + 1)
-
-    Logger.info("Connection #{state.connection_index} will attempt reconnect in #{delay}ms")
-    Process.sleep(delay)
-
-    {:reconnect, new_state}
+    {:ok, state}
   end
 
+  @impl WebSockex
   def handle_frame({:text, msg}, state) do
-    case Jason.decode!(msg) do
-      %{"result" => subscription_id, "id" => account} ->
-        new_state = put_in(state, [:subscription_map, to_string(subscription_id)], account)
-        {:ok, new_state}
-
-      %{"method" => "accountNotification"} = message ->
-        subscription = get_in(message, ["params", "subscription"])
-        account = get_in(state, [:subscription_map, to_string(subscription)])
-        account_info = get_in(message, ["params", "result", "value"])
-
-        if account_info do
-          info = format_account_info(account_info)
-          :ets.insert(:accounts, {account, info})
-
-          Phoenix.PubSub.broadcast(
-            SharkAttack.PubSub,
-            "account_updates",
-            {:account_updated, account, info}
-          )
-
-          # Broadcast to account-specific topic
-          Phoenix.PubSub.broadcast(
-            SharkAttack.PubSub,
-            "account_updates:#{account}",
-            {:account_updated, account, info}
-          )
-        end
-
-        {:ok, state}
-
-      %{"result" => _result, "id" => "ping"} ->
-        Logger.debug("Connection #{state.connection_index} received pong")
-        schedule_ping()
-        {:ok, state}
-
-      _ ->
-        Logger.debug(
-          "Connection #{state.connection_index} received other message: #{inspect(msg)}"
-        )
-
-        {:ok, state}
-    end
+    msg
+    |> Jason.decode!()
+    |> handle_message(state)
+  end
+  @impl WebSockex
+  def handle_pong(:pong, state) do
+    state = schedule_heartbeat(state)
+    {:ok, state}
   end
 
-  def handle_info(:ping, state) do
+  @impl WebSockex
+  def handle_info(:heartbeat, state) do
     {:reply, :ping, state}
   end
 
-  defp format_account_info(account_info) do
-    %{
-      "space" => account_info["space"],
-      "lamports" => account_info["lamports"],
-      "owner" => account_info["owner"],
-      "executable" => account_info["executable"],
-      "rentEpoch" => account_info["rentEpoch"],
-      "data" => account_info["data"]
-    }
+  @impl WebSockex
+  def handle_info(:heartbeat_timeout, state) do
+    Logger.warning("Connection #{state.connection_index} heartbeat timeout - reconnecting")
+    {:close, {1000, "heartbeat timeout"}, state}
   end
 
-  defp schedule_ping do
-    # Send ping every minute
-    Process.send_after(self(), :ping, 60_000)
+  @impl WebSockex
+  def handle_info(:attempt_reconnect, state) do
+    Logger.info("Attempting reconnect for connection #{state.connection_index}")
+    {:reconnect, state}
+  end
+
+  # Private functions
+
+  defp send_subscription_request(connection_name, account) do
+    request = %{
+      "jsonrpc" => "2.0",
+      "id" => account,
+      "method" => "accountSubscribe",
+      "params" => [
+        account,
+        %{
+          "encoding" => "base64",
+          "commitment" => "confirmed"
+        }
+      ]
+    }
+    WebSockex.send_frame(connection_name, {:text, Jason.encode!(request)})
+  end
+
+  defp maybe_resubscribe(%{needs_resubscribe: true} = state) do
+    accounts = Map.values(state.subscription_map) |> Enum.uniq()
+
+    if accounts != [] do
+      Logger.info("Resubscribing to #{length(accounts)} accounts")
+      Enum.each(accounts, &send_subscription_request(self(), &1))
+    end
+
+    %{state | needs_resubscribe: false}
+  end
+  defp maybe_resubscribe(state), do: state
+
+  defp schedule_heartbeat(state) do
+    cleanup_heartbeat(state)
+
+    refs = %{
+      ping: Process.send_after(self(), :heartbeat, @ping_interval),
+      timeout: Process.send_after(self(), :heartbeat_timeout, @ping_interval + @ping_timeout)
+    }
+
+    %{state | last_ping_ref: refs}
+  end
+
+  defp cleanup_heartbeat(%{last_ping_ref: nil} = state), do: state
+  defp cleanup_heartbeat(%{last_ping_ref: %{ping: ping_ref, timeout: timeout_ref}} = state) do
+    Process.cancel_timer(ping_ref)
+    Process.cancel_timer(timeout_ref)
+    %{state | last_ping_ref: nil}
+  end
+
+  defp calculate_backoff(attempt) do
+    min(:math.pow(2, attempt) * @initial_reconnect_delay, @max_reconnect_delay) |> round()
+  end
+
+  defp handle_message(%{"result" => subscription_id, "id" => account}, state) do
+    {:ok, put_in(state, [:subscription_map, to_string(subscription_id)], account)}
+  end
+
+  defp handle_message(%{"method" => "accountNotification"} = message, state) do
+    with subscription <- get_in(message, ["params", "subscription"]),
+         account <- get_in(state, [:subscription_map, to_string(subscription)]),
+         account_info when not is_nil(account_info) <- get_in(message, ["params", "result", "value"]) do
+      broadcast_account_update(account, account_info)
+    end
+    {:ok, state}
+  end
+
+  defp handle_message(message, state) do
+    Logger.debug("Connection #{state.connection_index} received unhandled message #{inspect(message)}")
+
+    {:ok, state}
+  end
+
+  defp broadcast_account_update(account, account_info) do
+    info = Map.take(account_info, ["space", "lamports", "owner", "executable", "rentEpoch", "data"])
+    :ets.insert(:accounts, {account, info})
+
+    # Broadcast updates
+    pubsub_broadcast("account_updates", account, info)
+    pubsub_broadcast("account_updates:#{account}", account, info)
+  end
+
+  defp pubsub_broadcast(topic, account, info) do
+    Phoenix.PubSub.broadcast(
+      SharkAttack.PubSub,
+      topic,
+      {:account_updated, account, info}
+    )
   end
 end

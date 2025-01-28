@@ -12,10 +12,10 @@ defmodule SharkAttack.SolanaWSPool do
 
   @impl true
   def init(_init_arg) do
-    # Start with one connection initially
     children = [
       Supervisor.child_spec({SharkAttack.SolanaWS, {0, @ws_url}}, id: :ws_0),
-      Supervisor.child_spec({SharkAttack.SolanaWS, {1, @ws_url}}, id: :ws_1)
+      Supervisor.child_spec({SharkAttack.SolanaWS, {1, @ws_url}}, id: :ws_1),
+      Supervisor.child_spec({SharkAttack.SolanaWS, {2, @ws_url}}, id: :ws_2)
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

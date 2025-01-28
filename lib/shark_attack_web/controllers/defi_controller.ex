@@ -39,9 +39,26 @@ defmodule SharkAttackWeb.DefiController do
     end
   end
 
+  def get_most_active_pools(conn, _params) do
+    pools =
+      SharkAttack.DLMMPools.list_pools()
+      |> Enum.map(fn pool ->
+        %{
+          pool: pool,
+          activity: SharkAttack.AccountMonitor.get_pool_activity(pool.address)
+        }
+      end)
+      |> Enum.uniq_by(& &1.pool.address)
+      |> Enum.sort_by(& &1.activity, :desc)
+      |> Enum.take(50)
+
+    json(conn, pools)
+  end
+
   def get_pools_by_token(conn, params) do
     pools =
-      SharkAttack.DLMMPools.get_pools_by_token(params["token_address"])
+      params["token_address"]
+      |> SharkAttack.DLMMPools.get_pools_by_token()
       |> Enum.map(fn pool ->
         %{
           pool: pool,
@@ -51,7 +68,26 @@ defmodule SharkAttackWeb.DefiController do
       |> Enum.sort_by(& &1.activity, :desc)
       |> Enum.take(10)
 
-    json(conn, pools)
+    dedup_token_addresses_x = pools |> Enum.map(& &1.pool.mint_x)
+    dedup_token_addresses_y = pools |> Enum.map(& &1.pool.mint_y)
+
+    token_analysis =
+      (dedup_token_addresses_x ++ dedup_token_addresses_y)
+      |> Enum.uniq()
+      |> Enum.map(fn token_address ->
+        {:ok, token_analysis} =
+          case SharkAttack.Birdeye.analyze_market(token_address) |> IO.inspect(label: "Token Analysis") do
+            {:ok, analysis} ->
+              {:ok, analysis}
+
+            {:error, _} ->
+              {:ok, nil}
+          end
+
+        token_analysis
+      end)
+
+    json(conn, %{pools: pools, token_analysis: token_analysis})
   end
 
   def disable_auto_close(conn, params) do

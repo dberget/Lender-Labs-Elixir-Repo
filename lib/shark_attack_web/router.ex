@@ -88,6 +88,7 @@ defmodule SharkAttackWeb.Router do
     get("/get_user_auto_close", DefiController, :get_user_auto_close)
     post("/disable_auto_close", DefiController, :disable_auto_close)
     get("/get_pools_by_token", DefiController, :get_pools_by_token)
+    get("/get_most_active_pools", DefiController, :get_most_active_pools)
   end
 
   scope "/api", SharkAttackWeb do
