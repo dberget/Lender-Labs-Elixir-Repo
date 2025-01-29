@@ -2,6 +2,8 @@ defmodule SharkAttack.AccountCache do
   use GenServer
   require Logger
 
+  @refresh_interval :timer.minutes(20)
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -9,11 +11,10 @@ defmodule SharkAttack.AccountCache do
   def init([]) do
     generate_table_and_monitor()
 
-    # Start the account fetching in a separate process
-    # Task.start_link(fn ->
     accounts = SharkAttack.DLMMPools.get_accounts()
-    SharkAttack.SolanaWSPool.subscribe_accounts(accounts)
-    # end)
+    SharkAttack.SolanaWSPool.startup_subscriptions(accounts)
+
+    schedule_refresh()
 
     {:ok, []}
   end
@@ -29,5 +30,22 @@ defmodule SharkAttack.AccountCache do
       {:read_concurrency, true},
       {:write_concurrency, true}
     ])
+  end
+
+  def handle_info(:refresh, state) do
+    refresh_accounts()
+    schedule_refresh()
+
+    {:noreply, state}
+  end
+
+  defp refresh_accounts do
+    Logger.info("Refreshing account subscriptions")
+    accounts = SharkAttack.DLMMPools.get_accounts()
+    SharkAttack.SolanaWSPool.refresh_subscriptions(accounts)
+  end
+
+  defp schedule_refresh do
+    Process.send_after(self(), :refresh, @refresh_interval)
   end
 end

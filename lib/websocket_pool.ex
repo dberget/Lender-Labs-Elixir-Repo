@@ -13,24 +13,22 @@ defmodule SharkAttack.SolanaWSPool do
   @impl true
   def init(_init_arg) do
     children = [
-      Supervisor.child_spec({SharkAttack.SolanaWS, {0, @ws_url}}, id: :ws_0),
-      Supervisor.child_spec({SharkAttack.SolanaWS, {1, @ws_url}}, id: :ws_1),
-      Supervisor.child_spec({SharkAttack.SolanaWS, {2, @ws_url}}, id: :ws_2)
+      # Supervisor.child_spec({SharkAttack.SolanaWS, {0, @ws_url}}, id: :"solana_ws_0"),
+      # Supervisor.child_spec({SharkAttack.SolanaWS, {1, @ws_url}}, id: :"solana_ws_1"),
+      # Supervisor.child_spec({SharkAttack.SolanaWS, {2, @ws_url}}, id: :"solana_ws_2")
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
   def subscribe_accounts(accounts) do
+    IO.inspect("subscribing accounts")
     # Group accounts into chunks that fit within subscription limits
     chunks = Enum.chunk_every(accounts, @max_subscriptions_per_connection)
-
-    # Ensure we have enough connections and wait for them to be ready
     needed_connections = length(chunks)
 
     :ok = ensure_connections(needed_connections)
-
-    # wait_for_connections(needed_connections)
+    # :ok = wait_for_connections(needed_connections)
 
     # Distribute chunks across connections
     chunks
@@ -44,50 +42,91 @@ defmodule SharkAttack.SolanaWSPool do
   defp ensure_connections(needed_connections) do
     current_connections = Supervisor.count_children(__MODULE__).active
 
+    Logger.info("Ensuring #{needed_connections} connections")
     if needed_connections > current_connections do
-      Enum.each(current_connections..(needed_connections - 1), fn index ->
-        IO.inspect(index, label: "starting")
+      results = Enum.map(current_connections..(needed_connections - 1), fn index ->
+        child_spec = %{
+          id: connection_name(index),
+          start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
+          restart: :permanent,
+          type: :worker
+        }
 
-        Supervisor.start_child(
-          __MODULE__,
-          %{
-            id: :"ws_#{index}",
-            start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
-            restart: :permanent,
-            type: :worker
-          }
-        )
+        case Supervisor.start_child(__MODULE__, child_spec) do
+          {:ok, _pid} -> {:ok, index}
+          {:error, {:already_started, _pid}} -> {:ok, index}  # Handle already started
+          {:error, :already_present} -> # Handle already present
+            Supervisor.delete_child(__MODULE__, connection_name(index))
+            case Supervisor.start_child(__MODULE__, child_spec) do
+              {:ok, _pid} -> {:ok, index}
+              {:error, reason} -> {:error, index, reason}
+            end
+          {:error, reason} -> {:error, index, reason}
+        end
       end)
-    end
 
-    :ok
+      # Check if any connections failed
+      case Enum.find(results, fn
+        {:ok, _} -> false
+        {:error, _, _} -> true
+      end) do
+        nil -> :ok
+        {:error, index, reason} ->
+          Logger.error("Failed to start connection #{index}: #{inspect(reason)}")
+          {:error, :connection_failed}
+      end
+    else
+      :ok
+    end
   end
 
-  # defp wait_for_connections(count, max_attempts \\ 100) do
-  #   Task.async_stream(
-  #     0..(count - 1),
-  #     fn index ->
-  #       wait_for_connection(connection_name(index), max_attempts)
-  #     end,
-  #     timeout: 60_000,
-  #     max_concurrency: 2
-  #   )
-  #   |> Stream.run()
-  #   |> IO.inspect(label: "wait_for_connections")
-  # end
-
-  # defp wait_for_connection(name, attempts_left) when attempts_left > 0 do
-  #   if Process.whereis(name) do
-  #     :ok
-  #   else
-  #     Process.sleep(500)
-  #     wait_for_connection(name, attempts_left - 1)
-  #   end
-  # end
-
-  # defp wait_for_connection(name, _) do
-  #   raise "Connection #{inspect(name)} failed to initialize"
-  # end
+  defp wait_for_connections(attempts \\ 10)
+  defp wait_for_connections(0), do: :error
+  defp wait_for_connections(attempts) do
+    case Supervisor.which_children(__MODULE__) do
+      [] ->
+        Process.sleep(100)
+        wait_for_connections(attempts - 1)
+      _children ->
+        :ok
+    end
+  end
 
   defp connection_name(index), do: :"solana_ws_#{index}"
+
+  def startup_subscriptions(accounts) do
+    IO.inspect("startup_subscriptions")
+    subscribe_accounts(accounts)
+  end
+
+  def refresh_subscriptions(accounts) do
+    Logger.info("Refreshing WebSocket connections and subscriptions")
+
+    # Terminate existing connections
+    Supervisor.which_children(__MODULE__)
+    |> Enum.each(fn {id, pid, _, _} ->
+      Logger.info("Terminating connection #{id}")
+      Supervisor.terminate_child(__MODULE__, id)
+    end)
+
+    # Wait for new connections to be established
+    Process.sleep(1000) # Give supervisor time to restart children
+
+    # Calculate needed connections
+    chunks = Enum.chunk_every(accounts, @max_subscriptions_per_connection)
+    needed_connections = length(chunks)
+
+    # Ensure connections are established
+    case ensure_connections(needed_connections) do
+      :ok ->
+        # Wait for WebSocket connections to be ready
+        Process.sleep(2000)  # Give WebSockex time to establish connections
+        Logger.info("Subscribing accounts")
+        subscribe_accounts(accounts)
+
+      {:error, reason} ->
+        Logger.error("Failed to establish WebSocket connections: #{inspect(reason)}")
+        {:error, :connection_failed}
+    end
+  end
 end
