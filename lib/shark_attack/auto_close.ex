@@ -94,16 +94,14 @@ defmodule SharkAttack.AutoClose do
     end
   end
 
-  def close_nonce_accounts(accounts, new_status \\ "CANCELLED") do
-    for account <- accounts do
-      Logger.info("Closing nonce account #{account}")
+  def close_nonce_account(account, destination \\ nil, new_status \\ "CANCELLED") do
+    Logger.info("Closing nonce account #{account}")
 
-      SharkAttack.Helpers.do_post_request(
-        "http://localhost:5001/close_nonce",
-        %{nonceAccount: account}
-      )
-      |> parse_close_response(account, new_status)
-    end
+    SharkAttack.Helpers.do_post_request(
+      "http://localhost:5001/close_nonce",
+      %{nonceAccount: account, destination: destination}
+    )
+    |> parse_close_response(account, new_status)
   end
 
   defp parse_close_position_response(
@@ -159,7 +157,9 @@ defmodule SharkAttack.AutoClose do
         {:error, "{\"error\":\"Account does not exist or has no data " <> _} ->
           # Position no longer exists, mark as CLOSED
           Logger.info("Position #{position.position_address} no longer exists, marking as CLOSED")
-          update_close_status(position.nonce_account, "CLOSED")
+          close_nonce_account(position.nonce_account, position.user_address, "CLOSED")
+
+        # update_close_status(position.nonce_account, "CLOSED")
 
         %{"position" => _} ->
           # Position still exists, do nothing

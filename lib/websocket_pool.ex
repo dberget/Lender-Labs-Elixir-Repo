@@ -42,34 +42,47 @@ defmodule SharkAttack.SolanaWSPool do
     current_connections = Supervisor.count_children(__MODULE__).active
 
     Logger.info("Ensuring #{needed_connections} connections")
-    if needed_connections > current_connections do
-      results = Enum.map(current_connections..(needed_connections - 1), fn index ->
-        child_spec = %{
-          id: connection_name(index),
-          start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
-          restart: :permanent,
-          type: :worker
-        }
 
-        case Supervisor.start_child(__MODULE__, child_spec) do
-          {:ok, _pid} -> {:ok, index}
-          {:error, {:already_started, _pid}} -> {:ok, index}  # Handle already started
-          {:error, :already_present} -> # Handle already present
-            Supervisor.delete_child(__MODULE__, connection_name(index))
-            case Supervisor.start_child(__MODULE__, child_spec) do
-              {:ok, _pid} -> {:ok, index}
-              {:error, reason} -> {:error, index, reason}
-            end
-          {:error, reason} -> {:error, index, reason}
-        end
-      end)
+    if needed_connections > current_connections do
+      results =
+        Enum.map(current_connections..(needed_connections - 1), fn index ->
+          child_spec = %{
+            id: connection_name(index),
+            start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
+            restart: :permanent,
+            type: :worker
+          }
+
+          case Supervisor.start_child(__MODULE__, child_spec) do
+            {:ok, _pid} ->
+              {:ok, index}
+
+            # Handle already started
+            {:error, {:already_started, _pid}} ->
+              {:ok, index}
+
+            # Handle already present
+            {:error, :already_present} ->
+              Supervisor.delete_child(__MODULE__, connection_name(index))
+
+              case Supervisor.start_child(__MODULE__, child_spec) do
+                {:ok, _pid} -> {:ok, index}
+                {:error, reason} -> {:error, index, reason}
+              end
+
+            {:error, reason} ->
+              {:error, index, reason}
+          end
+        end)
 
       # Check if any connections failed
       case Enum.find(results, fn
-        {:ok, _} -> false
-        {:error, _, _} -> true
-      end) do
-        nil -> :ok
+             {:ok, _} -> false
+             {:error, _, _} -> true
+           end) do
+        nil ->
+          :ok
+
         {:error, index, reason} ->
           Logger.error("Failed to start connection #{index}: #{inspect(reason)}")
           {:error, :connection_failed}
@@ -91,13 +104,14 @@ defmodule SharkAttack.SolanaWSPool do
 
     # Terminate existing connections
     Supervisor.which_children(__MODULE__)
-    |> Enum.each(fn {id, pid, _, _} ->
+    |> Enum.each(fn {id, _pid, _, _} ->
       Logger.info("Terminating connection #{id}")
       Supervisor.terminate_child(__MODULE__, id)
     end)
 
     # Wait for new connections to be established
-    Process.sleep(1000) # Give supervisor time to restart children
+    # Give supervisor time to restart children
+    Process.sleep(1000)
 
     # Calculate needed connections
     chunks = Enum.chunk_every(accounts, @max_subscriptions_per_connection)
@@ -107,7 +121,8 @@ defmodule SharkAttack.SolanaWSPool do
     case ensure_connections(needed_connections) do
       :ok ->
         # Wait for WebSocket connections to be ready
-        Process.sleep(2000)  # Give WebSockex time to establish connections
+        # Give WebSockex time to establish connections
+        Process.sleep(2000)
         Logger.info("Subscribing accounts")
         subscribe_accounts(accounts)
 
