@@ -1,6 +1,5 @@
 defmodule SharkAttack.Tokens do
   require Logger
-  import SharkAttack.AccountCache
 
   def get_token_data(pubkey) do
     %{
@@ -28,7 +27,8 @@ defmodule SharkAttack.Tokens do
       SharkAttack.Tokens,
       :get_account_mint_impl,
       [pubkey],
-      ttl: 86400  # Cache for 24 hours since decimals don't change
+      # Cache for 24 hours since decimals don't change
+      ttl: 86400
     )
   end
 
@@ -50,7 +50,8 @@ defmodule SharkAttack.Tokens do
       SharkAttack.Tokens,
       :get_mint_decimals_impl,
       [mint_address],
-      ttl: 86400  # Cache for 24 hours since decimals don't change
+      # Cache for 24 hours since decimals don't change
+      ttl: 86400
     )
   end
 

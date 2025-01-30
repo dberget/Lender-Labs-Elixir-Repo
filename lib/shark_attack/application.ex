@@ -24,7 +24,8 @@ defmodule SharkAttack.Application do
       SharkAttack.AccountMonitor,
       SharkAttack.AccountCache,
       SharkAttack.FloorWorker,
-      SharkAttack.Scheduler
+      SharkAttack.Scheduler,
+      SharkAttack.Birdeye.RateLimiter
     ]
 
     :ets.new(:simple_cache, [:public, :named_table])

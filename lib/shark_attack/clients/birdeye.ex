@@ -47,7 +47,6 @@ defmodule SharkAttack.Birdeye do
     with {:ok, overview} <- get_token_overview(token_address),
          {:ok, health} <- safely_calculate_market_health(overview),
          {:ok, patterns} <- analyze_trading_patterns(overview) do
-
       {:ok, %{health: health, overview: overview, patterns: patterns}}
     else
       {:error, reason} -> {:error, reason}
@@ -56,12 +55,13 @@ defmodule SharkAttack.Birdeye do
   end
 
   def analyze_trading_patterns(overview) do
-    {:ok, %{
-      volume_trend: analyze_volume_trend(overview.trading_metrics),
-      wallet_activity: analyze_wallet_trend(overview.trading_metrics),
-      buy_sell_pattern: analyze_buy_sell_pattern(overview.volume_analysis),
-      short_term_momentum: analyze_short_term_momentum(overview.market_metrics)
-    }}
+    {:ok,
+     %{
+       volume_trend: analyze_volume_trend(overview.trading_metrics),
+       wallet_activity: analyze_wallet_trend(overview.trading_metrics),
+       buy_sell_pattern: analyze_buy_sell_pattern(overview.volume_analysis),
+       short_term_momentum: analyze_short_term_momentum(overview.market_metrics)
+     }}
   end
 
   defp analyze_volume_trend(%{volume_24h: vol}) do
@@ -119,25 +119,26 @@ defmodule SharkAttack.Birdeye do
   # Private functions
 
   def fetch_and_cache_overview(token_address) do
-    case get("/defi/token_overview", query: [address: token_address]) do
-      {:ok, %{status: 200, body: %{"success" => true, "data" => data}}} ->
-        try do
-          analyzed_data = analyze_overview_data(data)
+    SharkAttack.Birdeye.RateLimiter.request(fn ->
+      case get("/defi/token_overview", query: [address: token_address]) do
+        {:ok, %{status: 200, body: %{"success" => true, "data" => data}}} ->
+          try do
+            analyzed_data = analyze_overview_data(data)
+            {:ok, analyzed_data}
+          rescue
+            e ->
+              Logger.error("Failed to analyze overview data: #{inspect(e)}")
+              {:error, "Failed to process token overview data"}
+          end
 
-          {:ok, analyzed_data}
-        rescue
-          e ->
-            Logger.error("Failed to analyze overview data: #{inspect(e)}")
-            {:error, "Failed to process token overview data"}
-        end
+        {:ok, %{status: status, body: %{"message" => message}}} ->
+          {:error, "API returned status #{status}: #{message}"}
 
-      {:ok, %{status: status, body: %{"message" => message}}} ->
-        {:error, "API returned status #{status}: #{message}"}
-
-      {:error, error} ->
-        Logger.error("Token overview API error: #{inspect(error)}")
-        {:error, "Failed to fetch overview data"}
-    end
+        {:error, error} ->
+          Logger.error("Token overview API error: #{inspect(error)}")
+          {:error, "Failed to fetch overview data"}
+      end
+    end)
   end
 
   defp safely_calculate_market_health(overview) do

@@ -76,7 +76,8 @@ defmodule SharkAttackWeb.DefiController do
       |> Enum.uniq()
       |> Enum.map(fn token_address ->
         {:ok, token_analysis} =
-          case SharkAttack.Birdeye.analyze_market(token_address) |> IO.inspect(label: "Token Analysis") do
+          case SharkAttack.Birdeye.analyze_market(token_address)
+               |> IO.inspect(label: "Token Analysis") do
             {:ok, analysis} ->
               {:ok, analysis}
 
@@ -101,23 +102,18 @@ defmodule SharkAttackWeb.DefiController do
       params["pool_address"]
       |> SharkAttack.DLMMPools.get_pool_by_address()
 
-
     %{balance: balance_x, mint: mint_x, decimals: decimals_x} =
       pool.reserve_x
       |> SharkAttack.Tokens.get_token_data()
-      |> IO.inspect(label: "Reserve X")
 
     %{balance: balance_y, mint: mint_y, decimals: decimals_y} =
       pool.reserve_y
       |> SharkAttack.Tokens.get_token_data()
-      |> IO.inspect(label: "Reserve Y")
 
     tvl =
-      (SharkAttack.Tokens.get_token_price(mint_x) * (balance_x / 10 ** decimals_x)) +
-        (SharkAttack.Tokens.get_token_price(mint_y) * (balance_y / 10 ** decimals_y))
+      SharkAttack.Tokens.get_token_price(mint_x) * (balance_x / 10 ** decimals_x) +
+        SharkAttack.Tokens.get_token_price(mint_y) * (balance_y / 10 ** decimals_y)
 
     json(conn, %{tvl: tvl})
   end
-
-
 end

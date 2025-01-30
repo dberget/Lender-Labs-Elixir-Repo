@@ -5,9 +5,6 @@ defmodule SharkAttack.Solana do
   @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("FLshW3pj5KWt4S5JDnsHiFqoUu8WK8S8JhVHp5L9rC6x")
 
-
-
-
   def send_transaction(bin_tx) do
     params =
       %{
@@ -252,8 +249,8 @@ defmodule SharkAttack.Solana do
           "encoding" => "jsonParsed",
           "dataSlice" => %{
             "offset" => 0,
-            "length" => 0,
-          },
+            "length" => 0
+          }
         }
       ]
     }
