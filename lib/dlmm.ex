@@ -27,6 +27,10 @@ defmodule SharkAttack.DLMMPools do
     Repo.all(DLMM)
   end
 
+  def get_pool_by_address(address) do
+    Repo.get_by(DLMM, address: address)
+  end
+
   def get_accounts() do
     # way too many accounts when doing all the gpas
     # gpas =
@@ -37,7 +41,7 @@ defmodule SharkAttack.DLMMPools do
     accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
 
     list_pools()
-    |> Enum.map(&(Map.take(&1, [:address]) |> Map.values()))
+    |> Enum.map(&(Map.take(&1, [:address, :reserve_x, :reserve_y]) |> Map.values()))
     |> List.flatten()
     |> Enum.dedup()
     |> Enum.concat(accounts)
@@ -69,22 +73,10 @@ defmodule SharkAttack.DLMMPools do
     end
   end
 
-  def get_account_info(account_address) do
-    case SharkAttack.AccountCache.get_account(account_address) do
-      [] ->
-        client =
-          Solana.RPC.client(network: @rpc_url)
 
-        {:ok, account_data} = SharkAttack.Solana.get_account_info(account_address, client)
-        account_data
-
-      [account_data] ->
-        account_data
-    end
-  end
 
   def get_pool_state(pool_address) do
-    case get_account_info(pool_address) do
+    case SharkAttack.Solana.get_account_info(pool_address) do
       %{"data" => [data | _]} ->
         get_active_bin_id(data)
 

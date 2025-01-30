@@ -48,4 +48,6 @@ defmodule SharkAttack.AccountCache do
   defp schedule_refresh do
     Process.send_after(self(), :refresh, @refresh_interval)
   end
+
+
 end

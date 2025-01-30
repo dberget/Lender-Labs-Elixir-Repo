@@ -28,7 +28,6 @@ defmodule SharkAttack.SolanaWSPool do
     needed_connections = length(chunks)
 
     :ok = ensure_connections(needed_connections)
-    # :ok = wait_for_connections(needed_connections)
 
     # Distribute chunks across connections
     chunks
@@ -77,18 +76,6 @@ defmodule SharkAttack.SolanaWSPool do
       end
     else
       :ok
-    end
-  end
-
-  defp wait_for_connections(attempts \\ 10)
-  defp wait_for_connections(0), do: :error
-  defp wait_for_connections(attempts) do
-    case Supervisor.which_children(__MODULE__) do
-      [] ->
-        Process.sleep(100)
-        wait_for_connections(attempts - 1)
-      _children ->
-        :ok
     end
   end
 

@@ -1,9 +1,12 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  @rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
-  # @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
+  # @rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("FLshW3pj5KWt4S5JDnsHiFqoUu8WK8S8JhVHp5L9rC6x")
+
+
+
 
   def send_transaction(bin_tx) do
     params =
@@ -89,6 +92,18 @@ defmodule SharkAttack.Solana do
       )
 
     sig
+  end
+
+  def get_account_info(account_address) do
+    case SharkAttack.AccountCache.get_account(account_address) do
+      [] ->
+        client = Solana.RPC.client(network: @rpc_url)
+        {:ok, account_data} = get_account_info(account_address, client)
+        standardize_account_data(account_data)
+
+      [account_data] ->
+        standardize_account_data(account_data)
+    end
   end
 
   @spec get_account_info(binary | {any, binary}, binary | Tesla.Client.t()) ::
@@ -371,4 +386,23 @@ defmodule SharkAttack.Solana do
     }
     |> Jason.encode!()
   end
+
+  defp standardize_account_data(account_data) when is_map(account_data) do
+    case account_data do
+      %{"data" => [_data, "base64"]} ->
+        {:ok, account_data}
+
+      {:ok, _data} = standardized ->
+        standardized
+
+      data when is_map(data) ->
+        {:ok, data}
+    end
+  end
+
+  defp standardize_account_data({_key, %{"data" => [_data, "base64"]} = data}) do
+    {:ok, data}
+  end
+
+  defp standardize_account_data(nil), do: {:error, :account_not_found}
 end
