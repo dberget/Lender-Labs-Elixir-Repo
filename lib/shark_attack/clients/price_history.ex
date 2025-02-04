@@ -210,10 +210,10 @@ defmodule SharkAttack.Birdeye.PriceHistoryClient do
 
     case length(volumes) do
       0 ->
-        0.0
+        +0.0
 
       1 ->
-        0.0
+        +0.0
 
       len ->
         first_half = Enum.take(volumes, div(len, 2))
@@ -223,17 +223,17 @@ defmodule SharkAttack.Birdeye.PriceHistoryClient do
         second_half_avg = safe_average(second_half)
 
         case first_half_avg do
-          0.0 -> 0.0
+          avg when avg in [+0.0, -0.0] -> +0.0
           avg -> (second_half_avg - avg) / avg * 100
         end
     end
   end
 
-  defp safe_average([]), do: 0.0
+  defp safe_average([]), do: +0.0
   defp safe_average(numbers) when length(numbers) > 0, do: Enum.sum(numbers) / length(numbers)
 
-  defp standard_deviation([]), do: 0.0
-  defp standard_deviation([_single]), do: 0.0
+  defp standard_deviation([]), do: +0.0
+  defp standard_deviation([_single]), do: +0.0
 
   defp standard_deviation(numbers) when length(numbers) > 1 do
     mean = safe_average(numbers)
@@ -244,7 +244,7 @@ defmodule SharkAttack.Birdeye.PriceHistoryClient do
     :math.sqrt(variance)
   end
 
-  defp simple_moving_average(numbers, period) when length(numbers) < period, do: 0.0
+  defp simple_moving_average(numbers, period) when length(numbers) < period, do: +0.0
 
   defp simple_moving_average(numbers, period) do
     numbers

@@ -45,7 +45,8 @@ defmodule SharkAttackWeb.DefiController do
       |> Enum.map(fn pool ->
         %{
           pool: pool,
-          activity: SharkAttack.AccountMonitor.get_pool_activity(pool.address)
+          activity: 1
+          # activity: SharkAttack.AccountMonitor.get_pool_activity(pool.address)
         }
       end)
       |> Enum.uniq_by(& &1.pool.address)
@@ -76,8 +77,7 @@ defmodule SharkAttackWeb.DefiController do
       |> Enum.uniq()
       |> Enum.map(fn token_address ->
         {:ok, token_analysis} =
-          case SharkAttack.Birdeye.analyze_market(token_address)
-               |> IO.inspect(label: "Token Analysis") do
+          case SharkAttack.Birdeye.analyze_market(token_address) do
             {:ok, analysis} ->
               {:ok, analysis}
 

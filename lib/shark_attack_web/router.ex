@@ -156,6 +156,7 @@ defmodule SharkAttackWeb.Router do
 
     post("/", EventController, :index)
     post("/purchase", EventController, :purchase)
+    post("/dlmm", EventController, :dlmm)
     post("/debug", EventController, :debug)
   end
 

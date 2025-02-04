@@ -73,8 +73,6 @@ defmodule SharkAttack.DLMMPools do
     end
   end
 
-
-
   def get_pool_state(pool_address) do
     case SharkAttack.Solana.get_account_info(pool_address) do
       %{"data" => [data | _]} ->
