@@ -41,7 +41,7 @@ defmodule SharkAttack.DLMMPools do
     accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
 
     list_pools()
-    |> Enum.map(&(Map.take(&1, [:address, :reserve_x, :reserve_y]) |> Map.values()))
+    |> Enum.map(&(Map.take(&1, [:address]) |> Map.values()))
     |> List.flatten()
     |> Enum.dedup()
     |> Enum.concat(accounts)

@@ -13,7 +13,7 @@ defmodule SharkAttack.SolanaWSPool do
   @impl true
   def init(_init_arg) do
     children = [
-      # Supervisor.child_spec({SharkAttack.SolanaWS, {0, @ws_url}}, id: :"solana_ws_0"),
+      Supervisor.child_spec({SharkAttack.SolanaWS, {0, @ws_url}}, id: :solana_ws_0)
       # Supervisor.child_spec({SharkAttack.SolanaWS, {1, @ws_url}}, id: :"solana_ws_1"),
       # Supervisor.child_spec({SharkAttack.SolanaWS, {2, @ws_url}}, id: :"solana_ws_2")
     ]
