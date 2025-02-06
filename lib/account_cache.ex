@@ -50,6 +50,7 @@ defmodule SharkAttack.AccountCache do
   def refresh_accounts do
     Logger.info("Refreshing account subscriptions")
     accounts = SharkAttack.DLMMPools.get_accounts()
+
     SharkAttack.SolanaWSPool.refresh_subscriptions(accounts)
   end
 

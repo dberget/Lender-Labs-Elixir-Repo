@@ -22,6 +22,7 @@ defmodule SharkAttack.SolanaWSPool do
   end
 
   def subscribe_accounts(accounts) do
+
     IO.inspect("subscribing accounts")
     # Group accounts into chunks that fit within subscription limits
     chunks = Enum.chunk_every(accounts, @max_subscriptions_per_connection)

@@ -10,7 +10,8 @@ defmodule SharkAttack.AutoClose do
     query =
       from(p in AutoClose,
         where: p.user_address == ^user_address,
-        select: p
+        select: p,
+        where: p.status == "ACTIVE"
       )
 
     Repo.all(query)
