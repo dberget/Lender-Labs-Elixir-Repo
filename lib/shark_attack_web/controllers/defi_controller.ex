@@ -2,6 +2,8 @@ defmodule SharkAttackWeb.DefiController do
   use SharkAttackWeb, :controller
   require Logger
 
+  @env Application.compile_env(:shark_attack, :environment, :dev)
+
   def dlmm_pools(conn, _params) do
     pools = SharkAttack.DLMMPools.list_pools()
 
@@ -30,6 +32,7 @@ defmodule SharkAttackWeb.DefiController do
 
     case SharkAttack.AutoClose.insert_auto_close(string_params) do
       {:ok, res} ->
+        SharkAttack.AccountCache.refresh_accounts()
         conn |> json(res)
 
       {:error, error} ->
@@ -45,8 +48,7 @@ defmodule SharkAttackWeb.DefiController do
       |> Enum.map(fn pool ->
         %{
           pool: pool,
-          activity: 1
-          # activity: SharkAttack.AccountMonitor.get_pool_activity(pool.address)
+          activity: SharkAttack.AccountMonitor.get_pool_activity(pool.address)
         }
       end)
       |> Enum.uniq_by(& &1.pool.address)
@@ -98,22 +100,26 @@ defmodule SharkAttackWeb.DefiController do
   end
 
   def get_total_value(conn, params) do
-    pool =
-      params["pool_address"]
-      |> SharkAttack.DLMMPools.get_pool_by_address()
+    if @env == :prod do
+      pool =
+        params["pool_address"]
+        |> SharkAttack.DLMMPools.get_pool_by_address()
 
-    %{balance: balance_x, mint: mint_x, decimals: decimals_x} =
-      pool.reserve_x
-      |> SharkAttack.Tokens.get_token_data()
+      %{balance: balance_x, mint: mint_x, decimals: decimals_x} =
+        pool.reserve_x
+        |> SharkAttack.Tokens.get_token_data()
 
-    %{balance: balance_y, mint: mint_y, decimals: decimals_y} =
-      pool.reserve_y
-      |> SharkAttack.Tokens.get_token_data()
+      %{balance: balance_y, mint: mint_y, decimals: decimals_y} =
+        pool.reserve_y
+        |> SharkAttack.Tokens.get_token_data()
 
-    tvl =
-      SharkAttack.Tokens.get_token_price(mint_x) * (balance_x / 10 ** decimals_x) +
-        SharkAttack.Tokens.get_token_price(mint_y) * (balance_y / 10 ** decimals_y)
+      tvl =
+        SharkAttack.Tokens.get_token_price(mint_x) * (balance_x / 10 ** decimals_x) +
+          SharkAttack.Tokens.get_token_price(mint_y) * (balance_y / 10 ** decimals_y)
 
-    json(conn, %{tvl: tvl})
+      json(conn, %{tvl: tvl})
+    else
+      json(conn, %{tvl: 0})
+    end
   end
 end

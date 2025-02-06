@@ -46,33 +46,7 @@ defmodule SharkAttack.SolanaWSPool do
     if needed_connections > current_connections do
       results =
         Enum.map(current_connections..(needed_connections - 1), fn index ->
-          child_spec = %{
-            id: connection_name(index),
-            start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
-            restart: :permanent,
-            type: :worker
-          }
-
-          case Supervisor.start_child(__MODULE__, child_spec) do
-            {:ok, _pid} ->
-              {:ok, index}
-
-            # Handle already started
-            {:error, {:already_started, _pid}} ->
-              {:ok, index}
-
-            # Handle already present
-            {:error, :already_present} ->
-              Supervisor.delete_child(__MODULE__, connection_name(index))
-
-              case Supervisor.start_child(__MODULE__, child_spec) do
-                {:ok, _pid} -> {:ok, index}
-                {:error, reason} -> {:error, index, reason}
-              end
-
-            {:error, reason} ->
-              {:error, index, reason}
-          end
+          attempt_connection(index, 1)
         end)
 
       # Check if any connections failed
@@ -89,6 +63,41 @@ defmodule SharkAttack.SolanaWSPool do
       end
     else
       :ok
+    end
+  end
+
+  defp attempt_connection(index, attempt, max_attempts \\ 3) do
+    child_spec = %{
+      id: connection_name(index),
+      start: {SharkAttack.SolanaWS, :start_link, [{index, @ws_url}]},
+      restart: :transient,
+      type: :worker
+    }
+
+    case Supervisor.start_child(__MODULE__, child_spec) do
+      {:ok, _pid} ->
+        {:ok, index}
+
+      {:error, {:already_started, _pid}} ->
+        {:ok, index}
+
+      {:error, :already_present} ->
+        Supervisor.delete_child(__MODULE__, connection_name(index))
+        attempt_connection(index, attempt, max_attempts)
+
+      {:error, {%WebSockex.RequestError{code: 429}, _}} when attempt < max_attempts ->
+        # Calculate exponential backoff time (2^attempt seconds)
+        backoff = :timer.seconds(10)
+
+        Logger.warning(
+          "Rate limited (429) for connection #{index}. Retrying in #{backoff}ms (attempt #{attempt}/#{max_attempts})"
+        )
+
+        Process.sleep(backoff)
+        attempt_connection(index, attempt + 1, max_attempts)
+
+      {:error, reason} ->
+        {:error, index, reason}
     end
   end
 

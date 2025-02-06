@@ -30,7 +30,8 @@ defmodule SharkAttack.Clients.Helius do
           count
       end
     rescue
-      _ ->
+      error ->
+        IO.inspect(error)
         Logger.info("Error fetching assets for #{address}, using #{fallback}")
 
         fallback

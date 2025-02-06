@@ -69,23 +69,21 @@ defmodule SharkAttack.Tokens do
   end
 
   def get_token_price(token_address) do
-    if Mix.env() != :dev do
-      try do
-        case SharkAttack.Birdeye.get_token_overview(token_address) do
-          {:ok, overview} ->
-            get_in(overview, [:market_metrics, :current_price])
+    try do
+      case SharkAttack.Birdeye.get_token_overview(token_address) do
+        {:ok, overview} ->
+          get_in(overview, [:market_metrics, :current_price])
 
-          {:error, reason} ->
-            {:error, "Failed to fetch token prices: #{reason}"}
+        {:error, reason} ->
+          {:error, "Failed to fetch token prices: #{reason}"}
 
-          _ ->
-            {:error, "Invalid response from price API"}
-        end
-      rescue
-        e ->
-          Logger.error("Error fetching token prices: #{inspect(e)}")
-          {:error, "Failed to fetch token prices"}
+        _ ->
+          {:error, "Invalid response from price API"}
       end
+    rescue
+      e ->
+        Logger.error("Error fetching token prices: #{inspect(e)}")
+        {:error, "Failed to fetch token prices"}
     end
   end
 end

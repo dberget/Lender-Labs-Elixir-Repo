@@ -69,7 +69,7 @@ defmodule SharkAttack.AutoClose do
     end)
   end
 
-  def get_positions_to_close() do
+  def get_active_positions() do
     query =
       from(p in AutoClose,
         where: p.status == "ACTIVE",
@@ -145,7 +145,7 @@ defmodule SharkAttack.AutoClose do
   end
 
   def cleanup_closed_positions() do
-    get_positions_to_close()
+    get_active_positions()
     |> Enum.each(fn position ->
       response =
         SharkAttack.DLMMPools.get_dlmm_position_data(

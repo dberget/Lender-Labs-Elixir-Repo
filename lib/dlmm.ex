@@ -4,6 +4,8 @@ defmodule SharkAttack.DLMMPools do
   import SharkAttack.Helpers
   import Ecto.Query
 
+  @env Application.compile_env(:shark_attack, :environment, :dev)
+
   @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8"
   # @rpc_url "https://mainnet.helius-rpc.com/?api-key=87f15176-5b11-42e2-92a3-4332752769a4"
 
@@ -40,11 +42,20 @@ defmodule SharkAttack.DLMMPools do
     # metera program acct
     accounts = ["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"]
 
-    list_pools()
-    |> Enum.map(&(Map.take(&1, [:address]) |> Map.values()))
-    |> List.flatten()
-    |> Enum.dedup()
-    |> Enum.concat(accounts)
+    if @env == :prod do
+      # SharkAttack.AutoClose.get_active_positions()
+      # |> Enum.map(& &1.pool_address)
+      # |> Enum.dedup()
+      # |> Enum.concat(accounts)
+
+      list_pools()
+      |> Enum.map(&(Map.take(&1, [:address]) |> Map.values()))
+      |> List.flatten()
+      |> Enum.dedup()
+      |> Enum.concat(accounts)
+    else
+      []
+    end
   end
 
   def get_pools_by_token(token_identifier) do
@@ -76,6 +87,19 @@ defmodule SharkAttack.DLMMPools do
   def get_pool_state(pool_address) do
     case SharkAttack.Solana.get_account_info(pool_address) do
       %{"data" => [data | _]} ->
+        get_active_bin_id(data)
+
+      %{
+        "data" => [
+          data,
+          "base64"
+        ],
+        "executable" => _,
+        "lamports" => _,
+        "owner" => _,
+        "rentEpoch" => _,
+        "space" => _
+      } ->
         get_active_bin_id(data)
 
       {_account, %{"data" => [data | _]}} ->

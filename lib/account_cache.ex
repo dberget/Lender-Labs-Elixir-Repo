@@ -20,7 +20,15 @@ defmodule SharkAttack.AccountCache do
   end
 
   def get_account(pubkey) do
-    :ets.lookup(:accounts, pubkey)
+    try do
+      case :ets.lookup(:accounts, pubkey) do
+        [] -> nil
+        [{^pubkey, value}] -> value
+        _other -> nil
+      end
+    rescue
+      _ -> nil
+    end
   end
 
   def generate_table_and_monitor() do
@@ -39,7 +47,7 @@ defmodule SharkAttack.AccountCache do
     {:noreply, state}
   end
 
-  defp refresh_accounts do
+  def refresh_accounts do
     Logger.info("Refreshing account subscriptions")
     accounts = SharkAttack.DLMMPools.get_accounts()
     SharkAttack.SolanaWSPool.refresh_subscriptions(accounts)
@@ -48,6 +56,4 @@ defmodule SharkAttack.AccountCache do
   defp schedule_refresh do
     Process.send_after(self(), :refresh, @refresh_interval)
   end
-
-
 end

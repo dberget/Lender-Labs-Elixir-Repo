@@ -15,7 +15,7 @@ defmodule SharkAttack.AccountMonitor do
 
     # Subscribe to base topic instead of trying to use wildcard
     Phoenix.PubSub.subscribe(SharkAttack.PubSub, "account_updates")
-    positions = SharkAttack.AutoClose.get_positions_to_close()
+    positions = SharkAttack.AutoClose.get_active_positions()
 
     Process.send_after(self(), :update_positions, 60_000)
     Process.send_after(self(), :cleanup_activity, 60_000 * 10)
@@ -65,7 +65,6 @@ defmodule SharkAttack.AccountMonitor do
 
   # call update_positions on an interval
   def handle_info(:update_positions, _state) do
-    check_positions()
     {:ok, new_state} = update_positions()
 
     Process.send_after(self(), :update_positions, 60_000)
@@ -85,13 +84,13 @@ defmodule SharkAttack.AccountMonitor do
   end
 
   def update_positions() do
-    positions = SharkAttack.AutoClose.get_positions_to_close()
+    positions = SharkAttack.AutoClose.get_active_positions()
 
     {:ok, positions}
   end
 
   def check_positions() do
-    positions = SharkAttack.AutoClose.get_positions_to_close()
+    positions = SharkAttack.AutoClose.get_active_positions()
 
     for position <- positions do
       if position.status == "ACTIVE" do

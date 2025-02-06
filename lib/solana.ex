@@ -1,7 +1,7 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  # @rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  @asset_rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
   @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
   @pk Solana.pubkey!("FLshW3pj5KWt4S5JDnsHiFqoUu8WK8S8JhVHp5L9rC6x")
 
@@ -93,10 +93,28 @@ defmodule SharkAttack.Solana do
 
   def get_account_info(account_address) do
     case SharkAttack.AccountCache.get_account(account_address) do
+      nil ->
+        client = Solana.RPC.client(network: @rpc_url)
+        {:ok, account_data} = get_account_info(account_address, client)
+        standardize_account_data(account_data)
+
       [] ->
         client = Solana.RPC.client(network: @rpc_url)
         {:ok, account_data} = get_account_info(account_address, client)
         standardize_account_data(account_data)
+
+      %{
+        "data" => [
+          _data,
+          "base64"
+        ],
+        "executable" => _,
+        "lamports" => _,
+        "owner" => _,
+        "rentEpoch" => _,
+        "space" => _
+      } = account ->
+        standardize_account_data(account)
 
       [account_data] ->
         standardize_account_data(account_data)
@@ -305,7 +323,7 @@ defmodule SharkAttack.Solana do
   def get_assets(mints) do
     params = Enum.map(mints, &get_assets_request(&1))
 
-    res = do_post_request(@rpc_url, params)
+    res = do_post_request(@asset_rpc_url, params)
 
     res
   end
@@ -334,7 +352,7 @@ defmodule SharkAttack.Solana do
       }
     }
 
-    case do_post_request(@rpc_url, body) do
+    case do_post_request(@asset_rpc_url, body) do
       {:error, _} ->
         {:error, []}
 
@@ -357,7 +375,7 @@ defmodule SharkAttack.Solana do
       }
     }
 
-    case do_post_request(@rpc_url, body) do
+    case do_post_request(@asset_rpc_url, body) do
       {:error, _} ->
         {:error, []}
 
