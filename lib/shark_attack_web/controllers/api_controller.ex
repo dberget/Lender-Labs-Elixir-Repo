@@ -852,8 +852,8 @@ defmodule SharkAttackWeb.ApiController do
   end
 
   def remove_loan(conn, params) do
-    SharkAttack.LoansWorker.delete_loan(params["loanAddress"])
     SharkAttack.Offers.rescind_offer(params["loanAddress"])
+    SharkAttack.LoansWorker.delete_loan(params["loanAddress"])
 
     conn
     |> json(%{message: "ok"})
