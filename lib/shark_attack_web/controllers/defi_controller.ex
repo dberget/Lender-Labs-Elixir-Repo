@@ -42,9 +42,11 @@ defmodule SharkAttackWeb.DefiController do
     end
   end
 
-  def get_most_active_pools(conn, _params) do
+  def get_most_active_pools(conn, params) do
+    bin_step = Map.get(params, "bin_step", :all)
+
     pools =
-      SharkAttack.DLMMPools.list_pools()
+      SharkAttack.DLMMPools.filter_pools(bin_step)
       |> Enum.map(fn pool ->
         %{
           pool: pool,
@@ -59,6 +61,8 @@ defmodule SharkAttackWeb.DefiController do
   end
 
   def get_pools_by_token(conn, params) do
+    bin_step = Map.get(params, "bin_step", :all)
+
     pools =
       params["token_address"]
       |> SharkAttack.DLMMPools.get_pools_by_token()
@@ -69,7 +73,12 @@ defmodule SharkAttackWeb.DefiController do
         }
       end)
       |> Enum.sort_by(& &1.activity, :desc)
-      |> Enum.take(10)
+      |> Enum.filter(fn pool ->
+        case bin_step do
+          :all -> true
+          bin_step -> pool.pool.bin_step == bin_step
+        end
+      end)
 
     dedup_token_addresses_x = pools |> Enum.map(& &1.pool.mint_x)
     dedup_token_addresses_y = pools |> Enum.map(& &1.pool.mint_y)
