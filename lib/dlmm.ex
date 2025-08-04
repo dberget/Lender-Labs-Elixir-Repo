@@ -29,6 +29,14 @@ defmodule SharkAttack.DLMMPools do
     Repo.all(DLMM)
   end
 
+  def filter_pools(:all) do
+    Repo.all(DLMM)
+  end
+
+  def filter_pools(bin_step) do
+    Repo.all(from p in DLMM, where: p.bin_step == ^bin_step)
+  end
+
   def get_pool_by_address(address) do
     Repo.get_by(DLMM, address: address)
   end
