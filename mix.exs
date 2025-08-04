@@ -66,10 +66,8 @@ defmodule SharkAttack.MixProject do
       {:protobuf, "~> 0.11"},
       {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
       {:ecto_mysql_extras, "~> 0.3"},
-      {:gun, "== 2.0.1",
-       [env: :prod, hex: "remedy_gun", repo: "hexpm", optional: false, override: true]},
-      {:cowlib, "~> 2.11.1",
-       [env: :prod, hex: "remedy_cowlib", repo: "hexpm", optional: false, override: true]},
+      {:gun, "~> 2.1.0", override: true},
+      {:cowlib, "~> 2.15.0", override: true},
       {:ssl_verify_fun, "~> 1.1.7", manager: :rebar3, override: true}
     ]
   end
