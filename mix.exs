@@ -4,7 +4,7 @@ defmodule SharkAttack.MixProject do
   def project do
     [
       app: :shark_attack,
-      version: "0.1.8",
+      version: "0.2.5",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -45,6 +45,7 @@ defmodule SharkAttack.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.18"},
+      {:httpoison, "~> 1.8"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:websockex, "~> 0.4.3"},
@@ -54,7 +55,7 @@ defmodule SharkAttack.MixProject do
       {:number, "~> 1.0.3"},
       {:cloak_ecto, "~> 1.2.0"},
       {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
-      {:sentry, "~> 8.0"},
+      # {:sentry, "~> 8.0"},
       {:hackney, "~> 1.8"},
       {:cors_plug, "~> 3.0"},
       {:timex, "~> 3.7.9"},
@@ -91,8 +92,8 @@ defmodule SharkAttack.MixProject do
         # "cmd --cd assets node build.js --deploy",
         "tailwind default --minify",
         "phx.digest"
-      ],
-      sentry_recompile: ["compile", "deps.compile sentry --force"]
+      ]
+      # sentry_recompile: ["compile", "deps.compile sentry --force"]
     ]
   end
 end

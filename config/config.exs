@@ -55,6 +55,8 @@ config :shark_attack, SharkAttack.Scheduler,
 # at the `config/runtime.exs`.
 config :shark_attack, SharkAttack.Mailer, adapter: Swoosh.Adapters.Local
 
+config :shark_attack, :duckdb_url, "http://localhost:8000"
+
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
 
@@ -88,7 +90,7 @@ config :shark_attack, SharkAttack.Vault,
   ]
 
 config :nostrum,
-  token: "MTA3MzgwNzczODAwNzczMjI0NQ.G7LawU.Zyt_Ea2zGO9nRqM4KuGFZ-4aacEzxOgyCHE2B8",
+  token: "MTA3MzgwNzczODAwNzczMjI0NQ.GAH146.12-TedcYBnf4yI0Knfh44ipqF2n0LxNeClH54Q",
   gateway_intents: [
     :guilds,
     :guild_messages,
