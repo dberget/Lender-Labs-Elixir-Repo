@@ -1,5 +1,5 @@
 defmodule SharkAttack.Clients.Helius do
-  # @url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
+  # @url "https://mainnet.helius-rpc.com/?api-key=..."
   import SharkAttack.Helpers
 
   @coll "FrZ6UuodANWfw8mMWBggDbQjrjnV8hcAaDVBUWRwwkAY"

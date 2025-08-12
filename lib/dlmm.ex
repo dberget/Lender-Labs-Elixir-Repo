@@ -6,8 +6,7 @@ defmodule SharkAttack.DLMMPools do
 
   @env Application.compile_env(:shark_attack, :environment, :dev)
 
-  @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8"
-  # @rpc_url "https://mainnet.helius-rpc.com/?api-key=87f15176-5b11-42e2-92a3-4332752769a4"
+  @rpc_url "https://mainnet.helius-rpc.com/?api-key=..."
 
   def update_pools_api() do
     IO.puts("Updating DLMM pools")

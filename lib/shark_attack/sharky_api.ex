@@ -96,8 +96,8 @@ defmodule SharkAttack.SharkyApi do
 
   def get_loan(pk, data) do
     case SharkAttack.Helpers.do_post_request("http://localhost:5001/loans/loan/#{pk}", %{
-      data: data
-    }) do
+           data: data
+         }) do
       {:error, body} ->
         {:error, body}
 
@@ -310,5 +310,37 @@ defmodule SharkAttack.SharkyApi do
 
   def unstake(params) do
     SharkAttack.Helpers.do_post_request("http://localhost:5001/unstake", params)
+  end
+
+  @doc """
+  Fetches Kamino obligation data for a given wallet address.
+  Returns user obligation data including deposits, borrows, and net account value.
+  """
+  def get_kamino_obligations(wallet_address) do
+    case SharkAttack.Helpers.do_get_request(
+           "http://localhost:5001/kamino/obligations/#{wallet_address}"
+         ) do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        body
+    end
+  end
+
+  @doc """
+  Fetches the directed stake validator for a given wallet address.
+  Returns the validator information for the user's directed stake.
+  """
+  def get_directed_stake_validator(wallet_address) do
+    case SharkAttack.Helpers.do_get_request(
+           "http://localhost:5001/vsol/directed-stake/#{wallet_address}"
+         ) do
+      {:error, body} ->
+        {:error, body}
+
+      body ->
+        body
+    end
   end
 end

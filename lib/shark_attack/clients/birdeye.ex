@@ -6,7 +6,7 @@ defmodule SharkAttack.Birdeye do
   use Tesla
   require Logger
 
-  @api_key "909f47ea203046f18943bd6f878fe669"
+  @api_key "..."
   @base_url "https://public-api.birdeye.so"
   @cache_ttl :timer.minutes(1)
 

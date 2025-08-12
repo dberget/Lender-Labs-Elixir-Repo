@@ -213,8 +213,7 @@ defmodule SharkAttack.Users do
     SharkAttack.Helpers.do_get_request(
       "https://api.hel.io/v1/export/payments?publicKey=Labsrz67AZ3Z7zk76k8hWh38nZSsfgUn4VtSU6ZdWL3",
       [
-        {"authorization",
-         "Bearer n24Y98PGn/38OZx0vU81pCSVBV6ZvVjYlbkBi1owTOSq+Yt8r75k1jkKVQzN4z6icCOi5M/yDYLbwIN90wC9YN6CRWTxo9yS+bzVBSJX860GRIBK7DJWC7upbDSj44Do"}
+        {"authorization", "Bearer ..."}
       ]
     )
     # |> Enum.filter(fn %{"paymentRequestId" => paymentId} -> paymentId in @paylinks end)

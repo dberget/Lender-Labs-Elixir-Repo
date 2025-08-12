@@ -84,13 +84,11 @@ config :tailwind,
 
 config :shark_attack, SharkAttack.Vault,
   ciphers: [
-    default:
-      {Cloak.Ciphers.AES.GCM,
-       tag: "AES.GCM.V1", key: Base.decode64!("xdzZGSkAKVLSg8QkQx+BBxWourhdtRCKBuTE13uPxjA=")}
+    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("...")}
   ]
 
 config :nostrum,
-  token: "MTA3MzgwNzczODAwNzczMjI0NQ.GAH146.12-TedcYBnf4yI0Knfh44ipqF2n0LxNeClH54Q",
+  token: "...",
   gateway_intents: [
     :guilds,
     :guild_messages,

@@ -70,6 +70,7 @@ defmodule SharkAttackWeb.Router do
     pipe_through(:api)
 
     get("/total", StakeController, :total)
+    get("/info", StakeController, :get_stake_info)
     post("/stake", StakeController, :stake)
     post("/unstake", StakeController, :unstake)
   end

@@ -64,7 +64,7 @@ if config_env() == :prod do
   #     """
 
   config :nostrum,
-    token: "MTA3MzgwNzczODAwNzczMjI0NQ.GAH146.12-TedcYBnf4yI0Knfh44ipqF2n0LxNeClH54Q",
+    token: "...",
     gateway_intents: [
       :guilds,
       :guild_messages,

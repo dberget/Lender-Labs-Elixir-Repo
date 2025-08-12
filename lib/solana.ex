@@ -1,8 +1,8 @@
 defmodule SharkAttack.Solana do
   import SharkAttack.Helpers
 
-  @asset_rpc_url "https://mainnet.helius-rpc.com/?api-key=8fea9de0-b3d0-4bf4-a1fb-0945dfd91d42"
-  @rpc_url "https://stylish-misty-replica.solana-mainnet.quiknode.pro/b8961d53b160fcc4e0557911b4ed5e6e3ebf9ac8/"
+  @asset_rpc_url "https://mainnet.helius-rpc.com/?api-key=..."
+  @rpc_url "https://mainnet.helius-rpc.com/?api-key=..."
   @pk Solana.pubkey!("FLshW3pj5KWt4S5JDnsHiFqoUu8WK8S8JhVHp5L9rC6x")
 
   def send_transaction(bin_tx) do
@@ -207,9 +207,11 @@ defmodule SharkAttack.Solana do
   end
 
   def get_user_token_mints(wallet) do
-    params = get_token_accounts_request(wallet)
+    params =
+      get_token_accounts_request(wallet)
 
-    res = do_post_request(@rpc_url, params)
+    res =
+      do_post_request(@rpc_url, params)
 
     res["result"]
     |> Enum.map(fn x ->
@@ -248,12 +250,33 @@ defmodule SharkAttack.Solana do
     }
   end
 
+  def get_program_accounts(programId, params) do
+    params =
+      get_program_account_request(programId, params)
+
+    res = do_post_request(@rpc_url, params)
+
+    res["result"]
+  end
+
   def get_program_accounts(programId) do
     params = get_program_account_request(programId)
 
     res = do_post_request(@rpc_url, params)
 
     res["result"]
+  end
+
+  def get_program_account_request(programId, filters) do
+    %{
+      "jsonrpc" => "2.0",
+      "id" => 1,
+      "method" => "getProgramAccounts",
+      "params" => [
+        programId,
+        filters
+      ]
+    }
   end
 
   def get_program_account_request(programId) do
@@ -299,7 +322,7 @@ defmodule SharkAttack.Solana do
   def get_transaction(signatures) do
     params = get_transaction_request(signatures)
 
-    res = do_post_request(@rpc_url, params) |> IO.inspect()
+    res = do_post_request(@rpc_url, params)
 
     res["result"]
   end

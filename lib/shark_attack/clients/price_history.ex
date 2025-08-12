@@ -5,7 +5,7 @@ defmodule SharkAttack.Birdeye.PriceHistoryClient do
 
   use Tesla
 
-  @api_key "909f47ea203046f18943bd6f878fe669"
+  @api_key "..."
   @base_url "https://public-api.birdeye.so"
   @default_interval "12H"
 
